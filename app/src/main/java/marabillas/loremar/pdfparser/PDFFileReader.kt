@@ -6,6 +6,8 @@ import java.io.*
  * This class facilitates reading in a pdf file.
  */
 class PDFFileReader(private val file: RandomAccessFile) {
+    private var startXRefPos: Long? = null
+
     /**
      * Read the line containing the character in the given offset position. Trailing line feed and carriage return is
      * treated as part of the line but will be discarded in the returned output. The file pointer is also set to the
@@ -48,21 +50,24 @@ class PDFFileReader(private val file: RandomAccessFile) {
      * Get the offset position of the cross reference section.
      */
     fun getStartXRefPosition(): Long {
-        var p = file.length() - 1
-        while (true) {
-            var s = readContainingLine(p)
-            if (s.startsWith("startxref")) {
-                file.seek(file.filePointer + 1)
-                file.readLine()
-                while (true) {
-                    s = file.readLine()
-                    if (!s.startsWith("%")) {
-                        return s.toLong()
+        if (startXRefPos == null) {
+            var p = file.length() - 1
+            while (true) {
+                var s = readContainingLine(p)
+                if (s.startsWith("startxref")) {
+                    file.seek(file.filePointer + 1)
+                    file.readLine()
+                    while (true) {
+                        s = file.readLine()
+                        if (!s.startsWith("%")) {
+                            startXRefPos = s.toLong()
+                            return startXRefPos as Long
+                        }
                     }
                 }
+                p = file.filePointer
             }
-            p = file.filePointer
-        }
+        } else return startXRefPos as Long
     }
 
     /**

@@ -13,9 +13,21 @@ internal class DictionaryParsingHelper {
         var unbParent = 1
         var closeParentIndex = 0
         var closeParentFound = false
+        var prev = ""
         string.substringAfter('(').forEach {
-            if (it == '(') unbParent++
-            else if (it == ')') unbParent--
+            when (it) {
+                '(' -> {
+                    if (prev != "\\") {
+                        unbParent++
+                    }
+                }
+                ')' -> {
+                    if (prev != "\\") {
+                        unbParent--
+                    }
+                }
+            }
+            prev = it.toString()
             if (!closeParentFound) closeParentIndex++
             if (unbParent == 0) {
                 closeParentFound = true

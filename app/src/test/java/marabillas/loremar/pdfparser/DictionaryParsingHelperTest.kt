@@ -15,5 +15,10 @@ class DictionaryParsingHelperTest {
         s = "((("
         i = DictionaryParsingHelper().findIndexOfClosingParentheses(s)
         assertThat(i, `is`(0))
+
+        // Test for escaped parentheses
+        s = "(\\()"
+        i = DictionaryParsingHelper().findIndexOfClosingParentheses(s)
+        assertThat(i, `is`(3))
     }
 }

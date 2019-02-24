@@ -6,7 +6,7 @@ import org.junit.Test
 class CaseInsensitiveMapTest {
     @Test
     fun test() {
-        val map = CaseInsensitiveMap()
+        val map = CaseInsensitiveMap<Int>()
         map["cAt"] = 10
         map["bAT"] = 20
         Assert.assertEquals(map["CaT"], 10)

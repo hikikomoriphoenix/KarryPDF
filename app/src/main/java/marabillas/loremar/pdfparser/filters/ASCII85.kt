@@ -2,6 +2,9 @@ package marabillas.loremar.pdfparser.filters
 
 import java.io.ByteArrayOutputStream
 
+/**
+ * Class for ASCII85Decode filter.
+ */
 class ASCII85 : Decoder {
     override fun decode(encoded: String): ByteArray {
         val s = encoded.substringAfter("<~").substringBefore("~>")

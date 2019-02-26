@@ -3,6 +3,9 @@ package marabillas.loremar.pdfparser.filters
 import marabillas.loremar.pdfparser.CaseInsensitiveMap
 import java.math.BigInteger
 
+/**
+ * Class for ASCIIHexDecode filter.
+ */
 class ASCIIHex : Decoder {
     override fun decode(encoded: String): ByteArray {
         if (encoded.length % 2 != 0) throw IllegalArgumentException()
@@ -31,6 +34,9 @@ class ASCIIHex : Decoder {
     }
 
     companion object {
+        /**
+         * A map that binds pairs of hexadecimals to their decimal values. Keys are  case-insensitive.
+         */
         var hexMap = CaseInsensitiveMap<Byte>()
             private set
 

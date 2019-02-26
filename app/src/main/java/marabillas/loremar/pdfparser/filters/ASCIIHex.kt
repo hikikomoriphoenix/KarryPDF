@@ -10,6 +10,11 @@ class ASCIIHex : Decoder {
         val bytes = ByteArray(encoded.length / 2)
         var i = 0
         while (i < encoded.length - 1) {
+            if (encoded[i] == ' ') {
+                ++i
+                continue
+            }
+
             val pair = encoded.substring(i++, i++ + 1)
             bytes[(i - 2) / 2] = hexMap[pair]!!
         }

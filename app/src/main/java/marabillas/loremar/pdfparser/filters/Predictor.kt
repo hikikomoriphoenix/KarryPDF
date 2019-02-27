@@ -5,7 +5,9 @@ and written into Kotlin. The original work is open-source and licensed under Apa
 
 package marabillas.loremar.pdfparser.filters
 
-import java.io.*
+import java.io.FilterOutputStream
+import java.io.IOException
+import java.io.OutputStream
 import java.util.*
 
 /**

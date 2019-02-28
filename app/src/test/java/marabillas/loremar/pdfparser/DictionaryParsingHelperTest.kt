@@ -8,17 +8,17 @@ class DictionaryParsingHelperTest {
     @Test
     fun testFindIndexOfClosingParentheses() {
         var s = "(123(345(67)89)0) 123243254435"
-        var i = DictionaryParsingHelper().findIndexOfClosingParentheses(s)
+        var i = DictionaryParsingHelper().findIndexOfClosingDelimiter(s)
         assertThat(i, `is`(16))
 
         // Test for unbalanced parentheses
         s = "((("
-        i = DictionaryParsingHelper().findIndexOfClosingParentheses(s)
+        i = DictionaryParsingHelper().findIndexOfClosingDelimiter(s)
         assertThat(i, `is`(0))
 
         // Test for escaped parentheses
         s = "(\\()"
-        i = DictionaryParsingHelper().findIndexOfClosingParentheses(s)
+        i = DictionaryParsingHelper().findIndexOfClosingDelimiter(s)
         assertThat(i, `is`(3))
     }
 }

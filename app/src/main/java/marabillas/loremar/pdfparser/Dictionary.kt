@@ -11,7 +11,7 @@ class Dictionary(file: RandomAccessFile, start: Long) {
         var s = file.readLine()
         while (!s.contains("<<") || s.startsWith('%'))
             s = readLine()
-        s = s.substringAfterLast("<<")
+        s = s.substringAfter("<<")
 
         while (true) {
             val sWithName = s.substringAfter('/', "")
@@ -32,12 +32,12 @@ class Dictionary(file: RandomAccessFile, start: Long) {
             // Get the entry's value.
             var value: String
             while (true) {
-                if (s != "" && s.first() == '(') {
+                if (s != "" && startsEnclosed(s)) {
                     // Parse string object
-                    val closeParentIndex = dictionaryParsingHelper.findIndexOfClosingParentheses(s)
-                    if (closeParentIndex != 0) {
-                        value = s.substring(0, closeParentIndex + 1)
-                        s = s.substring(closeParentIndex + 1, s.length)
+                    val closeIndex = dictionaryParsingHelper.findIndexOfClosingDelimiter(s)
+                    if (closeIndex != 0) {
+                        value = s.substring(0, closeIndex + 1)
+                        s = s.substring(closeIndex + 1, s.length)
                     } else value = ""
                 } else {
                     if (s.trim().startsWith('/')) {
@@ -63,6 +63,16 @@ class Dictionary(file: RandomAccessFile, start: Long) {
                     s += file.readLine()
                 }
             }
+        }
+    }
+
+    private fun startsEnclosed(s: String): Boolean {
+        return when (s.first()) {
+            '(' -> true
+            '[' -> true
+            '<' -> true
+            '{' -> true
+            else -> false
         }
     }
 }

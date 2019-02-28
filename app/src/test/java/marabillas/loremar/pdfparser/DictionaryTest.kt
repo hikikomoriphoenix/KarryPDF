@@ -38,10 +38,11 @@ class DictionaryTest {
         path = javaClass.classLoader.getResource("DictionaryTestFile3").path
         file = RandomAccessFile(path, "r")
         dictionary = Dictionary(file, 0)
-        assertThat(dictionary.entries["test1"], `is`("[yes"))
-        assertThat(dictionary.entries["test2"], `is`("(hello)"))
-        assertThat(dictionary.entries["test3"], `is`("<no"))
+        assertThat(dictionary.entries["test1"], `is`("[[yes]hey]"))
+        assertThat(dictionary.entries["test2"], `is`("((hello))"))
+        assertThat(dictionary.entries["test3"], `is`("<no<no>>"))
         assertThat(dictionary.entries["test4"], `is`("/wow"))
+        assertThat(dictionary.entries["test5"], `is`("<<<<what>>who>>"))
         println("Testing DictionaryTestFile3 success")
     }
 }

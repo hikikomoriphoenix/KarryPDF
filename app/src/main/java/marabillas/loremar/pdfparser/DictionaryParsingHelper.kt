@@ -2,40 +2,60 @@ package marabillas.loremar.pdfparser
 
 internal class DictionaryParsingHelper {
     /**
-     * Locates the close parentheses of the first open parentheses in a string and returns its index. This helps in
-     * parsing a string object in a PDF file.
+     * Locates the closing delimiter of the first opening delimiter in a string and returns its index. This helps in
+     * parsing objects enclosed with enclosing delimiters i.e. '()','[]','<>','{}' in a PDF file.
      *
-     * @param string String with a presumably balanced parentheses.
+     * @param string String enclosed by enclosing delimiters.
      *
-     * @return the index of the close parentheses or 0 if no close parentheses for the first open parentheses exists.
+     * @return the index of the closing delimiter or 0 if no closing delimiter for the first opening delimiter exists.
      */
-    fun findIndexOfClosingParentheses(string: String): Int {
-        var unbParent = 1
-        var closeParentIndex = 0
-        var closeParentFound = false
+    fun findIndexOfClosingDelimiter(string: String): Int {
+        var unb = 1
+        var closeIndex = 0
         var prev = ""
-        string.substringAfter('(').forEach {
-            when (it) {
-                '(' -> {
-                    if (prev != "\\") {
-                        unbParent++
+
+        val open = string.first()
+        val close = getClosingChar(string.first())
+
+        var dictionary = false
+        if (open == '<' && string[1] == '<') dictionary = true
+
+        string.substringAfter(open).forEachIndexed { i, c ->
+            when (c) {
+                open -> {
+                    if (dictionary) {
+                        if (prev != "\\" && string[i + 1] == '<')
+                            unb++
+                    } else if (prev != "\\") {
+                        unb++
                     }
                 }
-                ')' -> {
-                    if (prev != "\\") {
-                        unbParent--
+                close -> {
+                    if (dictionary) {
+                        if (prev != "\\" && string[i + 1] == '>')
+                            unb--
+                    } else if (prev != "\\") {
+                        unb--
                     }
                 }
             }
-            prev = it.toString()
-            if (!closeParentFound) closeParentIndex++
-            if (unbParent == 0) {
-                closeParentFound = true
-                return@forEach
+            prev = c.toString()
+            closeIndex++
+            if (unb == 0) {
+                return closeIndex
             }
         }
 
-        if (unbParent != 0) return 0
-        return closeParentIndex
+        return 0
+    }
+
+    private fun getClosingChar(c: Char): Char? {
+        return when (c) {
+            '(' -> ')'
+            '[' -> ']'
+            '<' -> '>'
+            '{' -> '}'
+            else -> null
+        }
     }
 }

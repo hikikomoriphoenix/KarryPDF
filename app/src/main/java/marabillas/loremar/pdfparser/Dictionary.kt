@@ -26,8 +26,8 @@ class Dictionary(file: RandomAccessFile, start: Long) {
                 continue
             } else s = sWithName
 
-            val key = s.substringBefore(' ')
-            s = s.substringAfter(' ', "")
+            val key = s.split(regex = "[()<>\\[\\]{}/% ]".toRegex())[0]
+            s = s.substringAfter(key, "").trim()
 
             // Get the entry's value.
             var value: String

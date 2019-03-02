@@ -5,7 +5,11 @@ import marabillas.loremar.pdfparser.stream.MemoryCacheImageInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 
-
+/**
+ * Class for LZWDecode filter.
+ * In case this class does not work, try using BitmapFactory.decode() in android to create bitmap from given compressed
+ * data.
+ */
 class LZW(decodeParams: Dictionary?) : Decoder {
     private val predictor:          Int = decodeParams?.entries?.get("Predictor")?.toInt()           ?: 1
     private val bitsPerComponent:   Int = decodeParams?.entries?.get("BitsPerComponent")?.toInt()    ?: 8

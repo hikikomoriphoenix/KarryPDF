@@ -11,8 +11,12 @@ import java.util.zip.DataFormatException
 import java.util.zip.Inflater
 
 /**
+ * Class for FlateDecode filter.
  * Decompresses data encoded using the zlib/deflate compression method,
  * reproducing the original text or binary data.
+ *
+ * In case this class does not work, try using BitmapFactory.decode() in android to create bitmap from given compressed
+ * data.
  */
 class Flate(decodeParams: Dictionary?) : Decoder {
     private val predictor: Int = decodeParams?.entries?.get("Predictor")?.toInt() ?: 1

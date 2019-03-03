@@ -14,8 +14,9 @@ import java.util.*
  * Helper class to contain predictor decoding used by Flate and LZW filter.
  * To see the history, look at the FlateFilter class.
  */
-class Predictor(private val predictor: Int, val bitsPerComponent: Int, val columns: Int, val colors: Int,
-                val bytes: ByteArray){
+internal class Predictor(
+    private val predictor: Int, val bitsPerComponent: Int, val columns: Int, val colors: Int,
+    val bytes: ByteArray){
     fun calculateRowLength(colors: Int, bitsPerComponent: Int, columns: Int): Int {
         val bitsPerPixel = colors * bitsPerComponent
         return (columns * bitsPerPixel + 7) / 8

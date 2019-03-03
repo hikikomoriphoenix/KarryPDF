@@ -6,7 +6,7 @@ import java.math.BigInteger
 /**
  * Class for ASCIIHexDecode filter.
  */
-class ASCIIHex : Decoder {
+internal class ASCIIHex : Decoder {
     override fun decode(encoded: String): ByteArray {
         if (encoded.length % 2 != 0) throw IllegalArgumentException()
 

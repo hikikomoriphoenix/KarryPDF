@@ -11,7 +11,7 @@ import java.io.ByteArrayOutputStream
  * Decompresses data encoded using a byte-oriented run-length encoding algorithm,
  * reproducing the original text or binary data
  */
-class RunLength : Decoder {
+internal class RunLength : Decoder {
     private val runLengthEOD = 128
 
     override fun decode(encoded: String): ByteArray {

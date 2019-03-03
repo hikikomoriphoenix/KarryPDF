@@ -5,12 +5,12 @@ import java.io.IOException
 import kotlin.experimental.and
 import kotlin.experimental.inv
 
-class CCITTFax(decodeParams: Dictionary?, private val height: Int) : Decoder {
-    private val k: Int = decodeParams?.entries?.get("K")?.toInt() ?: 0
-    private val encodedByteAlign: Boolean = decodeParams?.entries?.get("EncodedByteAlign") == "true"
-    private val cols: Int = decodeParams?.entries?.get("Columns")?.toInt() ?: 1728
-    private var rows: Int = decodeParams?.entries?.get("Rows")?.toInt() ?: 0
-    private val blackIsOne: Boolean = decodeParams?.entries?.get("BlackIs1") == "true"
+internal class CCITTFax(decodeParams: Dictionary?, private val height: Int) : Decoder {
+    private val k: Int = decodeParams?.get("K")?.toInt() ?: 0
+    private val encodedByteAlign: Boolean = decodeParams?.get("EncodedByteAlign") == "true"
+    private val cols: Int = decodeParams?.get("Columns")?.toInt() ?: 1728
+    private var rows: Int = decodeParams?.get("Rows")?.toInt() ?: 0
+    private val blackIsOne: Boolean = decodeParams?.get("BlackIs1") == "true"
 
     override fun decode(encoded: String): ByteArray {
         rows = if (rows > 0 && height > 0) {

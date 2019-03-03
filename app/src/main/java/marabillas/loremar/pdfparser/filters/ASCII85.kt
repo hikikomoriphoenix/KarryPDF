@@ -5,7 +5,7 @@ import java.io.ByteArrayOutputStream
 /**
  * Class for ASCII85Decode filter.
  */
-class ASCII85 : Decoder {
+internal class ASCII85 : Decoder {
     override fun decode(encoded: String): ByteArray {
         val s = encoded.substringAfter("<~").substringBefore("~>")
         val out = ByteArrayOutputStream()

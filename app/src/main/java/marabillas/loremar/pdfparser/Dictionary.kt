@@ -6,7 +6,7 @@ import java.io.RandomAccessFile
 import java.nio.channels.Channels
 
 class Dictionary {
-    val entries = HashMap<String, String>()
+    private val entries = HashMap<String, String>()
     private val dictionaryParsingHelper = DictionaryParsingHelper()
     private var reader: BufferedReader = BufferedReader("".reader())
 
@@ -90,5 +90,9 @@ class Dictionary {
             '{' -> true
             else -> false
         }
+    }
+
+    operator fun get(entry: String): String? {
+        return entries[entry]
     }
 }

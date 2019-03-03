@@ -10,7 +10,7 @@ class DictionaryTest {
     fun testInitial() {
         var path = javaClass.classLoader.getResource("DictionaryTestFile").path
         var file = RandomAccessFile(path, "r")
-        var dictionary = Dictionary(file, 15)
+        var dictionary = Dictionary(file, 15).parse()
         assertThat(dictionary.entries["text"], `is`("(hello world)"))
         assertThat(dictionary.entries["nameKey"], `is`("/nameValue"))
         assertThat(
@@ -25,19 +25,19 @@ class DictionaryTest {
 
         path = javaClass.classLoader.getResource("DictionaryTestFile1").path
         file = RandomAccessFile(path, "r")
-        dictionary = Dictionary(file, 0)
+        dictionary = Dictionary(file, 0).parse()
         assertThat(dictionary.entries["name"], `is`("value"))
         println("Testing DictionaryTestFile1 success")
 
         path = javaClass.classLoader.getResource("DictionaryTestFile2").path
         file = RandomAccessFile(path, "r")
-        dictionary = Dictionary(file, 0)
+        dictionary = Dictionary(file, 0).parse()
         assertThat(dictionary.entries["name"], `is`("value"))
         println("Testing DictionaryTestFile2 success")
 
         path = javaClass.classLoader.getResource("DictionaryTestFile3").path
         file = RandomAccessFile(path, "r")
-        dictionary = Dictionary(file, 0)
+        dictionary = Dictionary(file, 0).parse()
         assertThat(dictionary.entries["test1"], `is`("[[yes]hey]"))
         assertThat(dictionary.entries["test2"], `is`("((hello))"))
         assertThat(dictionary.entries["test3"], `is`("<no<no>>"))

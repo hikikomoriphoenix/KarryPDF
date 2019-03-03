@@ -1,16 +1,30 @@
 package marabillas.loremar.pdfparser
 
+import java.io.BufferedReader
+import java.io.InputStreamReader
 import java.io.RandomAccessFile
+import java.nio.channels.Channels
 
-class Dictionary(file: RandomAccessFile, start: Long) {
+class Dictionary {
     val entries = HashMap<String, String>()
     private val dictionaryParsingHelper = DictionaryParsingHelper()
+    private var reader: BufferedReader = BufferedReader("".reader())
 
-    init {
+    constructor(file: RandomAccessFile, start: Long) {
         file.seek(start)
-        var s = file.readLine()
+        val stream = Channels.newInputStream(file.channel)
+        reader = BufferedReader(InputStreamReader(stream!!))
+    }
+
+    constructor(string: String) {
+        reader = BufferedReader(string.reader())
+    }
+
+    fun parse(): Dictionary {
+        var s: String = reader.readLine()
+
         while (!s.contains("<<") || s.startsWith('%'))
-            s = readLine()
+            s = reader.readLine()
         s = s.substringAfter("<<")
 
         while (true) {
@@ -20,9 +34,9 @@ class Dictionary(file: RandomAccessFile, start: Long) {
                 // Check if end of dictionary. If it is, then stop parsing.
                 if (s.endsWith(">>")) break
 
-                s = file.readLine()
+                s = reader.readLine()
                 while (s.startsWith('%'))
-                    s = readLine()
+                    s = reader.readLine()
                 continue
             } else s = sWithName
 
@@ -60,10 +74,12 @@ class Dictionary(file: RandomAccessFile, start: Long) {
                     break
                 } else {
                     // Get the value in the next line.
-                    s += file.readLine()
+                    s += reader.readLine()
                 }
             }
         }
+
+        return this
     }
 
     private fun startsEnclosed(s: String): Boolean {

@@ -1,6 +1,6 @@
 package marabillas.loremar.pdfparser
 
-import java.io.*
+import java.io.RandomAccessFile
 
 /**
  * This class facilitates reading in a pdf file.
@@ -75,15 +75,25 @@ class PDFFileReader(private val file: RandomAccessFile) {
      *
      * @return a map of cross reference entries
      */
-    fun getLastXRefData(): Map<String, XRefEntry> {
+    fun getLastXRefData(): HashMap<String, XRefEntry> {
         val startXRef = getStartXRefPosition()
-        file.seek(startXRef)
+        return getXRefData(startXRef)
+    }
+
+    /**
+     * Given the byte offset position of a cross reference section, parse all of its entries.
+     *
+     * @param pos Byte offset position of the cross reference section.
+     *
+     * @return a map of cross reference entries
+     */
+    fun getXRefData(pos: Long): HashMap<String, XRefEntry> {
+        file.seek(pos)
         val s = file.readLine()
         return if (s.startsWith("xref")) {
             parseXRefSection()
         } else {
-            // TODO Locate cross reference stream and parse xref section.
-            HashMap()
+            XRefStream(file, pos).parse()
         }
     }
 
@@ -91,7 +101,7 @@ class PDFFileReader(private val file: RandomAccessFile) {
      * Parse through each line of the cross reference section to get all of its entries. The offset position must
      * currently be in the beginning of the first subsection.
      */
-    private fun parseXRefSection(): Map<String, XRefEntry> {
+    private fun parseXRefSection(): HashMap<String, XRefEntry> {
         val entries = HashMap<String, XRefEntry>()
 
         while (true) {

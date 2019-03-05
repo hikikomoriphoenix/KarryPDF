@@ -1,6 +1,6 @@
 package marabillas.loremar.pdfparser.filters
 
-import marabillas.loremar.pdfparser.Dictionary
+import marabillas.loremar.pdfparser.objects.Dictionary
 
 class DecoderFactory {
     fun getDecoder(filter: String, objDic: Dictionary? = null): Decoder {

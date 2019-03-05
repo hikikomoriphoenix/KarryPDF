@@ -1,5 +1,6 @@
 package marabillas.loremar.pdfparser
 
+import marabillas.loremar.pdfparser.objects.StreamObject
 import java.io.RandomAccessFile
 
 /**

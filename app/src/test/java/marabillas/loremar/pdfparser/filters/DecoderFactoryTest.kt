@@ -1,7 +1,7 @@
 package marabillas.loremar.pdfparser.filters
 
 import junit.framework.Assert.assertTrue
-import marabillas.loremar.pdfparser.Dictionary
+import marabillas.loremar.pdfparser.objects.Dictionary
 import org.junit.Test
 
 class DecoderFactoryTest {

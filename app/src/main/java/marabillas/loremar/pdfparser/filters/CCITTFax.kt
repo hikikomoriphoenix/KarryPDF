@@ -1,6 +1,6 @@
 package marabillas.loremar.pdfparser.filters
 
-import marabillas.loremar.pdfparser.Dictionary
+import marabillas.loremar.pdfparser.objects.Dictionary
 import java.io.IOException
 import kotlin.experimental.and
 import kotlin.experimental.inv

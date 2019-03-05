@@ -1,5 +1,6 @@
 package marabillas.loremar.pdfparser
 
+import marabillas.loremar.pdfparser.objects.Dictionary
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test

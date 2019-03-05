@@ -5,7 +5,7 @@ Original authors: Ben Litchfield, Marcel Kammer
  */
 package marabillas.loremar.pdfparser.filters
 
-import marabillas.loremar.pdfparser.Dictionary
+import marabillas.loremar.pdfparser.objects.Dictionary
 import java.io.ByteArrayOutputStream
 import java.util.zip.DataFormatException
 import java.util.zip.Inflater

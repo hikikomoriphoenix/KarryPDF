@@ -1,4 +1,4 @@
-package marabillas.loremar.pdfparser
+package marabillas.loremar.pdfparser.objects
 
 internal class DictionaryParsingHelper {
     /**

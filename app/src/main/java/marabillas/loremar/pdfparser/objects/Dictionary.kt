@@ -46,7 +46,7 @@ class Dictionary {
             var value: String
             while (true) {
                 if (s != "" && s.startsEnclosed()) {
-                    value = EnclosedObjectExtractor(s).extract()
+                    value = s.extractEnclosedObject()
                     s = s.substringAfter(value)
                 } else {
                     if (s.trim().startsWith('/')) {

@@ -8,15 +8,15 @@ class EnclosedObjectExtractorTest {
     @Test
     fun testExtract() {
         var s = "(123(345(67)89)0) 123243254435"
-        var extracted = EnclosedObjectExtractor(s).extract()
+        var extracted = s.extractEnclosedObject()
         assertThat(extracted, `is`("(123(345(67)89)0)"))
 
         s = "<<<<<Hello>World>>>>"
-        extracted = EnclosedObjectExtractor(s).extract()
+        extracted = s.extractEnclosedObject()
         assertThat(extracted, `is`("<<<<<Hello>World>>>>"))
 
         s = "<Hello World>!!!>"
-        extracted = EnclosedObjectExtractor(s).extract()
+        extracted = s.extractEnclosedObject()
         assertThat(extracted, `is`("<Hello World>"))
     }
 }

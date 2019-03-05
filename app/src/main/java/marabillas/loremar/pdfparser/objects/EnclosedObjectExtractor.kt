@@ -91,3 +91,7 @@ fun String.startsEnclosed(): Boolean {
         else -> false
     }
 }
+
+fun String.extractEnclosedObject(start: Int = 0): String {
+    return EnclosedObjectExtractor(this, start).extract()
+}

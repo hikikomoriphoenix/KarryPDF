@@ -45,7 +45,7 @@ class Dictionary {
             // Get the entry's value.
             var value: String
             while (true) {
-                if (s != "" && startsEnclosed(s)) {
+                if (s != "" && s.startsEnclosed()) {
                     value = EnclosedObjectExtractor(s).extract()
                     s = s.substringAfter(value)
                 } else {
@@ -75,16 +75,6 @@ class Dictionary {
         }
 
         return this
-    }
-
-    private fun startsEnclosed(s: String): Boolean {
-        return when (s.first()) {
-            '(' -> true
-            '[' -> true
-            '<' -> true
-            '{' -> true
-            else -> false
-        }
     }
 
     operator fun get(entry: String): String? {

@@ -76,3 +76,18 @@ class EnclosedObjectExtractor(private val string: String, private val start: Int
         }
     }
 }
+
+/**
+ * Check if string starts with an enclosing delimiter i.e. '(', '[', '<', '{'.
+ *
+ * @return true or false.
+ */
+fun String.startsEnclosed(): Boolean {
+    return when (this.first()) {
+        '(' -> true
+        '[' -> true
+        '<' -> true
+        '{' -> true
+        else -> false
+    }
+}

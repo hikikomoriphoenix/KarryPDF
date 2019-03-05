@@ -7,7 +7,6 @@ import java.nio.channels.Channels
 
 class Dictionary {
     private val entries = HashMap<String, String>()
-    private val dictionaryParsingHelper = DictionaryParsingHelper()
     private var reader: BufferedReader = BufferedReader("".reader())
 
     constructor(file: RandomAccessFile, start: Long) {
@@ -47,12 +46,8 @@ class Dictionary {
             var value: String
             while (true) {
                 if (s != "" && startsEnclosed(s)) {
-                    // Parse string object
-                    val closeIndex = dictionaryParsingHelper.findIndexOfClosingDelimiter(s)
-                    if (closeIndex != 0) {
-                        value = s.substring(0, closeIndex + 1)
-                        s = s.substring(closeIndex + 1, s.length)
-                    } else value = ""
+                    value = EnclosedObjectExtractor(s).extract()
+                    s = s.substringAfter(value)
                 } else {
                     if (s.trim().startsWith('/')) {
                         value = "/" + s.substringAfter('/').substringBefore('/')

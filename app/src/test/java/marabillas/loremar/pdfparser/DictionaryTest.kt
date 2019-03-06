@@ -49,10 +49,15 @@ class DictionaryTest {
 
     @Test
     fun testDictionaryFromString() {
-        val s = "<</test1 (Hello)/test2 (World)>>"
-        val dictionary = Dictionary(s).parse()
+        var s = "<</test1 (Hello)/test2 (World)>>"
+        var dictionary = Dictionary(s).parse()
         assertThat(dictionary["test1"], `is`("(Hello)"))
         assertThat(dictionary["test2"], `is`("(World)"))
         println("Testing dictionary from string success")
+
+        s = "<</Reference 12 0 R >>"
+        dictionary = Dictionary(s).parse()
+        assertThat(dictionary["Reference"], `is`("12 0 R"))
+        println("Testing indirect object reference entry success")
     }
 }

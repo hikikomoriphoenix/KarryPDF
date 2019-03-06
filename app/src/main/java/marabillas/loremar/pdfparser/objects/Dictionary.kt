@@ -51,13 +51,11 @@ class Dictionary {
                 } else {
                     if (s.trim().startsWith('/')) {
                         value = "/" + s.substringAfter('/').substringBefore('/')
-                        value = value.substringBefore(' ')
-                        value = value.substringBefore(">>")
+                        value = value.substringBefore(">>").trim()
                         s = s.substringAfter('/')
                     } else {
                         value = s.trimStart().substringBefore('/')
-                        value = value.substringBefore(' ')
-                        value = value.substringBefore(">>")
+                        value = value.substringBefore(">>").trim()
 
                         // Check if value ends at the end of line then maybe value continues on the next line
                         if (s.trimStart() == value) value = ""

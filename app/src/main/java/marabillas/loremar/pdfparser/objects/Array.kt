@@ -3,6 +3,10 @@ package marabillas.loremar.pdfparser.objects
 class Array(private val arrayString: String) {
     private val array = ArrayList<String>()
     fun parse(): Array {
+        if (!arrayString.startsWith("[") || !arrayString.endsWith("]")) throw IllegalArgumentException(
+            "An array object needs to be enclosed in []"
+        )
+
         var content = arrayString.substringAfter("[").substringBeforeLast("]")
 
         while (true) {
@@ -31,4 +35,8 @@ class Array(private val arrayString: String) {
     operator fun get(i: Int): String {
         return array[i]
     }
+}
+
+fun String.toArray(): Array {
+    return Array(this)
 }

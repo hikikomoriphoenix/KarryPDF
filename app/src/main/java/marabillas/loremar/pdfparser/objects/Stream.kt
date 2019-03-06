@@ -2,7 +2,7 @@ package marabillas.loremar.pdfparser.objects
 
 import java.io.RandomAccessFile
 
-open class StreamObject(file: RandomAccessFile, start: Long) : IndirectObject(file, start) {
+open class Stream(file: RandomAccessFile, start: Long) : Indirect(file, start) {
     val dictionary = Dictionary(file, start).parse()
     var streamData: String = ""
         private set

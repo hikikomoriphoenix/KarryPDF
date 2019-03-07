@@ -1,6 +1,6 @@
 package marabillas.loremar.pdfparser.objects
 
-class Name(string: String) {
+class Name(string: String) : Any(), PDFObject {
     val value = string.substringAfter("/")
 
     init {

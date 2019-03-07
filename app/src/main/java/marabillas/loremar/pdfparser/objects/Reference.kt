@@ -1,6 +1,6 @@
 package marabillas.loremar.pdfparser.objects
 
-class Reference(string: String) {
+class Reference(string: String) : PDFObject {
     var obj: Int? = null
         private set
     var gen: Int = 0

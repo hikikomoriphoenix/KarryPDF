@@ -1,6 +1,6 @@
 package marabillas.loremar.pdfparser.objects
 
-class PDFBoolean(string: String) {
+class PDFBoolean(string: String) : PDFObject {
     var value = false
         private set
 

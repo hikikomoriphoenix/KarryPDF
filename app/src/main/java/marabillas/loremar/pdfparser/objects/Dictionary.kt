@@ -5,7 +5,7 @@ import java.io.InputStreamReader
 import java.io.RandomAccessFile
 import java.nio.channels.Channels
 
-class Dictionary {
+class Dictionary : PDFObject {
     private val entries = HashMap<String, String>()
     private var reader: BufferedReader = BufferedReader("".reader())
 
@@ -78,4 +78,8 @@ class Dictionary {
     operator fun get(entry: String): String? {
         return entries[entry]
     }
+}
+
+fun String.toDictionary(): Dictionary {
+    return Dictionary(this).parse()
 }

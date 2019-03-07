@@ -1,6 +1,6 @@
 package marabillas.loremar.pdfparser.objects
 
-class Array(private val arrayString: String) {
+class Array(private val arrayString: String) : PDFObject {
     private val array = ArrayList<String>()
     fun parse(): Array {
         if (!arrayString.startsWith("[") || !arrayString.endsWith("]")) throw IllegalArgumentException(

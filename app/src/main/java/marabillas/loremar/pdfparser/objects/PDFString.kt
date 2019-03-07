@@ -2,7 +2,7 @@ package marabillas.loremar.pdfparser.objects
 
 import marabillas.loremar.pdfparser.filters.DecoderFactory
 
-class PDFString(private var string: String) {
+class PDFString(private var string: String) : Any(), PDFObject {
     var value = ""
         private set
 

@@ -2,7 +2,7 @@ package marabillas.loremar.pdfparser.objects
 
 import java.math.BigDecimal
 
-class Numeric(string: String) {
+class Numeric(string: String) : PDFObject {
     val value = BigDecimal(string)
 
     override fun equals(other: Any?): Boolean {

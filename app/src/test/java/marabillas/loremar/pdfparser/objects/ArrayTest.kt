@@ -1,7 +1,6 @@
 package marabillas.loremar.pdfparser.objects
 
-import org.hamcrest.CoreMatchers.`is`
-import org.hamcrest.MatcherAssert.assertThat
+import junit.framework.Assert
 import org.junit.Test
 
 class ArrayTest {
@@ -9,8 +8,8 @@ class ArrayTest {
     fun testParse() {
         val s = "[54 (Hello World) /Name]"
         val array = Array(s).parse()
-        assertThat(array[0], `is`("54"))
-        assertThat(array[1], `is`("(Hello World)"))
-        assertThat(array[2], `is`("/Name"))
+        Assert.assertEquals((array[0] as Numeric).value.toInt(), 54)
+        Assert.assertEquals(array[1], "Hello World")
+        Assert.assertEquals(array[2], "Name")
     }
 }

@@ -6,7 +6,7 @@ import java.io.RandomAccessFile
 import java.nio.channels.Channels
 
 class Dictionary : PDFObject {
-    private val entries = HashMap<String, String>()
+    private val entries = HashMap<String, PDFObject?>()
     private var reader: BufferedReader = BufferedReader("".reader())
 
     constructor(file: RandomAccessFile, start: Long) {
@@ -63,7 +63,7 @@ class Dictionary : PDFObject {
                 }
 
                 if (value != "") {
-                    entries[key] = value
+                    entries[key] = value.toPDFObject()
                     break
                 } else {
                     // Get the value in the next line.
@@ -75,7 +75,7 @@ class Dictionary : PDFObject {
         return this
     }
 
-    operator fun get(entry: String): String? {
+    operator fun get(entry: String): PDFObject? {
         return entries[entry]
     }
 }

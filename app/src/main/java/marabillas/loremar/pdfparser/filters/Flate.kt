@@ -6,6 +6,7 @@ Original authors: Ben Litchfield, Marcel Kammer
 package marabillas.loremar.pdfparser.filters
 
 import marabillas.loremar.pdfparser.objects.Dictionary
+import marabillas.loremar.pdfparser.objects.Numeric
 import java.io.ByteArrayOutputStream
 import java.util.zip.DataFormatException
 import java.util.zip.Inflater
@@ -19,10 +20,10 @@ import java.util.zip.Inflater
  * data.
  */
 internal class Flate(decodeParams: Dictionary?) : Decoder {
-    private val predictor: Int = decodeParams?.get("Predictor")?.toInt() ?: 1
-    private val bitsPerComponent: Int = decodeParams?.get("BitsPerComponent")?.toInt() ?: 8
-    private val columns: Int = decodeParams?.get("Columns")?.toInt() ?: 1
-    private var colors: Int = Math.min(decodeParams?.get("Colors")?.toInt() ?: 1, 32)
+    private val predictor: Int = (decodeParams?.get("Predictor") as Numeric?)?.value?.toInt() ?: 1
+    private val bitsPerComponent: Int = (decodeParams?.get("BitsPerComponent") as Numeric?)?.value?.toInt() ?: 8
+    private val columns: Int = (decodeParams?.get("Columns") as Numeric?)?.value?.toInt() ?: 1
+    private var colors: Int = Math.min((decodeParams?.get("Colors") as Numeric?)?.value?.toInt() ?: 1, 32)
 
     constructor() : this(null)
 

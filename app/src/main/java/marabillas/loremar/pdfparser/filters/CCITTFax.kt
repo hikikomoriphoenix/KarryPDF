@@ -1,16 +1,18 @@
 package marabillas.loremar.pdfparser.filters
 
 import marabillas.loremar.pdfparser.objects.Dictionary
+import marabillas.loremar.pdfparser.objects.Numeric
+import marabillas.loremar.pdfparser.objects.PDFBoolean
 import java.io.IOException
 import kotlin.experimental.and
 import kotlin.experimental.inv
 
 internal class CCITTFax(decodeParams: Dictionary?, private val height: Int) : Decoder {
-    private val k: Int = decodeParams?.get("K")?.toInt() ?: 0
-    private val encodedByteAlign: Boolean = decodeParams?.get("EncodedByteAlign") == "true"
-    private val cols: Int = decodeParams?.get("Columns")?.toInt() ?: 1728
-    private var rows: Int = decodeParams?.get("Rows")?.toInt() ?: 0
-    private val blackIsOne: Boolean = decodeParams?.get("BlackIs1") == "true"
+    private val k: Int = (decodeParams?.get("K") as Numeric?)?.value?.toInt() ?: 0
+    private val encodedByteAlign: Boolean = (decodeParams?.get("EncodedByteAlign") as PDFBoolean).value
+    private val cols: Int = (decodeParams?.get("Columns") as Numeric?)?.value?.toInt() ?: 1728
+    private var rows: Int = (decodeParams?.get("Rows") as Numeric?)?.value?.toInt() ?: 0
+    private val blackIsOne: Boolean = (decodeParams?.get("BlackIs1") as PDFBoolean).value
 
     override fun decode(encoded: String): ByteArray {
         rows = if (rows > 0 && height > 0) {

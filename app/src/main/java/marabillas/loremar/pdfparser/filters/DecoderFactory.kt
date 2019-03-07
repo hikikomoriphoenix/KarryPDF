@@ -1,6 +1,7 @@
 package marabillas.loremar.pdfparser.filters
 
 import marabillas.loremar.pdfparser.objects.Dictionary
+import marabillas.loremar.pdfparser.objects.Numeric
 
 class DecoderFactory {
     fun getDecoder(filter: String, objDic: Dictionary? = null): Decoder {
@@ -10,8 +11,8 @@ class DecoderFactory {
             "FlateDecode" -> Flate(objDic?.getDecodeParams())
             "LZWDecode" -> LZW(objDic?.getDecodeParams())
             "CCITTFaxDecode" -> {
-                val height = Integer.valueOf(objDic?.get("height"))
-                return CCITTFax(objDic?.getDecodeParams(), height)
+                val height = objDic?.get("height") as Numeric
+                return CCITTFax(objDic.getDecodeParams(), height.value.toInt())
             }
             "RunLengthDecode" -> RunLength()
             else -> Identity()
@@ -19,11 +20,8 @@ class DecoderFactory {
     }
 
     private fun Dictionary.getDecodeParams(): Dictionary? {
-        val paramsString = this["DecodeParams"]
-        var paramsDictionary: Dictionary? = null
-        if (paramsString != null) {
-            paramsDictionary = Dictionary(paramsString).parse()
-        }
-        return paramsDictionary
+        val paramsDictionary = this["DecodeParams"]
+        return if (paramsDictionary is Dictionary) paramsDictionary
+        else null
     }
 }

@@ -1,6 +1,7 @@
 package marabillas.loremar.pdfparser.filters
 
 import marabillas.loremar.pdfparser.objects.Dictionary
+import marabillas.loremar.pdfparser.objects.Numeric
 import marabillas.loremar.pdfparser.stream.MemoryCacheImageInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -11,11 +12,11 @@ import java.io.IOException
  * data.
  */
 internal class LZW(decodeParams: Dictionary?) : Decoder {
-    private val predictor: Int = decodeParams?.get("Predictor")?.toInt() ?: 1
-    private val bitsPerComponent: Int = decodeParams?.get("BitsPerComponent")?.toInt() ?: 8
-    private val columns: Int = decodeParams?.get("Columns")?.toInt() ?: 1
-    private var earlyChange: Int = decodeParams?.get("EarlyChange")?.toInt() ?: 1
-    private var colors: Int = Math.min(decodeParams?.get("Colors")?.toInt() ?: 1, 32)
+    private val predictor: Int = (decodeParams?.get("Predictor") as Numeric?)?.value?.toInt() ?: 1
+    private val bitsPerComponent: Int = (decodeParams?.get("BitsPerComponent") as Numeric?)?.value?.toInt() ?: 8
+    private val columns: Int = (decodeParams?.get("Columns") as Numeric?)?.value?.toInt() ?: 1
+    private var earlyChange: Int = (decodeParams?.get("EarlyChange") as Numeric?)?.value?.toInt() ?: 1
+    private var colors: Int = Math.min((decodeParams?.get("Colors") as Numeric?)?.value?.toInt() ?: 1, 32)
 
     private var lzwTable = ArrayList<ByteArray>()
 

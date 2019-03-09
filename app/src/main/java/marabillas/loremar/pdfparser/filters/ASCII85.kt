@@ -6,8 +6,8 @@ import java.io.ByteArrayOutputStream
  * Class for ASCII85Decode filter.
  */
 internal class ASCII85 : Decoder {
-    override fun decode(encoded: String): ByteArray {
-        val s = encoded.substringAfter("<~").substringBefore("~>")
+    override fun decode(encoded: ByteArray): ByteArray {
+        val s = encoded.toString().substringAfter("<~").substringBefore("~>")
         val out = ByteArrayOutputStream()
         var i: Long = 0
         var j = 0

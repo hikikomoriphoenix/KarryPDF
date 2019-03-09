@@ -15,7 +15,10 @@ open class Indirect(private val file: RandomAccessFile, private val start: Long)
         private set
 
     init {
-        val s = file.readLine().trim()
+        file.seek(start)
+        var s = ""
+        while (s == "")
+            s = file.readLine().trim()
         obj = s.substringBefore(' ').toInt()
         gen = s.substringAfter(' ').substringBefore(' ').toInt()
     }

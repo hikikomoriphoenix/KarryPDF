@@ -14,7 +14,7 @@ internal class CCITTFax(decodeParams: Dictionary?, private val height: Int) : De
     private var rows: Int = (decodeParams?.get("Rows") as Numeric?)?.value?.toInt() ?: 0
     private val blackIsOne: Boolean = (decodeParams?.get("BlackIs1") as PDFBoolean).value
 
-    override fun decode(encoded: String): ByteArray {
+    override fun decode(encoded: ByteArray): ByteArray {
         rows = if (rows > 0 && height > 0) {
             // PDFBOX-771, PDFBOX-3727: rows in DecodeParms sometimes contains an incorrect value
             height
@@ -44,7 +44,7 @@ internal class CCITTFax(decodeParams: Dictionary?, private val height: Int) : De
                 type = TIFFExtension.COMPRESSION_CCITT_T6
             }
         }
-        s = CCITTFaxDecoderStream(encoded.byteInputStream(), cols, type, TIFFExtension.FILL_LEFT_TO_RIGHT, tiffOptions)
+        s = CCITTFaxDecoderStream(encoded.inputStream(), cols, type, TIFFExtension.FILL_LEFT_TO_RIGHT, tiffOptions)
         readFromDecoderStream(s, decompressed)
 
         // invert bitmap

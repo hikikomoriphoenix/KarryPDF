@@ -14,7 +14,7 @@ import java.math.BigInteger
  */
 class XRefStream(private val file: RandomAccessFile, private val start: Long) : Stream(file, start) {
     fun parse(): HashMap<String, XRefEntry> {
-        val stream = decodeEncodedStream().toByteArray()
+        val stream = decodeEncodedStream()
 
         val index = dictionary["Index"] as Array?
         val w = dictionary["W"] as Array

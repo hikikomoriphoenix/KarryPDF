@@ -33,9 +33,9 @@ internal class LZW(decodeParams: Dictionary?) : Decoder {
         }
     }
 
-    override fun decode(encoded: String): ByteArray {
+    override fun decode(encoded: ByteArray): ByteArray {
         val out = ByteArrayOutputStream()
-        val inputStream = encoded.byteInputStream()
+        val inputStream = encoded.inputStream()
         val input = MemoryCacheImageInputStream(inputStream)
 
         val predictedOut = Predictor(
@@ -43,7 +43,7 @@ internal class LZW(decodeParams: Dictionary?) : Decoder {
             bitsPerComponent = bitsPerComponent,
             columns = columns,
             colors = colors,
-            bytes = encoded.toByteArray()
+            bytes = encoded
         ).wrapPredictor(out)
 
         var size = 8

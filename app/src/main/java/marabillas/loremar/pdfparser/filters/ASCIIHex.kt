@@ -7,29 +7,30 @@ import java.math.BigInteger
  * Class for ASCIIHexDecode filter.
  */
 internal class ASCIIHex : Decoder {
-    override fun decode(encoded: String): ByteArray {
-        if (encoded.length % 2 != 0) throw IllegalArgumentException()
+    override fun decode(encoded: ByteArray): ByteArray {
+        val s = encoded.toString()
+        if (s.length % 2 != 0) throw IllegalArgumentException()
 
-        val bytes = ByteArray(encoded.length / 2)
+        val bytes = ByteArray(s.length / 2)
         var i = 0
-        while (i < encoded.length - 1) {
-            if (encoded[i] == ' ') {
+        while (i < s.length - 1) {
+            if (s[i] == ' ') {
                 ++i
                 continue
             }
 
-            val pair = encoded.substring(i++, i++ + 1)
+            val pair = s.substring(i++, i++ + 1)
             bytes[(i - 2) / 2] = hexMap[pair]!!
         }
 
         return bytes
     }
 
-    fun decodeToString(encoded: String): String {
+    fun decodeToString(encoded: ByteArray): String {
         return String(decode(encoded))
     }
 
-    fun decodeToBigInteger(encoded: String): BigInteger {
+    fun decodeToBigInteger(encoded: ByteArray): BigInteger {
         return BigInteger(decode(encoded))
     }
 

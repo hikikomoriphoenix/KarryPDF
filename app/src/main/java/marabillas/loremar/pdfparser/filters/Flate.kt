@@ -27,8 +27,8 @@ internal class Flate(decodeParams: Dictionary?) : Decoder {
 
     constructor() : this(null)
 
-    override fun decode(encoded: String): ByteArray {
-        val input = encoded.byteInputStream()
+    override fun decode(encoded: ByteArray): ByteArray {
+        val input = encoded.inputStream()
         val out = ByteArrayOutputStream()
 
         val predictedOut = Predictor(
@@ -36,7 +36,7 @@ internal class Flate(decodeParams: Dictionary?) : Decoder {
             bitsPerComponent = bitsPerComponent,
             columns = columns,
             colors = colors,
-            bytes = encoded.toByteArray()
+            bytes = encoded
         ).wrapPredictor(out)
 
         // Start decompress

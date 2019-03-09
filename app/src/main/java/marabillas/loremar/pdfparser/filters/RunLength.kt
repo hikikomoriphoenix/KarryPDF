@@ -14,8 +14,8 @@ import java.io.ByteArrayOutputStream
 internal class RunLength : Decoder {
     private val runLengthEOD = 128
 
-    override fun decode(encoded: String): ByteArray {
-        val input = encoded.byteInputStream()
+    override fun decode(encoded: ByteArray): ByteArray {
+        val input = encoded.inputStream()
         val out = ByteArrayOutputStream()
 
         var dupAmount: Int

@@ -1,7 +1,7 @@
 package marabillas.loremar.pdfparser.filters
 
 class Identity : Decoder {
-    override fun decode(encoded: String): ByteArray {
-        return encoded.toByteArray()
+    override fun decode(encoded: ByteArray): ByteArray {
+        return encoded
     }
 }

@@ -16,7 +16,7 @@ class PDFString(private var string: String) : Any(), PDFObject {
                 if (string.length % 2 != 0) string += "0"
 
                 val decoder = DecoderFactory().getDecoder("ASCIIHex")
-                value = decoder.decode(string).toString()
+                value = decoder.decode(string.toByteArray()).toString()
             }
             else -> throw IllegalArgumentException("A PDF string object should either be enclosed in () or <>.")
         }

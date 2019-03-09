@@ -8,9 +8,9 @@ interface Decoder {
     /**
      * Executes a filter's decoding algorithm.
      *
-     * @param encoded String representing of encoded data.
+     * @param encoded bytes of encoded data.
      *
      * @return a byte array containing the original un-encoded data.
      */
-    fun decode(encoded: String): ByteArray
+    fun decode(encoded: ByteArray): ByteArray
 }

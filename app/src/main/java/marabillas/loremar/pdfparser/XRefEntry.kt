@@ -8,4 +8,8 @@ data class XRefEntry(
     var compressed: Boolean = false,    // Is it compressed in an object stream
     var objStm: Int = 0,                // Object number of object stream if compressed
     var index: Int = 0                  // Object's index in the object stream if compressed
-)
+) {
+    override fun toString(): String {
+        return "XRefEntry(obj:$obj pos:$pos gen:$gen inUse:$inUse compressed:$compressed objStm:$objStm index:$index)"
+    }
+}

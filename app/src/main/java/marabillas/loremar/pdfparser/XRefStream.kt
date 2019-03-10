@@ -24,11 +24,13 @@ class XRefStream(private val file: RandomAccessFile, private val start: Long) : 
 
         var entries = HashMap<String, XRefEntry>()
         if (index != null) {
+            println("Parsing XRefStream start")
             for (i in 0 until index.count() step 2) {
                 val start = (index[i] as Numeric).value.toInt()
                 val count = (index[i + 1] as Numeric).value.toInt()
 
                 repeat(count) {
+                    print("Parsing XRef entry for obj ${start + it}")
                     val fields = arrayOf(ByteArray(w0), ByteArray(w1), ByteArray(w2))
                     repeat(3) { i ->
                         repeat(fields[i].count()) { j ->
@@ -36,10 +38,25 @@ class XRefStream(private val file: RandomAccessFile, private val start: Long) : 
                         }
                     }
 
-                    val entry = XRefEntry(start + i)
-                    val type = BigInteger(fields[0]).toInt()
-                    val second = BigInteger(fields[1]).toInt()
-                    val third = BigInteger(fields[2]).toInt()
+                    val entry = XRefEntry(start + it)
+                    val type = if (fields[0].count() != 0)
+                        BigInteger(fields[0]).toInt()
+                    else 1
+
+                    val second = if (fields[1].count() != 0)
+                        BigInteger(fields[1]).toInt()
+                    else 0
+
+                    val thirdDefault = when (type) {
+                        0 -> 65535
+                        1 -> 0
+                        2 -> -1
+                        else -> 0
+                    }
+
+                    val third = if (fields[2].count() != 0)
+                        BigInteger(fields[2]).toInt()
+                    else thirdDefault
 
                     when (type) {
                         0 -> {
@@ -59,12 +76,15 @@ class XRefStream(private val file: RandomAccessFile, private val start: Long) : 
                     }
 
                     entries["${start + it} ${entry.gen}"] = entry
+                    println(" $entry")
                 }
             }
+            println("Parsing XRefStream end")
         }
 
         val prev = dictionary["Prev"] as Numeric?
         if (prev != null) {
+            println("Prev = ${prev.value.toLong()}")
             val data = PDFFileReader(file).getXRefData(prev.value.toLong())
             data.putAll(entries)
             entries = data

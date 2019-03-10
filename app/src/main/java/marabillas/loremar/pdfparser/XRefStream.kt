@@ -73,6 +73,9 @@ class XRefStream(private val file: RandomAccessFile, private val start: Long) : 
                             entry.objStm = second
                             entry.index = third
                         }
+                        else -> {
+                            entry.nullObj = true
+                        }
                     }
 
                     entries["${start + it} ${entry.gen}"] = entry

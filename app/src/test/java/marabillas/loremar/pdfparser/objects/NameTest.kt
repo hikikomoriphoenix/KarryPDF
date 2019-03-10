@@ -14,7 +14,7 @@ class NameTest {
         val out = ByteArrayOutputStream()
         System.setOut(PrintStream(out))
         print(name)
-        assertThat(out.toString(), `is`("Loremar"))
+        assertThat(String(out.toByteArray(), Charsets.US_ASCII), `is`("Loremar"))
 
         val nameIs = "Name is $name"
         assertThat(nameIs, `is`("Name is Loremar"))

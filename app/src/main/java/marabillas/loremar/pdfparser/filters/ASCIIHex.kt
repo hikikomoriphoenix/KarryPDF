@@ -8,7 +8,7 @@ import java.math.BigInteger
  */
 internal class ASCIIHex : Decoder {
     override fun decode(encoded: ByteArray): ByteArray {
-        val s = encoded.toString()
+        val s = String(encoded, Charsets.US_ASCII)
         if (s.length % 2 != 0) throw IllegalArgumentException()
 
         val bytes = ByteArray(s.length / 2)
@@ -27,7 +27,7 @@ internal class ASCIIHex : Decoder {
     }
 
     fun decodeToString(encoded: ByteArray): String {
-        return String(decode(encoded))
+        return String(decode(encoded), Charsets.US_ASCII)
     }
 
     fun decodeToBigInteger(encoded: ByteArray): BigInteger {

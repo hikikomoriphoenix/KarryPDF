@@ -7,7 +7,7 @@ import java.io.ByteArrayOutputStream
  */
 internal class ASCII85 : Decoder {
     override fun decode(encoded: ByteArray): ByteArray {
-        val s = encoded.toString().substringAfter("<~").substringBefore("~>")
+        val s = String(encoded, Charsets.US_ASCII).substringAfter("<~").substringBefore("~>")
         val out = ByteArrayOutputStream()
         var i: Long = 0
         var j = 0

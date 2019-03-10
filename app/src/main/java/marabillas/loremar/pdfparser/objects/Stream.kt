@@ -11,7 +11,7 @@ open class Stream(file: RandomAccessFile, start: Long) : Indirect(file, start) {
     init {
         file.seek(start)
         var s = ""
-        while (!s.equals("stream", true))
+        while (!s.endsWith("stream", true))
             s = file.readLine()
         file.readFully(streamData)
     }

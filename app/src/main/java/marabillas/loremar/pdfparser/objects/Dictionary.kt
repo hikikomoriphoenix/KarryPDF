@@ -31,7 +31,7 @@ class Dictionary : PDFObject {
 
             if (sWithName == "") {
                 // Check if end of dictionary. If it is, then stop parsing.
-                if (s.endsWith(">>")) break
+                if (s.contains(">>")) break
 
                 s = reader.readLine()
                 while (s.startsWith('%'))

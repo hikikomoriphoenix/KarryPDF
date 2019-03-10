@@ -20,16 +20,16 @@ class ObjectStream(file: RandomAccessFile, start: Long) : Stream(file, start) {
             val stream = decodeEncodedStream()
             val first = (dictionary["First"] as Numeric).value.toInt()
             val firstArray = stream.copyOfRange(0, first)
-            val indString = firstArray.toString().trim()
+            val indString = String(firstArray, Charsets.US_ASCII).trim()
             val indArray = indString.split(" ")
             val objPos = indArray[index * 2 + 1].toInt() + first
             return if (index + 1 < indArray.size) {
                 val nextObjPos = indArray[(index + 1) * 2 + 1].toInt() + first
                 val objBytes = stream.copyOfRange(objPos, nextObjPos)
-                objBytes.toString().toPDFObject()
+                String(objBytes, Charsets.US_ASCII).toPDFObject()
             } else {
                 val objBytes = stream.copyOfRange(objPos, stream.size)
-                objBytes.toString().toPDFObject()
+                String(objBytes, Charsets.US_ASCII).toPDFObject()
             }
         } else return null
     }

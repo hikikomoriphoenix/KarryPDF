@@ -40,8 +40,17 @@ class Array(private val arrayString: String) : PDFObject, Iterable<PDFObject?> {
     override fun iterator(): Iterator<PDFObject?> {
         return array.iterator()
     }
+
+    override fun toString(): String {
+        val sb = StringBuilder("[")
+        array.forEach {
+            sb.append(" ${it.toString()} ")
+        }
+        sb.append("]")
+        return sb.toString()
+    }
 }
 
 fun String.toArray(): Array {
-    return Array(this)
+    return Array(this).parse()
 }

@@ -9,10 +9,10 @@ import kotlin.experimental.inv
 
 internal class CCITTFax(decodeParams: Dictionary?, private val height: Int) : Decoder {
     private val k: Int = (decodeParams?.get("K") as Numeric?)?.value?.toInt() ?: 0
-    private val encodedByteAlign: Boolean = (decodeParams?.get("EncodedByteAlign") as PDFBoolean).value
+    private val encodedByteAlign: Boolean = (decodeParams?.get("EncodedByteAlign") as PDFBoolean?)?.value ?: false
     private val cols: Int = (decodeParams?.get("Columns") as Numeric?)?.value?.toInt() ?: 1728
     private var rows: Int = (decodeParams?.get("Rows") as Numeric?)?.value?.toInt() ?: 0
-    private val blackIsOne: Boolean = (decodeParams?.get("BlackIs1") as PDFBoolean).value
+    private val blackIsOne: Boolean = (decodeParams?.get("BlackIs1") as PDFBoolean?)?.value ?: false
 
     override fun decode(encoded: ByteArray): ByteArray {
         rows = if (rows > 0 && height > 0) {

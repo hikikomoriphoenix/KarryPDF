@@ -37,25 +37,24 @@ class XRefStream(private val file: RandomAccessFile, private val start: Long) : 
                     print("Parsing XRef entry for obj ${start + it}")
                     val fields = arrayOf(ByteBuffer.allocate(w0), ByteBuffer.allocate(w1), ByteBuffer.allocate(w2))
                     repeat(3) { m ->
-                        fields[m].order(ByteOrder.BIG_ENDIAN)
-                        channel.read(fields[m])
+                        if (fields[m].capacity() > 0) {
+                            fields[m].order(ByteOrder.BIG_ENDIAN)
+                            channel.read(fields[m])
+                        }
                     }
 
-                    //print(" x=${BigInteger(fields[0])} y=${BigInteger(fields[1])} z=${BigInteger(fields[2])}")
-                    val entry = XRefEntry(start + it)
-                    val type = if (fields[0].capacity() != 0) {
-                        val bArr = ByteArray(fields[0].capacity())
-                        fields[0].flip()
-                        fields[0].get(bArr)
-                        BigInteger(bArr).toInt()
-                    } else 1
+                    /*if (fields[0].capacity() > 0 && fields[1].capacity() > 0 && fields[2].capacity() > 0) {
+                        print(
+                            " x=${getUnsignedNumber(fields[0])} y=${getUnsignedNumber(fields[1])} z=${getUnsignedNumber(
+                                fields[2]
+                            )} "
+                        )
+                    }*/
 
-                    val second = if (fields[1].capacity() != 0) {
-                        val bArr = ByteArray(fields[1].capacity())
-                        fields[1].flip()
-                        fields[1].get(bArr)
-                        BigInteger(bArr).toLong()
-                    } else 0
+                    val entry = XRefEntry(start + it)
+                    val type = if (count != 0) getUnsignedNumber(fields[0]).toInt() else 1
+
+                    val second = if (fields[1].capacity() != 0) getUnsignedNumber(fields[1]).toLong() else 0
 
                     val thirdDefault = when (type) {
                         0 -> 65535
@@ -63,13 +62,7 @@ class XRefStream(private val file: RandomAccessFile, private val start: Long) : 
                         2 -> -1
                         else -> 0
                     }
-
-                    val third = if (fields[2].capacity() != 0) {
-                        val bArr = ByteArray(fields[2].capacity())
-                        fields[2].flip()
-                        fields[2].get(bArr)
-                        BigInteger(bArr).toInt()
-                    } else thirdDefault
+                    val third = if (fields[2].capacity() != 0) getUnsignedNumber(fields[2]).toInt() else thirdDefault
 
                     when (type) {
                         0 -> {
@@ -108,5 +101,13 @@ class XRefStream(private val file: RandomAccessFile, private val start: Long) : 
         }
 
         return entries
+    }
+
+    private fun getUnsignedNumber(buffer: ByteBuffer): BigInteger {
+        return if (buffer.capacity() == 1) {
+            BigInteger(buffer.array()) and 0xff.toBigInteger()
+        } else {
+            BigInteger(buffer.array())
+        }
     }
 }

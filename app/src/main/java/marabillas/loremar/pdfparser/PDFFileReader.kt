@@ -104,6 +104,7 @@ class PDFFileReader(private val file: RandomAccessFile) {
     private fun parseXRefSection(): HashMap<String, XRefEntry> {
         val entries = HashMap<String, XRefEntry>()
 
+        println("Parsing XRef section start")
         while (true) {
             // Find next subsection
             val s = file.readLine()
@@ -115,6 +116,7 @@ class PDFFileReader(private val file: RandomAccessFile) {
 
             // Iterate through every entry and add to entries
             for (i in obj..(obj + count - 1)) {
+                print("Parsing XRef entry for obj $i ")
                 val e = file.readLine()
                 val eFields = e.split(" ")
                 val pos = eFields.component1().toLong()
@@ -126,9 +128,10 @@ class PDFFileReader(private val file: RandomAccessFile) {
                 } else {
                     entries["$i $gen"] = XRefEntry(i, pos, gen)
                 }
+                println("${entries["$i $gen"]}")
             }
         }
-
+        println("Parsing XRef section end")
         return entries
     }
 }

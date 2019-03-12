@@ -1,17 +1,21 @@
 package marabillas.loremar.pdfparser.objects
 
+import org.hamcrest.CoreMatchers.`is`
+import org.junit.Assert.assertThat
 import org.junit.Test
+import java.io.File
 import java.io.RandomAccessFile
 
 class StreamTest {
     @Test
     fun testDecodeEncodedStream() {
-        val path = javaClass.classLoader.getResource("samplepdf1.7.pdf").path
-        val file = RandomAccessFile(path, "r")
-        val streamObj = Stream(file, 9)
-        println("Length of encoded stream: ${streamObj.streamData.size}")
+        val path1 = javaClass.classLoader.getResource("samplepdf1.4.pdf").path
+        val file1 = RandomAccessFile(path1, "r")
+        val streamObj = Stream(file1, 42603)
         val stream = streamObj.decodeEncodedStream()
-        println("Length of decoded stream: ${stream.size}")
-        println(String(stream, Charsets.US_ASCII))
+        val path2 = javaClass.classLoader.getResource("samplepdf1.4expectedtext.txt").path
+        val file2 = File(path2)
+        val expected = file2.readText()
+        assertThat(String(stream), `is`(expected))
     }
 }

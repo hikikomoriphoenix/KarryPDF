@@ -1,5 +1,7 @@
 package marabillas.loremar.pdfparser
 
+import marabillas.loremar.pdfparser.objects.Dictionary
+import marabillas.loremar.pdfparser.objects.PDFObject
 import java.io.RandomAccessFile
 
 /**
@@ -133,5 +135,40 @@ class PDFFileReader(private val file: RandomAccessFile) {
         }
         println("Parsing XRef section end")
         return entries
+    }
+
+    fun getTrailerEntries(): HashMap<String, PDFObject?> {
+        val startXRef = getStartXRefPosition()
+        file.seek(startXRef)
+        var s = file.readLine()
+        if (s.startsWith("xref")) {
+            // Find trailer
+            var p = file.length() - 1
+            while (true) {
+                s = readContainingLine(p)
+                if (s.startsWith("trailer")) {
+                    file.seek(file.filePointer + 1)
+                    val dictionary = Dictionary(file, file.filePointer).parse()
+                    return createTrailerHashMap(dictionary)
+                }
+                p = file.filePointer
+            }
+        } else {
+            // Get trailer entries from XRefStream dictionary
+            val xrefStm = XRefStream(file, startXRef)
+            return createTrailerHashMap(xrefStm.dictionary)
+        }
+    }
+
+    private fun createTrailerHashMap(dictionary: Dictionary): HashMap<String, PDFObject?> {
+        return hashMapOf(
+            "Size" to dictionary["Size"],
+            "Prev" to dictionary["Prev"],
+            "Root" to dictionary["Root"],
+            "Encrypt" to dictionary["Encrypt"],
+            "Info" to dictionary["Info"],
+            "ID" to dictionary["ID"],
+            "XRefStm" to dictionary["XRefStm"]
+        )
     }
 }

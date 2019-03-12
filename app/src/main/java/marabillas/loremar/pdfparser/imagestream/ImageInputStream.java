@@ -18,7 +18,7 @@
  * @author Rustem V. Rafikov
  */
 
-package marabillas.loremar.pdfparser.stream;
+package marabillas.loremar.pdfparser.imagestream;
 
 import java.io.DataInput;
 import java.io.IOException;

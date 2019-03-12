@@ -18,7 +18,7 @@
  * @author Sergey I. Salishev
  */
 
-package marabillas.loremar.pdfparser.stream;
+package marabillas.loremar.pdfparser.imagestream;
 
 /**
  * @author Sergey I. Salishev

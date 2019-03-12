@@ -19,7 +19,7 @@
 @author https://github.com/TomRoush
  */
 
-package marabillas.loremar.pdfparser.stream;
+package marabillas.loremar.pdfparser.imagestream;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;

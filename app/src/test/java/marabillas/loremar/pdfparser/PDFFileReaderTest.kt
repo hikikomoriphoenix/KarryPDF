@@ -24,4 +24,20 @@ class PDFFileReaderTest {
         assertThat(obj10?.gen, `is`(0))
         assertThat(obj10?.inUse, `is`(true))
     }
+
+    @Test
+    fun testGetLastXRefDataFromCompressedPDF() {
+        val path = javaClass.classLoader.getResource("samplepdf1.4compressed.pdf").path
+        val file = RandomAccessFile(path, "r")
+        val reader = PDFFileReader(file)
+        val xref = reader.getLastXRefData()
+        xref.forEach {
+            if (it.value.compressed)
+                println("Compressed-> obj:${it.value.obj} objStm:${it.value.objStm} index:${it.value.index}")
+        }
+        xref.forEach() {
+            if (!it.value.compressed && it.value.inUse && !it.value.nullObj)
+                println("Uncompressed->obj:${it.value.obj} pos:${it.value.pos} gen:${it.value.gen}")
+        }
+    }
 }

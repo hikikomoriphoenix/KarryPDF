@@ -39,7 +39,9 @@ class XRefStream(private val file: RandomAccessFile, private val start: Long) : 
                     repeat(3) { m ->
                         if (fields[m].capacity() > 0) {
                             fields[m].order(ByteOrder.BIG_ENDIAN)
-                            channel.read(fields[m])
+                            while (fields[m].hasRemaining()) {
+                                channel.read(fields[m])
+                            }
                         }
                     }
 

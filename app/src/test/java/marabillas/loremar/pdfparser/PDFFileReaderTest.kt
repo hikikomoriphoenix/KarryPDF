@@ -1,10 +1,12 @@
 package marabillas.loremar.pdfparser
 
+import marabillas.loremar.pdfparser.objects.Numeric
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.CoreMatchers.startsWith
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Assert
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.RandomAccessFile
 
@@ -65,5 +67,22 @@ class PDFFileReaderTest {
             Assert.fail("Could not find the trailer.")
         }
         println("Testing samplepdf1.4.pdf having trailer -> succcess.")
+    }
+
+    @Test
+    fun testGetTrailerEntries() {
+        var path = javaClass.classLoader.getResource("samplepdf1.4.pdf").path
+        var file = RandomAccessFile(path, "r")
+        var reader = PDFFileReader(file)
+        var entries = reader.getTrailerEntries()
+        assertTrue(entries["Size"] is Numeric)
+        println("Size entry in trailer for samplepdf1.4.pdf is ${(entries["Size"] as Numeric).value.toInt()}")
+
+        path = javaClass.classLoader.getResource("samplepdf1.4compressed.pdf").path
+        file = RandomAccessFile(path, "r")
+        reader = PDFFileReader(file)
+        entries = reader.getTrailerEntries()
+        assertTrue(entries["Size"] is Numeric)
+        println("Size entry in trailer for samplepdf1.4compressed.pdf is ${(entries["Size"] as Numeric).value.toInt()}")
     }
 }

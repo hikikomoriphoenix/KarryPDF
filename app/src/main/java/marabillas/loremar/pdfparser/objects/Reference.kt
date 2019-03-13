@@ -15,6 +15,10 @@ class Reference(string: String) : PDFObject {
         obj = string.substringBefore(' ').toInt()
         gen = string.substringAfter(' ').substringBefore(' ').toInt()
     }
+
+    fun resolveReference(referenceResolver: ReferenceResolver): PDFObject? {
+        return referenceResolver.resolveReference(this)
+    }
 }
 
 fun String.toReference(): Reference {

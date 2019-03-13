@@ -1,7 +1,15 @@
 package marabillas.loremar.pdfparser.objects
 
+import marabillas.loremar.pdfparser.exceptions.NoReferenceResolverException
+
 class ObjectIdentifier {
     companion object {
+        private var referenceResolver: ReferenceResolver? = null
+
+        fun setReferenceResolver(referenceResolver: ReferenceResolver) {
+            this.referenceResolver = referenceResolver
+        }
+
         fun processString(string: String?): PDFObject? {
             return when {
                 string == "true" || string == "false" -> string.toPDFBoolean()
@@ -11,7 +19,11 @@ class ObjectIdentifier {
                 string?.isEnclosedWith("<", ">") ?: false -> string?.toPDFString()
                 string?.startsWith("/") ?: false -> string?.toName()
                 string?.isEnclosedWith("[", "]") ?: false -> string?.toArray()
-                (string?.let { "^\\d+ \\d+ R$".toRegex().matches(it) }) ?: false -> string?.toReference()
+                (string?.let { "^\\d+ \\d+ R$".toRegex().matches(it) }) ?: false -> referenceResolver?.let {
+                    string?.toReference()?.resolveReference(
+                        it
+                    ) ?: throw NoReferenceResolverException()
+                }
 
                 else -> null
             }

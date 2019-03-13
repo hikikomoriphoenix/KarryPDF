@@ -9,6 +9,7 @@ import java.io.RandomAccessFile
  */
 class PDFFileReader(private val file: RandomAccessFile) {
     private var startXRefPos: Long? = null
+    private var trailerPos: Long? = null
 
     /**
      * Read the line containing the character in the given offset position. Trailing line feed and carriage return is
@@ -137,26 +138,41 @@ class PDFFileReader(private val file: RandomAccessFile) {
         return entries
     }
 
-    fun getTrailerEntries(): HashMap<String, PDFObject?> {
-        val startXRef = getStartXRefPosition()
-        file.seek(startXRef)
-        var s = file.readLine()
-        if (s.startsWith("xref")) {
-            // Find trailer
-            var p = file.length() - 1
-            while (true) {
-                s = readContainingLine(p)
-                if (s.startsWith("trailer")) {
-                    file.seek(file.filePointer + 1)
-                    val dictionary = Dictionary(file, file.filePointer).parse()
-                    return createTrailerHashMap(dictionary)
+    /**
+     * Gets the byte offset position of the trailer.
+     *
+     * @return position or null if PDF document does not have a trailer and that trailer entries are merged into a
+     * cross reference stream instead.
+     */
+    fun getTrailerPosition(): Long? {
+        if (trailerPos == null) {
+            val startXRef = getStartXRefPosition()
+            file.seek(startXRef)
+            var s = file.readLine()
+            if (s.startsWith("xref")) {
+                var p = file.length() - 1
+                while (true) {
+                    s = readContainingLine(p)
+                    if (s.startsWith("trailer")) {
+                        file.seek(file.filePointer + 1)
+                        return file.filePointer
+                    }
+                    p = file.filePointer
                 }
-                p = file.filePointer
-            }
+            } else return null
+        } else return trailerPos
+    }
+
+    fun getTrailerEntries(): HashMap<String, PDFObject?> {
+        val trailerPos = getTrailerPosition()
+        return if (trailerPos != null) {
+            file.seek(trailerPos)
+            val dictionary = Dictionary(file, file.filePointer).parse()
+            createTrailerHashMap(dictionary)
         } else {
             // Get trailer entries from XRefStream dictionary
-            val xrefStm = XRefStream(file, startXRef)
-            return createTrailerHashMap(xrefStm.dictionary)
+            val xrefStm = XRefStream(file, getStartXRefPosition())
+            createTrailerHashMap(xrefStm.dictionary)
         }
     }
 

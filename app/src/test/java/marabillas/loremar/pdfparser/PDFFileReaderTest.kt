@@ -1,7 +1,10 @@
 package marabillas.loremar.pdfparser
 
 import org.hamcrest.CoreMatchers.`is`
+import org.hamcrest.CoreMatchers.startsWith
 import org.hamcrest.MatcherAssert.assertThat
+import org.junit.Assert
+import org.junit.Assert.assertNull
 import org.junit.Test
 import java.io.RandomAccessFile
 
@@ -39,5 +42,28 @@ class PDFFileReaderTest {
             if (!it.value.compressed && it.value.inUse && !it.value.nullObj)
                 println("Uncompressed->obj:${it.value.obj} pos:${it.value.pos} gen:${it.value.gen}")
         }
+    }
+
+    @Test
+    fun testGetTrailerPosition() {
+        var path = javaClass.classLoader.getResource("samplepdf1.4compressed.pdf").path
+        var file = RandomAccessFile(path, "r")
+        var reader = PDFFileReader(file)
+        var trailerPos = reader.getTrailerPosition()
+        assertNull(trailerPos)
+        println("Testing samplepdf1.4compressed.pdf not having trailer -> success.")
+
+        path = javaClass.classLoader.getResource("samplepdf1.4.pdf").path
+        file = RandomAccessFile(path, "r")
+        reader = PDFFileReader(file)
+        trailerPos = reader.getTrailerPosition()
+        if (trailerPos != null) {
+            file.seek(trailerPos)
+            val s = file.readLine()
+            assertThat(s, startsWith("trailer"))
+        } else {
+            Assert.fail("Could not find the trailer.")
+        }
+        println("Testing samplepdf1.4.pdf having trailer -> succcess.")
     }
 }

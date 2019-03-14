@@ -112,10 +112,15 @@ class PDFFileReader(private val file: RandomAccessFile) {
 
         println("Parsing XRef section start")
         while (true) {
+            val p = file.filePointer
             // Find next subsection
             val s = file.readLine()
             if (s == "") continue
-            if (!s.matches(Regex("^(\\d+) (\\d+)$"))) break
+            if (!s.matches(Regex("^(\\d+) (\\d+)$"))) {
+                // File pointer should be reset to right after the last entry
+                file.seek(p)
+                break
+            }
             val subs = s.split(" ")
             val obj = subs.component1().toInt()
             val count = subs.component2().toInt()

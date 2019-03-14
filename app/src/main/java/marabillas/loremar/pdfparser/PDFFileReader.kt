@@ -1,6 +1,7 @@
 package marabillas.loremar.pdfparser
 
 import marabillas.loremar.pdfparser.objects.Dictionary
+import marabillas.loremar.pdfparser.objects.Numeric
 import marabillas.loremar.pdfparser.objects.PDFObject
 import java.io.RandomAccessFile
 
@@ -94,7 +95,9 @@ class PDFFileReader(private val file: RandomAccessFile) {
         file.seek(pos)
         val s = file.readLine()
         return if (s.startsWith("xref")) {
-            parseXRefSection()
+            var data = parseXRefSection()
+            data = parseOtherXRefInTrailer(file.filePointer, data)
+            data
         } else {
             XRefStream(file, pos).parse()
         }
@@ -135,6 +138,40 @@ class PDFFileReader(private val file: RandomAccessFile) {
             }
         }
         println("Parsing XRef section end")
+        return entries
+    }
+
+    private fun parseOtherXRefInTrailer(
+        endXRefPos: Long,
+        xRefEntries: HashMap<String, XRefEntry>
+    ): HashMap<String, XRefEntry> {
+        var entries = xRefEntries
+        var p: Long
+        var s: String
+        file.seek(endXRefPos)
+        do {
+            p = file.filePointer
+            s = file.readLine()
+        } while (!s.startsWith("trailer"))
+        val trailer = Dictionary(file, p)
+
+        // Parse any existing cross reference stream
+        val xRefStm = trailer["XRefStm"] as Numeric?
+        if (xRefStm != null) {
+            println("XRefStm = ${xRefStm.value.toLong()}")
+            val data = getXRefData((xRefStm.value.toLong()))
+            data.putAll(entries)
+            entries = data
+        }
+
+        // Parse any existing previous cross reference table
+        val prev = trailer["Prev"] as Numeric?
+        if (prev != null) {
+            println("Prev = ${prev.value.toLong()}")
+            val data = getXRefData(prev.value.toLong())
+            data.putAll(entries)
+            entries = data
+        }
         return entries
     }
 

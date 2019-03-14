@@ -153,6 +153,12 @@ class PDFFileReader(private val file: RandomAccessFile) {
             p = file.filePointer
             s = file.readLine()
         } while (!s.startsWith("trailer"))
+
+        // Store the main trailer position.
+        if (trailerPos == null) {
+            trailerPos = p
+        }
+
         val trailer = Dictionary(file, p)
 
         // Parse any existing cross reference stream
@@ -182,22 +188,20 @@ class PDFFileReader(private val file: RandomAccessFile) {
      * cross reference stream instead.
      */
     fun getTrailerPosition(): Long? {
-        if (trailerPos == null) {
+        return if (trailerPos == null) {
             val startXRef = getStartXRefPosition()
             file.seek(startXRef)
             var s = file.readLine()
             if (s.startsWith("xref")) {
-                var p = file.length() - 1
-                while (true) {
-                    s = readContainingLine(p)
-                    if (s.startsWith("trailer")) {
-                        file.seek(file.filePointer + 1)
-                        return file.filePointer
-                    }
+                parseXRefSection()
+                var p: Long
+                do {
                     p = file.filePointer
-                }
-            } else return null
-        } else return trailerPos
+                    s = file.readLine()
+                } while (!s.startsWith("trailer"))
+                p
+            } else null
+        } else trailerPos
     }
 
     fun getTrailerEntries(): HashMap<String, PDFObject?> {

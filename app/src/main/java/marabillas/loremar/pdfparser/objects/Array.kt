@@ -22,7 +22,19 @@ class Array(private val arrayString: String) : PDFObject, Iterable<PDFObject?> {
                     entry = entry.split(regex = "[()<\\[{/ ]".toRegex())[0]
                     entry = "/$entry"
                 }
-                else -> entry = content.split(regex = "[()<\\[{/ ]".toRegex())[0]
+                else -> {
+                    entry = content.split(regex = "[()<\\[{/ ]".toRegex())[0]
+                    if (entry == "R") {
+                        val a = (array[array.lastIndex - 1] as Numeric).value.toInt()
+                        val b = (array[array.lastIndex] as Numeric).value.toInt()
+                        val ref = "$a $b R"
+                        if ("^\\d+ \\d+ R$".toRegex().matches(ref)) {
+                            repeat(2) { array.removeAt(array.lastIndex) }
+                            entry = ref
+                            content = "$a $b $content"
+                        }
+                    }
+                }
             }
 
             content = content.substringAfter(entry)

@@ -22,4 +22,16 @@ open class Indirect(private val file: RandomAccessFile, private val start: Long)
         obj = s.substringBefore(' ').toInt()
         gen = s.substringAfter(' ').substringBefore(' ').toInt()
     }
+
+    fun extractContent(): String {
+        file.seek(start)
+        val sb = StringBuilder()
+        while (true) {
+            val s = file.readLine()
+            sb.append(s)
+            if (s.endsWith("endobj")) break
+        }
+        val s = sb.toString()
+        return s.substringAfter("obj").substringBeforeLast("endobj").trim()
+    }
 }

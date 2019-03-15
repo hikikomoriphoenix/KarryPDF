@@ -1,6 +1,7 @@
 package marabillas.loremar.pdfparser
 
 import marabillas.loremar.pdfparser.objects.Dictionary
+import marabillas.loremar.pdfparser.objects.Indirect
 import marabillas.loremar.pdfparser.objects.Numeric
 import marabillas.loremar.pdfparser.objects.PDFObject
 import java.io.RandomAccessFile
@@ -232,5 +233,9 @@ class PDFFileReader(private val file: RandomAccessFile) {
             "ID" to dictionary["ID"],
             "XRefStm" to dictionary["XRefStm"]
         )
+    }
+
+    fun getIndirectObject(pos: Long): Indirect {
+        return Indirect(file, pos)
     }
 }

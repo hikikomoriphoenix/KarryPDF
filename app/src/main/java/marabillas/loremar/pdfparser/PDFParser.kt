@@ -9,7 +9,7 @@ class PDFParser : ReferenceResolver {
     private var fileReader: PDFFileReader? = null
     private var objects: HashMap<String, XRefEntry>? = null
 
-    fun loadDocument(file: RandomAccessFile) {
+    fun loadDocument(file: RandomAccessFile): PDFParser {
         val fileReader = PDFFileReader(file)
         this.fileReader = fileReader
         ObjectIdentifier.setReferenceResolver(this)
@@ -24,6 +24,8 @@ class PDFParser : ReferenceResolver {
         if (trailerEntries["Encrypt"] != null) throw UnsupportedPDFElementException(
             "PDFParser library does not support encrypted pdf files yet."
         )
+
+        return this
     }
 
     var size: Int? = null
@@ -38,6 +40,11 @@ class PDFParser : ReferenceResolver {
         private set
 
     override fun resolveReference(reference: Reference): PDFObject? {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val fileReader = this.fileReader ?: throw NoDocumentException()
+        val objects = this.objects ?: throw NoDocumentException()
+        val obj = objects["${reference.obj} ${reference.gen}"] ?: return null
+        val content = fileReader.getIndirectObject(obj.pos).extractContent()
+        if (content == "" || content == "null") return null
+        return content.toPDFObject() ?: reference
     }
 }

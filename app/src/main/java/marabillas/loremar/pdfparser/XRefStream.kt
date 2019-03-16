@@ -34,7 +34,7 @@ class XRefStream(private val file: RandomAccessFile, private val start: Long) : 
                 val count = (index[i + 1] as Numeric).value.toInt()
 
                 repeat(count) {
-                    print("Parsing XRef entry for obj ${start + it}")
+                    //print("Parsing XRef entry for obj ${start + it}")
                     val fields = arrayOf(ByteBuffer.allocate(w0), ByteBuffer.allocate(w1), ByteBuffer.allocate(w2))
                     repeat(3) { m ->
                         if (fields[m].capacity() > 0) {
@@ -87,7 +87,7 @@ class XRefStream(private val file: RandomAccessFile, private val start: Long) : 
                     }
 
                     entries["${start + it} ${entry.gen}"] = entry
-                    println(" $entry")
+                    //println(" $entry")
                 }
             }
             println("Parsing XRefStream end")

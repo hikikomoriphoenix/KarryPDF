@@ -6,6 +6,7 @@ import marabillas.loremar.pdfparser.objects.Numeric
 class DecoderFactory {
     fun getDecoder(filter: String, objDic: Dictionary? = null): Decoder {
         println("Filter->$filter")
+        objDic?.resolveReferences()
         return when (filter) {
             "ASCIIHexDecode" -> ASCIIHex()
             "ASCII85Decode" -> ASCII85()
@@ -22,7 +23,7 @@ class DecoderFactory {
 
     private fun Dictionary.getDecodeParams(): Dictionary? {
         val paramsDictionary = this["DecodeParams"]
-        return if (paramsDictionary is Dictionary) paramsDictionary
+        return if (paramsDictionary is Dictionary) paramsDictionary.resolveReferences()
         else null
     }
 }

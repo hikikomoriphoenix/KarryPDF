@@ -1,9 +1,6 @@
 package marabillas.loremar.pdfparser
 
-import marabillas.loremar.pdfparser.objects.Dictionary
-import marabillas.loremar.pdfparser.objects.Indirect
-import marabillas.loremar.pdfparser.objects.Numeric
-import marabillas.loremar.pdfparser.objects.PDFObject
+import marabillas.loremar.pdfparser.objects.*
 import java.io.RandomAccessFile
 
 /**
@@ -128,7 +125,7 @@ class PDFFileReader(private val file: RandomAccessFile) {
 
             // Iterate through every entry and add to entries
             for (i in obj..(obj + count - 1)) {
-                print("Parsing XRef entry for obj $i ")
+                //print("Parsing XRef entry for obj $i ")
                 val e = file.readLine()
                 val eFields = e.split(" ")
                 val pos = eFields.component1().toLong()
@@ -140,7 +137,7 @@ class PDFFileReader(private val file: RandomAccessFile) {
                 } else {
                     entries["$i $gen"] = XRefEntry(i, pos, gen)
                 }
-                println("${entries["$i $gen"]}")
+                //println("${entries["$i $gen"]}")
             }
         }
         println("Parsing XRef section end")
@@ -165,7 +162,7 @@ class PDFFileReader(private val file: RandomAccessFile) {
             trailerPos = p
         }
 
-        val trailer = Dictionary(file, p)
+        val trailer = getDictionary(p, false)
 
         // Parse any existing cross reference stream
         val xRefStm = trailer["XRefStm"] as Numeric?
@@ -210,11 +207,11 @@ class PDFFileReader(private val file: RandomAccessFile) {
         } else trailerPos
     }
 
-    fun getTrailerEntries(): HashMap<String, PDFObject?> {
+    fun getTrailerEntries(resolveReferences: Boolean = true): HashMap<String, PDFObject?> {
         val trailerPos = getTrailerPosition()
         return if (trailerPos != null) {
             file.seek(trailerPos)
-            val dictionary = Dictionary(file, file.filePointer).parse()
+            val dictionary = getDictionary(file.filePointer, resolveReferences)
             createTrailerHashMap(dictionary)
         } else {
             // Get trailer entries from XRefStream dictionary
@@ -237,5 +234,28 @@ class PDFFileReader(private val file: RandomAccessFile) {
 
     fun getIndirectObject(pos: Long): Indirect {
         return Indirect(file, pos)
+    }
+
+    fun getDictionary(pos: Long, resolveReferences: Boolean = false): Dictionary {
+        file.seek(pos)
+        var s: String
+        do {
+            s = file.readLine()
+        } while (!s.contains("<<") || s.startsWith('%'))
+
+        val sb = StringBuilder("<<").append(s.substringAfter("<<"))
+
+        var open = 0
+        var close = 0
+        while (true) {
+            open += s.split("<<").count() - 1
+            close += s.split(">>").count() - 1
+            if (close >= open) break
+            s = file.readLine()
+            sb.append(s)
+        }
+
+        s = EnclosedObjectExtractor(sb.toString()).extract()
+        return Dictionary(s).parse(resolveReferences)
     }
 }

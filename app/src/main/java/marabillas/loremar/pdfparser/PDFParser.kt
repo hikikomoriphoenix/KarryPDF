@@ -12,15 +12,15 @@ class PDFParser : ReferenceResolver {
     fun loadDocument(file: RandomAccessFile): PDFParser {
         val fileReader = PDFFileReader(file)
         this.fileReader = fileReader
-        ObjectIdentifier.setReferenceResolver(this)
+        ObjectIdentifier.referenceResolver = this
 
         objects = fileReader.getLastXRefData()
 
         // Process trailer
-        val trailerEntries = fileReader.getTrailerEntries()
+        val trailerEntries = fileReader.getTrailerEntries(true)
         size = (trailerEntries["Size"] as Numeric).value.toInt()
         documentCatalog = trailerEntries["Root"] as Dictionary
-        info = (trailerEntries["Info"] as Dictionary?)
+        info = trailerEntries["Info"] as Dictionary
         if (trailerEntries["Encrypt"] != null) throw UnsupportedPDFElementException(
             "PDFParser library does not support encrypted pdf files yet."
         )
@@ -45,6 +45,6 @@ class PDFParser : ReferenceResolver {
         val obj = objects["${reference.obj} ${reference.gen}"] ?: return null
         val content = fileReader.getIndirectObject(obj.pos).extractContent()
         if (content == "" || content == "null") return null
-        return content.toPDFObject() ?: reference
+        return content.toPDFObject(false) ?: reference
     }
 }

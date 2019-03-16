@@ -16,11 +16,11 @@ class ArrayTest {
 
     @Test
     fun testReferenceEntry() {
-        ObjectIdentifier.setReferenceResolver(object : ReferenceResolver {
+        ObjectIdentifier.referenceResolver = object : ReferenceResolver {
             override fun resolveReference(reference: Reference): PDFObject? {
                 return reference
             }
-        })
+        }
         val s = "[(Hello World)12 0 R/Nameless]"
         val array = Array(s).parse()
         assertThat((array[1] as Reference).obj, `is`(12))

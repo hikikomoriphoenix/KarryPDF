@@ -4,25 +4,27 @@ import marabillas.loremar.pdfparser.exceptions.NoReferenceResolverException
 
 class ObjectIdentifier {
     companion object {
-        private var referenceResolver: ReferenceResolver? = null
+        var referenceResolver: ReferenceResolver? = null
 
-        fun setReferenceResolver(referenceResolver: ReferenceResolver) {
-            this.referenceResolver = referenceResolver
-        }
-
-        fun processString(string: String?): PDFObject? {
+        fun processString(string: String?, resolverReferences: Boolean = false): PDFObject? {
             return when {
                 string == "true" || string == "false" -> string.toPDFBoolean()
                 string?.isNumeric() ?: false -> string?.toNumeric()
                 string?.isEnclosedWith("(", ")") ?: false -> string?.toPDFString()
-                string?.isEnclosedWith("<<", ">>") ?: false -> string?.toDictionary()
+                string?.isEnclosedWith("<<", ">>") ?: false -> string?.toDictionary(resolverReferences)
                 string?.isEnclosedWith("<", ">") ?: false -> string?.toPDFString()
                 string?.startsWith("/") ?: false -> string?.toName()
-                string?.isEnclosedWith("[", "]") ?: false -> string?.toArray()
-                (string?.let { "^\\d+ \\d+ R$".toRegex().matches(it) }) ?: false -> referenceResolver?.let {
-                    string?.toReference()?.resolveReference(
-                        it
-                    ) ?: throw NoReferenceResolverException()
+                string?.isEnclosedWith("[", "]") ?: false -> string?.toArray(resolverReferences)
+                (string?.let { "^\\d+ \\d+ R$".toRegex().matches(it) }) ?: false -> {
+                    if (resolverReferences) {
+                        referenceResolver?.let {
+                            string?.toReference()?.resolve(
+                                it
+                            ) ?: throw NoReferenceResolverException()
+                        }
+                    } else {
+                        string?.toReference()
+                    }
                 }
 
                 else -> null
@@ -45,7 +47,7 @@ class ObjectIdentifier {
 
 }
 
-fun String.toPDFObject(): PDFObject? {
-    return ObjectIdentifier.processString(this)
+fun String.toPDFObject(resolveReferences: Boolean = false): PDFObject? {
+    return ObjectIdentifier.processString(this, resolveReferences)
 }
 

@@ -1,10 +1,11 @@
 package marabillas.loremar.pdfparser.objects
 
+import marabillas.loremar.pdfparser.PDFFileReader
 import marabillas.loremar.pdfparser.filters.DecoderFactory
 import java.io.RandomAccessFile
 
 open class Stream(file: RandomAccessFile, start: Long) : Indirect(file, start) {
-    val dictionary = Dictionary(file, start).parse()
+    val dictionary = PDFFileReader(file).getDictionary(start)
     var streamData = ByteArray((dictionary["Length"] as Numeric).value.toInt())
         private set
 

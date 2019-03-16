@@ -16,8 +16,8 @@ class Reference(string: String) : PDFObject {
         gen = string.substringAfter(' ').substringBefore(' ').toInt()
     }
 
-    fun resolveReference(referenceResolver: ReferenceResolver): PDFObject? {
-        return referenceResolver.resolveReference(this)
+    fun resolve(referenceResolver: ReferenceResolver? = ObjectIdentifier.referenceResolver): PDFObject? {
+        return referenceResolver?.resolveReference(this)
     }
 }
 

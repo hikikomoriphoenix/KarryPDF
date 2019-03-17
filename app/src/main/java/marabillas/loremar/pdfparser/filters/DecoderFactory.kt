@@ -22,7 +22,7 @@ class DecoderFactory {
     }
 
     private fun Dictionary.getDecodeParams(): Dictionary? {
-        var paramsDictionary = this["DecodeParams"]
+        var paramsDictionary = this["DecodeParms"]
         if (paramsDictionary is Reference)
             paramsDictionary = paramsDictionary.resolve()
         return if (paramsDictionary is Dictionary)

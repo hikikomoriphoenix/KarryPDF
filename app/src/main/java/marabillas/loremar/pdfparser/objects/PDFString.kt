@@ -2,7 +2,7 @@ package marabillas.loremar.pdfparser.objects
 
 import marabillas.loremar.pdfparser.filters.DecoderFactory
 
-class PDFString(private var string: String) : Any(), PDFObject {
+internal class PDFString(private var string: String) : Any(), PDFObject {
     var value = ""
         private set
 
@@ -40,6 +40,6 @@ class PDFString(private var string: String) : Any(), PDFObject {
     }
 }
 
-fun String.toPDFString(): PDFString {
+internal fun String.toPDFString(): PDFString {
     return PDFString(this)
 }

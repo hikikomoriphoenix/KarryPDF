@@ -8,7 +8,7 @@ import java.io.RandomAccessFile
  * @param file PDF file
  * @param start offset position where the beginning of the indirect object is located
  */
-open class Indirect(private val file: RandomAccessFile, private val start: Long) {
+internal open class Indirect(private val file: RandomAccessFile, private val start: Long) {
     var obj: Int? = null
         private set
     var gen: Int = 0

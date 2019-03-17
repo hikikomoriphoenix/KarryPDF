@@ -1,6 +1,6 @@
 package marabillas.loremar.pdfparser.objects
 
-class Name(string: String) : Any(), PDFObject {
+internal class Name(string: String) : Any(), PDFObject {
     val value = string.substringAfter("/")
 
     init {
@@ -24,6 +24,6 @@ class Name(string: String) : Any(), PDFObject {
     }
 }
 
-fun String.toName(): Name {
+internal fun String.toName(): Name {
     return Name(this)
 }

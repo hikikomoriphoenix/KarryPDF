@@ -2,7 +2,7 @@ package marabillas.loremar.pdfparser.objects
 
 import marabillas.loremar.pdfparser.exceptions.NoReferenceResolverException
 
-class ObjectIdentifier {
+internal class ObjectIdentifier {
     companion object {
         var referenceResolver: ReferenceResolver? = null
 
@@ -47,7 +47,7 @@ class ObjectIdentifier {
 
 }
 
-fun String.toPDFObject(resolveReferences: Boolean = false): PDFObject? {
+internal fun String.toPDFObject(resolveReferences: Boolean = false): PDFObject? {
     return ObjectIdentifier.processString(this, resolveReferences)
 }
 

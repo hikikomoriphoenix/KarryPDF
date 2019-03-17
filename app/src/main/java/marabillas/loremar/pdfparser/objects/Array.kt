@@ -1,6 +1,6 @@
 package marabillas.loremar.pdfparser.objects
 
-class Array(private val arrayString: String) : PDFObject, Iterable<PDFObject?> {
+internal class Array(private val arrayString: String) : PDFObject, Iterable<PDFObject?> {
     private val array = ArrayList<PDFObject?>()
 
     fun parse(resolveReferences: Boolean = true): Array {
@@ -73,6 +73,6 @@ class Array(private val arrayString: String) : PDFObject, Iterable<PDFObject?> {
     }
 }
 
-fun String.toArray(resolveReferences: Boolean = false): Array {
+internal fun String.toArray(resolveReferences: Boolean = false): Array {
     return Array(this).parse(resolveReferences)
 }

@@ -1,6 +1,5 @@
 package marabillas.loremar.pdfparser.filters
 
-import marabillas.loremar.pdfparser.imagestream.MemoryCacheImageInputStream
 import marabillas.loremar.pdfparser.objects.Dictionary
 import marabillas.loremar.pdfparser.objects.Numeric
 import java.io.ByteArrayOutputStream

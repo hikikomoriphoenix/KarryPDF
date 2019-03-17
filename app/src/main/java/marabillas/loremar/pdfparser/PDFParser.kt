@@ -5,14 +5,14 @@ import marabillas.loremar.pdfparser.exceptions.UnsupportedPDFElementException
 import marabillas.loremar.pdfparser.objects.*
 import java.io.RandomAccessFile
 
-class PDFParser : ReferenceResolver {
+class PDFParser {
     private var fileReader: PDFFileReader? = null
     private var objects: HashMap<String, XRefEntry>? = null
 
     fun loadDocument(file: RandomAccessFile): PDFParser {
         val fileReader = PDFFileReader(file)
         this.fileReader = fileReader
-        ObjectIdentifier.referenceResolver = this
+        ObjectIdentifier.referenceResolver = ReferenceResolverImpl()
 
         objects = fileReader.getLastXRefData()
 
@@ -28,30 +28,30 @@ class PDFParser : ReferenceResolver {
         return this
     }
 
-    var size: Int? = null
+    internal var size: Int? = null
         get() = field ?: throw NoDocumentException()
-        private set
 
-    var documentCatalog: Dictionary? = null
+    internal var documentCatalog: Dictionary? = null
         get() = field ?: throw NoDocumentException()
-        private set
 
-    var info: Dictionary? = null
-        private set
+    internal var info: Dictionary? = null
 
-    override fun resolveReference(reference: Reference): PDFObject? {
-        val fileReader = this.fileReader ?: throw NoDocumentException()
-        val objects = this.objects ?: throw NoDocumentException()
-        val obj = objects["${reference.obj} ${reference.gen}"] ?: return null
+    private inner class ReferenceResolverImpl : ReferenceResolver {
+        override fun resolveReference(reference: Reference): PDFObject? {
+            val fileReader = fileReader ?: throw NoDocumentException()
+            val objects = objects ?: throw NoDocumentException()
+            val obj = objects["${reference.obj} ${reference.gen}"] ?: return null
 
-        if (obj.compressed) {
-            val objStmEntry = objects["${obj.objStm} 0"]
-            val objStm = objStmEntry?.pos?.let { fileReader.getObjectStream(it) }
-            return objStm?.getObject(obj.index)
-        } else {
-            val content = fileReader.getIndirectObject(obj.pos).extractContent()
-            if (content == "" || content == "null") return null
-            return content.toPDFObject(false) ?: reference
+            if (obj.compressed) {
+                val objStmEntry = objects["${obj.objStm} 0"]
+                val objStm = objStmEntry?.pos?.let { fileReader.getObjectStream(it) }
+                return objStm?.getObject(obj.index)
+            } else {
+                val content = fileReader.getIndirectObject(obj.pos).extractContent()
+                if (content == "" || content == "null") return null
+                return content.toPDFObject(false) ?: reference
+            }
         }
+
     }
 }

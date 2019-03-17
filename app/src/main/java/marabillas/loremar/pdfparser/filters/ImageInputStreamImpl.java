@@ -19,7 +19,7 @@
 @author https://github.com/TomRoush
  */
 
-package marabillas.loremar.pdfparser.imagestream;
+package marabillas.loremar.pdfparser.filters;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -30,7 +30,7 @@ import java.nio.ByteOrder;
 /**
  * @author https://github.com/TomRoush
  */
-public abstract class ImageInputStreamImpl implements ImageInputStream {
+abstract class ImageInputStreamImpl implements ImageInputStream {
     protected ByteOrder byteOrder = ByteOrder.BIG_ENDIAN;
 
     protected long streamPos = 0;
@@ -43,7 +43,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
     private final PositionStack offsetStack = new PositionStack();
     private final byte[] buff = new byte[8];
 
-    public ImageInputStreamImpl() {
+    ImageInputStreamImpl() {
     }
 
     protected final void checkClosed() throws IOException {

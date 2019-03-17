@@ -1,6 +1,6 @@
 package marabillas.loremar.pdfparser.objects
 
-class Reference(string: String) : PDFObject {
+internal class Reference(string: String) : PDFObject {
     var obj: Int? = null
         private set
     var gen: Int = 0
@@ -21,6 +21,6 @@ class Reference(string: String) : PDFObject {
     }
 }
 
-fun String.toReference(): Reference {
+internal fun String.toReference(): Reference {
     return Reference(this)
 }

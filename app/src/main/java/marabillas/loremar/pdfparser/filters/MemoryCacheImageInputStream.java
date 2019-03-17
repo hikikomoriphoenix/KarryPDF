@@ -19,7 +19,7 @@
 @author https://github.com/TomRoush
  */
 
-package marabillas.loremar.pdfparser.imagestream;
+package marabillas.loremar.pdfparser.filters;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,11 +27,11 @@ import java.io.InputStream;
 /**
  * @author https://github.com/TomRoush
  */
-public class MemoryCacheImageInputStream extends ImageInputStreamImpl {
+class MemoryCacheImageInputStream extends ImageInputStreamImpl {
     private InputStream is;
     private RandomAccessMemoryCache ramc = new RandomAccessMemoryCache();
 
-    public MemoryCacheImageInputStream(InputStream stream) {
+    MemoryCacheImageInputStream(InputStream stream) {
         if (stream == null) {
             throw new IllegalArgumentException("stream == null!");
         }

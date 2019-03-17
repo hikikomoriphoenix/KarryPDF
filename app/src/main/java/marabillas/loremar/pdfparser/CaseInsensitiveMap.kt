@@ -5,7 +5,7 @@ import java.util.*
 /**
  * A HashMap containing case-insensitive strings for keys.
  */
-class CaseInsensitiveMap<A : Any?> : HashMap<String, A?>() {
+internal class CaseInsensitiveMap<A : Any?> : HashMap<String, A?>() {
     override fun put(key: String, value: A?): A? {
         return super.put(key.toLowerCase(), value)
     }

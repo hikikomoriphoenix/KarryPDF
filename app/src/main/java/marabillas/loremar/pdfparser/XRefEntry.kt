@@ -1,6 +1,6 @@
 package marabillas.loremar.pdfparser
 
-data class XRefEntry(
+internal data class XRefEntry(
     var obj: Int,                       // Object number
     var pos: Long = 0,                  // Byte offset of the object in the file
     var gen: Int = 65535,               // Generation number

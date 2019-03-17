@@ -18,17 +18,17 @@
  * @author Sergey I. Salishev
  */
 
-package marabillas.loremar.pdfparser.imagestream;
+package marabillas.loremar.pdfparser.filters;
 
 /**
  * @author Sergey I. Salishev
  */
-public class IIOByteBuffer {
+class IIOByteBuffer {
     private byte[] data;
     private int offset;
     private int length;
 
-    public IIOByteBuffer(byte[] data, int offset, int length) {
+    IIOByteBuffer(byte[] data, int offset, int length) {
         this.data = data;
         this.offset = offset;
         this.length = length;

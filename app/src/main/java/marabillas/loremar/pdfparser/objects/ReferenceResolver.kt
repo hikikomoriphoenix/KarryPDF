@@ -1,6 +1,6 @@
 package marabillas.loremar.pdfparser.objects
 
-interface ReferenceResolver {
+internal interface ReferenceResolver {
     /**
      * Get the indirect object corresponding to the given indirect reference
      */

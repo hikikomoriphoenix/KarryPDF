@@ -1,6 +1,6 @@
 package marabillas.loremar.pdfparser.objects
 
-class Dictionary(private val string: String) : PDFObject {
+internal class Dictionary(private val string: String) : PDFObject {
     private val entries = HashMap<String, PDFObject?>()
 
     fun parse(resolveReferences: Boolean = true): Dictionary {
@@ -38,6 +38,6 @@ class Dictionary(private val string: String) : PDFObject {
     }
 }
 
-fun String.toDictionary(resolveReferences: Boolean = false): Dictionary {
+internal fun String.toDictionary(resolveReferences: Boolean = false): Dictionary {
     return Dictionary(this).parse(resolveReferences)
 }

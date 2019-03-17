@@ -6,7 +6,7 @@ import java.io.RandomAccessFile
 /**
  * This class facilitates reading in a pdf file.
  */
-class PDFFileReader(private val file: RandomAccessFile) {
+internal class PDFFileReader(private val file: RandomAccessFile) {
     private var startXRefPos: Long? = null
     private var trailerPos: Long? = null
 

@@ -15,7 +15,7 @@ import java.nio.channels.Channels
  * @param file  PDF file containing the stream.
  * @param start offset position where beginning of the cross reference stream's object is located.
  */
-class XRefStream(private val file: RandomAccessFile, private val start: Long) : Stream(file, start) {
+internal class XRefStream(private val file: RandomAccessFile, private val start: Long) : Stream(file, start) {
     fun parse(): HashMap<String, XRefEntry> {
         val stream = decodeEncodedStream()
 

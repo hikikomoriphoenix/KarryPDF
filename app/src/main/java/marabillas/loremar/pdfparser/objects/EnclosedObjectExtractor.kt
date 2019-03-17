@@ -7,7 +7,7 @@ package marabillas.loremar.pdfparser.objects
  * @param string String that contains the enclosed object.
  * @param start Index of the enclosed object's first character.
  */
-class EnclosedObjectExtractor(private val string: String, private val start: Int = 0) {
+internal class EnclosedObjectExtractor(private val string: String, private val start: Int = 0) {
     fun extract(): String {
         val s = string.substring(start)
         val close = findIndexOfClosingDelimiter(s)
@@ -82,7 +82,7 @@ class EnclosedObjectExtractor(private val string: String, private val start: Int
  *
  * @return true or false.
  */
-fun String.startsEnclosed(): Boolean {
+internal fun String.startsEnclosed(): Boolean {
     return when (this.first()) {
         '(' -> true
         '[' -> true
@@ -92,6 +92,6 @@ fun String.startsEnclosed(): Boolean {
     }
 }
 
-fun String.extractEnclosedObject(start: Int = 0): String {
+internal fun String.extractEnclosedObject(start: Int = 0): String {
     return EnclosedObjectExtractor(this, start).extract()
 }

@@ -4,7 +4,7 @@ import marabillas.loremar.pdfparser.objects.Dictionary
 import marabillas.loremar.pdfparser.objects.Numeric
 import marabillas.loremar.pdfparser.objects.Reference
 
-class DecoderFactory {
+internal class DecoderFactory {
     fun getDecoder(filter: String, objDic: Dictionary? = null): Decoder {
         println("Filter->$filter")
         return when (filter) {

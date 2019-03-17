@@ -18,7 +18,7 @@
  * @author Rustem V. Rafikov
  */
 
-package marabillas.loremar.pdfparser.imagestream;
+package marabillas.loremar.pdfparser.filters;
 
 import java.io.DataInput;
 import java.io.IOException;
@@ -27,7 +27,7 @@ import java.nio.ByteOrder;
 /**
  * @author Rustem V. Rafikov
  */
-public interface ImageInputStream extends DataInput {
+interface ImageInputStream extends DataInput {
 
     void setByteOrder(ByteOrder byteOrder);
 

@@ -19,7 +19,7 @@
 @author https://github.com/TomRoush
  */
 
-package marabillas.loremar.pdfparser.imagestream;
+package marabillas.loremar.pdfparser.filters;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,7 +29,7 @@ import java.util.ArrayList;
 /**
  * @author https://github.com/TomRoush
  */
-public final class RandomAccessMemoryCache {
+final class RandomAccessMemoryCache {
     private static final int BLOCK_SHIFT = 9;
     private static final int BLOCK_SIZE = 1 << BLOCK_SHIFT;
     private static final int BLOCK_MASK = BLOCK_SIZE - 1;
@@ -40,7 +40,7 @@ public final class RandomAccessMemoryCache {
 
     private ArrayList<byte[]> blocks = new ArrayList<byte[]>();
 
-    public RandomAccessMemoryCache() {
+    RandomAccessMemoryCache() {
     }
 
     public long length() {

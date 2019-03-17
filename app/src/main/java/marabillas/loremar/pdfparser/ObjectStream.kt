@@ -6,7 +6,7 @@ import marabillas.loremar.pdfparser.objects.Stream
 import marabillas.loremar.pdfparser.objects.toPDFObject
 import java.io.RandomAccessFile
 
-class ObjectStream(file: RandomAccessFile, start: Long) : Stream(file, start) {
+internal class ObjectStream(file: RandomAccessFile, start: Long) : Stream(file, start) {
     /**
      * Get the contents of a compressed object from an object stream given its index in the stream.
      *

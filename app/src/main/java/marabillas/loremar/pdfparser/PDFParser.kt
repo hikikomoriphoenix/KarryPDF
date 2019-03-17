@@ -43,8 +43,15 @@ class PDFParser : ReferenceResolver {
         val fileReader = this.fileReader ?: throw NoDocumentException()
         val objects = this.objects ?: throw NoDocumentException()
         val obj = objects["${reference.obj} ${reference.gen}"] ?: return null
-        val content = fileReader.getIndirectObject(obj.pos).extractContent()
-        if (content == "" || content == "null") return null
-        return content.toPDFObject(false) ?: reference
+
+        if (obj.compressed) {
+            val objStmEntry = objects["${obj.objStm} 0"]
+            val objStm = objStmEntry?.pos?.let { fileReader.getObjectStream(it) }
+            return objStm?.getObject(obj.index)
+        } else {
+            val content = fileReader.getIndirectObject(obj.pos).extractContent()
+            if (content == "" || content == "null") return null
+            return content.toPDFObject(false) ?: reference
+        }
     }
 }

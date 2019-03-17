@@ -28,12 +28,20 @@ class PDFParserTest {
 
     @Test
     fun testResolveReference() {
-        val path = javaClass.classLoader.getResource("samplepdf1.4.pdf").path
-        val file = RandomAccessFile(path, "r")
+        var path = javaClass.classLoader.getResource("samplepdf1.4.pdf").path
+        var file = RandomAccessFile(path, "r")
         PDFParser().loadDocument(file) // This also sets ReferenceResolver for ObjectIdentifier class
         var obj = "3 0 R".toPDFObject(true) // resolveReference() is indirectly called
         assertTrue(obj is Dictionary)
         obj = "19 0 R".toPDFObject(true) // resolveReference() is indirectly called
         assertTrue(obj is Reference)
+
+        path = javaClass.classLoader.getResource("samplepdf1.4compressed.pdf").path
+        file = RandomAccessFile(path, "r")
+        PDFParser().loadDocument(file)
+        obj = "10 0 R".toPDFObject(true)
+        assertTrue(obj is Reference)
+        obj = "1 0 R".toPDFObject(true)
+        assertTrue(obj is Dictionary)
     }
 }

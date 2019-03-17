@@ -212,10 +212,12 @@ class PDFFileReader(private val file: RandomAccessFile) {
         return if (trailerPos != null) {
             file.seek(trailerPos)
             val dictionary = getDictionary(file.filePointer, resolveReferences)
+            if (resolveReferences) dictionary.resolveReferences()
             createTrailerHashMap(dictionary)
         } else {
             // Get trailer entries from XRefStream dictionary
             val xrefStm = XRefStream(file, getStartXRefPosition())
+            if (resolveReferences) xrefStm.dictionary.resolveReferences()
             createTrailerHashMap(xrefStm.dictionary)
         }
     }
@@ -257,5 +259,9 @@ class PDFFileReader(private val file: RandomAccessFile) {
 
         s = EnclosedObjectExtractor(sb.toString()).extract()
         return Dictionary(s).parse(resolveReferences)
+    }
+
+    fun getObjectStream(pos: Long): ObjectStream {
+        return ObjectStream(file, pos)
     }
 }

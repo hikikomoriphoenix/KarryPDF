@@ -1,5 +1,6 @@
 package marabillas.loremar.pdfparser
 
+import marabillas.loremar.pdfparser.exceptions.InvalidDocumentException
 import marabillas.loremar.pdfparser.exceptions.NoDocumentException
 import marabillas.loremar.pdfparser.exceptions.UnsupportedPDFElementException
 import marabillas.loremar.pdfparser.objects.*
@@ -8,6 +9,7 @@ import java.io.RandomAccessFile
 class PDFParser {
     private var fileReader: PDFFileReader? = null
     private var objects: HashMap<String, XRefEntry>? = null
+    private var pages: ArrayList<Reference> = ArrayList()
 
     fun loadDocument(file: RandomAccessFile): PDFParser {
         val fileReader = PDFFileReader(file)
@@ -24,6 +26,11 @@ class PDFParser {
         if (trailerEntries["Encrypt"] != null) throw UnsupportedPDFElementException(
             "PDFParser library does not support encrypted pdf files yet."
         )
+
+        val pageTree = (documentCatalog?.resolveReferences()?.get("Pages") ?: throw InvalidDocumentException(
+            "This document does not have a root page tree."
+        )) as Dictionary
+        getPageTreeLeafNodes(pageTree)
 
         return this
     }
@@ -53,5 +60,19 @@ class PDFParser {
             }
         }
 
+    }
+
+    private fun getPageTreeLeafNodes(pageTree: Dictionary) {
+        pageTree.resolveReferences()
+        val arr = pageTree["Kids"] as PDFArray
+        arr.forEach {
+            val node = it as Reference
+            val nodeDic = node.resolve() as Dictionary
+            val type = nodeDic["Type"] as Name
+            if (type.value == "Pages")
+                getPageTreeLeafNodes(nodeDic)
+            else
+                pages.add(node)
+        }
     }
 }

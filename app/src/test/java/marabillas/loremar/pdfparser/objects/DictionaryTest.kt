@@ -39,7 +39,7 @@ class DictionaryTest {
         path = javaClass.classLoader.getResource("DictionaryTestFile3").path
         file = RandomAccessFile(path, "r")
         dictionary = PDFFileReader(file).getDictionary(0)
-        assertTrue(dictionary["test1"] is Array)
+        assertTrue(dictionary["test1"] is PDFArray)
         assertTrue(dictionary["test2"] is PDFString)
         assertTrue(dictionary["test3"] is PDFString)
         assertTrue(dictionary["test4"] is Name)

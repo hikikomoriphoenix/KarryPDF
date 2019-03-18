@@ -1,9 +1,9 @@
 package marabillas.loremar.pdfparser.objects
 
-internal class Array(private val arrayString: String) : PDFObject, Iterable<PDFObject?> {
+internal class PDFArray(private val arrayString: String) : PDFObject, Iterable<PDFObject?> {
     private val array = ArrayList<PDFObject?>()
 
-    fun parse(resolveReferences: Boolean = true): Array {
+    fun parse(resolveReferences: Boolean = true): PDFArray {
         if (!arrayString.startsWith("[") || !arrayString.endsWith("]")) throw IllegalArgumentException(
             "An array object needs to be enclosed in []"
         )
@@ -62,7 +62,7 @@ internal class Array(private val arrayString: String) : PDFObject, Iterable<PDFO
         return sb.toString()
     }
 
-    fun resolveReferences(): Array {
+    fun resolveReferences(): PDFArray {
         array.asSequence()
             .filter { it is Reference }
             .forEachIndexed { i, it ->
@@ -73,6 +73,6 @@ internal class Array(private val arrayString: String) : PDFObject, Iterable<PDFO
     }
 }
 
-internal fun String.toArray(resolveReferences: Boolean = false): Array {
-    return Array(this).parse(resolveReferences)
+internal fun String.toPDFArray(resolveReferences: Boolean = false): PDFArray {
+    return PDFArray(this).parse(resolveReferences)
 }

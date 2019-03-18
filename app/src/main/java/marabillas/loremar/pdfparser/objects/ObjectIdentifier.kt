@@ -14,7 +14,7 @@ internal class ObjectIdentifier {
                 string?.isEnclosedWith("<<", ">>") ?: false -> string?.toDictionary(resolverReferences)
                 string?.isEnclosedWith("<", ">") ?: false -> string?.toPDFString()
                 string?.startsWith("/") ?: false -> string?.toName()
-                string?.isEnclosedWith("[", "]") ?: false -> string?.toArray(resolverReferences)
+                string?.isEnclosedWith("[", "]") ?: false -> string?.toPDFArray(resolverReferences)
                 (string?.let { "^\\d+ \\d+ R$".toRegex().matches(it) }) ?: false -> {
                     if (resolverReferences) {
                         referenceResolver?.let {

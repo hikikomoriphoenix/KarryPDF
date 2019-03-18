@@ -22,7 +22,7 @@ internal open class Stream(file: RandomAccessFile, start: Long) : Indirect(file,
 
         var data = streamData
         when (filterObj) {
-            is Array -> for (filterEntry in filterObj) {
+            is PDFArray -> for (filterEntry in filterObj) {
                 if (filterEntry is Name) {
                     val decoder = DecoderFactory().getDecoder(filterEntry.value, dictionary)
                     data = decoder.decode(data)

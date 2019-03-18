@@ -25,7 +25,7 @@ class ObjectIdentifierTest {
         assertTrue("Did not convert to Name as expected", obj is Name)
 
         obj = "[/Name 12345 (Text)]".toPDFObject()
-        assertTrue("Did not convert to Array as expected", obj is Array)
+        assertTrue("Did not convert to PDFArray as expected", obj is PDFArray)
 
         obj = "12 0 R".toPDFObject()
         assertTrue("Did not convert to Reference as expected", obj is Reference)

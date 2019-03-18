@@ -1,7 +1,7 @@
 package marabillas.loremar.pdfparser
 
-import marabillas.loremar.pdfparser.objects.Array
 import marabillas.loremar.pdfparser.objects.Numeric
+import marabillas.loremar.pdfparser.objects.PDFArray
 import marabillas.loremar.pdfparser.objects.Stream
 import java.io.RandomAccessFile
 import java.math.BigInteger
@@ -19,8 +19,8 @@ internal class XRefStream(private val file: RandomAccessFile, private val start:
     fun parse(): HashMap<String, XRefEntry> {
         val stream = decodeEncodedStream()
 
-        val index = dictionary["Index"] as Array?
-        val w = dictionary["W"] as Array
+        val index = dictionary["Index"] as PDFArray?
+        val w = dictionary["W"] as PDFArray
         val w0 = (w[0] as Numeric).value.toInt()
         val w1 = (w[1] as Numeric).value.toInt()
         val w2 = (w[2] as Numeric).value.toInt()

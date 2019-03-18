@@ -264,4 +264,8 @@ internal class PDFFileReader(private val file: RandomAccessFile) {
     fun getObjectStream(pos: Long): ObjectStream {
         return ObjectStream(file, pos)
     }
+
+    fun getStream(pos: Long): Stream {
+        return Stream(file, pos)
+    }
 }

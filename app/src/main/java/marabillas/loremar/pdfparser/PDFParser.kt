@@ -1,5 +1,7 @@
 package marabillas.loremar.pdfparser
 
+import marabillas.loremar.pdfparser.contents.ContentStreamParser
+import marabillas.loremar.pdfparser.contents.PageContent
 import marabillas.loremar.pdfparser.exceptions.InvalidDocumentException
 import marabillas.loremar.pdfparser.exceptions.NoDocumentException
 import marabillas.loremar.pdfparser.exceptions.UnsupportedPDFElementException
@@ -59,7 +61,6 @@ class PDFParser {
                 return content.toPDFObject(false) ?: reference
             }
         }
-
     }
 
     private fun getPageTreeLeafNodes(pageTree: Dictionary) {
@@ -74,5 +75,35 @@ class PDFParser {
             else
                 pages.add(node)
         }
+    }
+
+    fun getPageContents(pageNum: Int): ArrayList<PageContent> {
+        val contentsList = ArrayList<PageContent>()
+        val pageDic = pages[pageNum].resolve() as Dictionary
+        val contents = pageDic["Contents"] ?: throw InvalidDocumentException("Missing Contents entry in Page object.")
+        return if (contents is PDFArray) {
+            contents.asSequence()
+                .filterNotNull()
+                .forEach { content ->
+                    val pageContent = parseContent(content)
+                    contentsList.addAll(pageContent)
+                }
+            contentsList
+        } else {
+            parseContent(contents)
+        }
+    }
+
+    private fun parseContent(content: PDFObject): ArrayList<PageContent> {
+        val fileReader = fileReader ?: throw NoDocumentException()
+        val ref = content as Reference
+        val objects = this.objects ?: throw NoDocumentException()
+        val obj = objects["${ref.obj} ${ref.gen}"]
+        obj?.pos?.let {
+            val stream = fileReader.getStream(it)
+            val data = stream.decodeEncodedStream()
+            return ContentStreamParser().parse(String(data))
+        }
+        return ArrayList()
     }
 }

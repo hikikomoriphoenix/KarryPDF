@@ -253,7 +253,7 @@ internal class PDFFileReader(private val file: RandomAccessFile) {
             open += s.split("<<").count() - 1
             close += s.split(">>").count() - 1
             if (close >= open) break
-            s = file.readLine()
+            s = " ${file.readLine()}"
             sb.append(s)
         }
 

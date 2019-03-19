@@ -27,7 +27,7 @@ internal open class Indirect(private val file: RandomAccessFile, private val sta
         file.seek(start)
         val sb = StringBuilder()
         while (true) {
-            val s = file.readLine()
+            val s = " ${file.readLine()}"
             if (s.endsWith("stream", true)) return "pdf_stream_content"
             sb.append(s)
             if (s.endsWith("endobj", true)) break

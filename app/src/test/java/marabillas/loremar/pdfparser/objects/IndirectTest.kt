@@ -14,11 +14,11 @@ class IndirectTest {
         val content = obj.extractContent()
         assertThat(obj.obj, `is`(3))
         assertThat(obj.gen, `is`(0))
-        val expected = "<</Type /Font" +
-                "/Subtype /Type0" +
-                "/BaseFont /ArialMT" +
-                "/Encoding /Identity-H" +
-                "/DescendantFonts [18 0 R]" +
+        val expected = "<</Type /Font " +
+                "/Subtype /Type0 " +
+                "/BaseFont /ArialMT " +
+                "/Encoding /Identity-H " +
+                "/DescendantFonts [18 0 R] " +
                 "/ToUnicode 19 0 R>>"
         assertThat(content, `is`(expected))
     }

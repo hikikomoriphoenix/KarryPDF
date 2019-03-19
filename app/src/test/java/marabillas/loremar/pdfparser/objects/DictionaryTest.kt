@@ -20,7 +20,6 @@ class DictionaryTest {
                 "some loooooooooooooooooooooooooonnnnnnnggggggg teeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeext"
             )
         )
-        assertThat((dictionary["longNumber"] as Numeric).value, `is`(123456789.toBigDecimal()))
         assertThat((dictionary["someKey"] as PDFString).value, `is`("value is in next line"))
         println("Testing DictionaryTestFile success")
 

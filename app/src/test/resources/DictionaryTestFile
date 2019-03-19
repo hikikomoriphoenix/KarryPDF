@@ -1,6 +1,6 @@
 %DictionaryTest<</text (hello world) /nameKey /nameValue 
-/longText (some loooooooooooooooooooooooooonnnnnnn
-ggggggg teeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeext) /longNumber    12345
-6789      /someKey
+/longText (some loooooooooooooooooooooooooonnnnnnnggggggg
+teeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeext)
+      /someKey
 (value is in next line)      
 >>

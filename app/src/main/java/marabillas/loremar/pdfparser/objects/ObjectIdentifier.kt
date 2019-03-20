@@ -7,23 +7,24 @@ internal class ObjectIdentifier {
         var referenceResolver: ReferenceResolver? = null
 
         fun processString(string: String?, resolverReferences: Boolean = false): PDFObject? {
+            val s = string?.trim() ?: ""
             return when {
-                string == "true" || string == "false" -> string.toPDFBoolean()
-                string?.isNumeric() ?: false -> string?.toNumeric()
-                string?.isEnclosedWith("(", ")") ?: false -> string?.toPDFString()
-                string?.isEnclosedWith("<<", ">>") ?: false -> string?.toDictionary(resolverReferences)
-                string?.isEnclosedWith("<", ">") ?: false -> string?.toPDFString()
-                string?.startsWith("/") ?: false -> string?.toName()
-                string?.isEnclosedWith("[", "]") ?: false -> string?.toPDFArray(resolverReferences)
-                (string?.let { "^\\d+ \\d+ R$".toRegex().matches(it) }) ?: false -> {
+                s == "true" || s == "false" -> s.toPDFBoolean()
+                s.isNumeric() -> s.toNumeric()
+                s.isEnclosedWith("(", ")") -> s.toPDFString()
+                s.isEnclosedWith("<<", ">>") -> s.toDictionary(resolverReferences)
+                s.isEnclosedWith("<", ">") -> s.toPDFString()
+                s.startsWith("/") -> s.toName()
+                s.isEnclosedWith("[", "]") -> s.toPDFArray(resolverReferences)
+                (s.let { "^\\d+ \\d+ R$".toRegex().matches(it) }) -> {
                     if (resolverReferences) {
                         referenceResolver?.let {
-                            string?.toReference()?.resolve(
+                            s.toReference().resolve(
                                 it
                             ) ?: throw NoReferenceResolverException()
                         }
                     } else {
-                        string?.toReference()
+                        s.toReference()
                     }
                 }
 

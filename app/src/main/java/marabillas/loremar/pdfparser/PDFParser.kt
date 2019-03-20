@@ -24,7 +24,7 @@ class PDFParser {
         val trailerEntries = fileReader.getTrailerEntries(true)
         size = (trailerEntries["Size"] as Numeric).value.toInt()
         documentCatalog = trailerEntries["Root"] as Dictionary
-        info = trailerEntries["Info"] as Dictionary
+        info = trailerEntries["Info"] as Dictionary?
         if (trailerEntries["Encrypt"] != null) throw UnsupportedPDFElementException(
             "PDFParser library does not support encrypted pdf files yet."
         )

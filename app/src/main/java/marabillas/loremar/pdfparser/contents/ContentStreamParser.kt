@@ -6,6 +6,7 @@ import marabillas.loremar.pdfparser.objects.toPDFString
 internal class ContentStreamParser {
     private var reader = "".reader().buffered()
     private val contents = ArrayList<PageContent>()
+    private var tf = ""
 
     fun parse(streamData: String): ArrayList<PageContent> {
         reader = streamData.reader().buffered()
@@ -19,12 +20,13 @@ internal class ContentStreamParser {
 
     private fun parseDefault(s: String) {
         if (s == "BT") parseText()
+        else if (s.endsWith("Tf")) tf = s.substringBeforeLast("Tf").trim()
     }
 
     private fun parseText() {
         var td = ""
         var tm = ""
-        var tf = ""
+        var tf = this.tf
         while (true) {
             val s = reader.readLine()
             when {

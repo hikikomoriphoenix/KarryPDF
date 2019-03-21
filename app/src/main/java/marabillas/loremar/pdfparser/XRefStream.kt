@@ -16,6 +16,8 @@ import java.nio.channels.Channels
  * @param start offset position where beginning of the cross reference stream's object is located.
  */
 internal class XRefStream(private val file: RandomAccessFile, private val start: Long) : Stream(file, start) {
+    var entries = HashMap<String, XRefEntry>()
+
     fun parse(): HashMap<String, XRefEntry> {
         val stream = decodeEncodedStream()
 
@@ -25,7 +27,6 @@ internal class XRefStream(private val file: RandomAccessFile, private val start:
         val w1 = (w[1] as Numeric).value.toInt()
         val w2 = (w[2] as Numeric).value.toInt()
 
-        var entries = HashMap<String, XRefEntry>()
         if (index != null) {
             println("Parsing XRefStream start")
             val channel = Channels.newChannel(stream.inputStream())
@@ -53,42 +54,28 @@ internal class XRefStream(private val file: RandomAccessFile, private val start:
                         )
                     }*/
 
-                    val entry = XRefEntry(start + it)
-                    val type = if (count != 0) getUnsignedNumber(fields[0]).toInt() else 1
-
-                    val second = if (fields[1].capacity() != 0) getUnsignedNumber(fields[1]).toLong() else 0
-
-                    val thirdDefault = when (type) {
-                        0 -> 65535
-                        1 -> 0
-                        2 -> -1
-                        else -> 0
-                    }
-                    val third = if (fields[2].capacity() != 0) getUnsignedNumber(fields[2]).toInt() else thirdDefault
-
-                    when (type) {
-                        0 -> {
-                            entry.gen = third
-                            entry.inUse = false
-                        }
-                        1 -> {
-                            entry.pos = second
-                            entry.gen = third
-                        }
-                        2 -> {
-                            entry.gen = 0
-                            entry.compressed = true
-                            entry.objStm = second.toInt()
-                            entry.index = third
-                        }
-                        else -> {
-                            entry.nullObj = true
-                        }
-                    }
-
-                    entries["${start + it} ${entry.gen}"] = entry
-                    //println(" $entry")
+                    addEntry(start + it, fields)
                 }
+            }
+            println("Parsing XRefStream end")
+            channel.close()
+        } else {
+            println("Parsing XRefStream start")
+            val channel = Channels.newChannel(stream.inputStream())
+            var count = 0
+            loop@ while (true) {
+                val fields = arrayOf(ByteBuffer.allocate(w0), ByteBuffer.allocate(w1), ByteBuffer.allocate(w2))
+                for (i in 0 until 3) {
+                    if (fields[i].capacity() > 0) {
+                        fields[i].order(ByteOrder.BIG_ENDIAN)
+                        while (fields[i].hasRemaining()) {
+                            val read = channel.read(fields[i])
+                            if (read == -1) break@loop
+                        }
+                    }
+                }
+                addEntry(count, fields)
+                count++
             }
             println("Parsing XRefStream end")
             channel.close()
@@ -105,7 +92,46 @@ internal class XRefStream(private val file: RandomAccessFile, private val start:
         return entries
     }
 
+    private fun addEntry(obj: Int, fields: Array<ByteBuffer>) {
+        val entry = XRefEntry(obj)
+        val type = if (fields[0].capacity() != 0) getUnsignedNumber(fields[0]).toInt() else 1
+
+        val second = if (fields[1].capacity() != 0) getUnsignedNumber(fields[1]).toLong() else 0
+
+        val thirdDefault = when (type) {
+            0 -> 65535
+            1 -> 0
+            2 -> -1
+            else -> 0
+        }
+        val third = if (fields[2].capacity() != 0) getUnsignedNumber(fields[2]).toInt() else thirdDefault
+
+        when (type) {
+            0 -> {
+                entry.gen = third
+                entry.inUse = false
+            }
+            1 -> {
+                entry.pos = second
+                entry.gen = third
+            }
+            2 -> {
+                entry.gen = 0
+                entry.compressed = true
+                entry.objStm = second.toInt()
+                entry.index = third
+            }
+            else -> {
+                entry.nullObj = true
+            }
+        }
+
+        entries["$obj ${entry.gen}"] = entry
+    }
+
+
     private fun getUnsignedNumber(buffer: ByteBuffer): BigInteger {
+        // If buffer contains only one byte, return number from 0 to 255
         return if (buffer.capacity() == 1) {
             BigInteger(buffer.array()) and 0xff.toBigInteger()
         } else {

@@ -48,10 +48,10 @@ class PDFParserTest {
 
     @Test
     fun testGetPageContents() {
-        val path = javaClass.classLoader.getResource("KotlinNotesForProfessionals.pdf").path
+        val path = javaClass.classLoader.getResource("seeing-theory.pdf").path
         val file = RandomAccessFile(path, "r")
         val parser = PDFParser().loadDocument(file)
-        val contents = parser.getPageContents(38)
+        val contents = parser.getPageContents(48)
         contents.asSequence()
             .filter {
                 it is TextContent

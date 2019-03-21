@@ -1,57 +1,71 @@
 package marabillas.loremar.pdfparser.contents
 
+import marabillas.loremar.pdfparser.objects.PDFObject
 import marabillas.loremar.pdfparser.objects.extractEnclosedObject
-import marabillas.loremar.pdfparser.objects.toPDFString
+import marabillas.loremar.pdfparser.objects.startsEnclosed
+import marabillas.loremar.pdfparser.objects.toPDFObject
 
 internal class ContentStreamParser {
-    private var reader = "".reader().buffered()
     private val contents = ArrayList<PageContent>()
     private var tf = ""
 
+    companion object {
+        /**
+         * Get the next token in the content stream which could either be a string representing a valid PDFObject or an
+         * operator.
+         *
+         * @param s Remaining string in the stream.
+         * @return the next token as a string.
+         */
+        fun getNextToken(s: String): String {
+            s.trim()
+            return when {
+                s.startsEnclosed() -> s.extractEnclosedObject()
+                else -> {
+                    // Check if next token is a Reference Object
+                    var p = "^\\d+ \\d+ R".toRegex()
+                    var t = p.find(s)?.value ?: ""
+
+                    // If not Reference then get the substring before any delimiter
+                    if (t == "") {
+                        p = "^/?(\\w+|-?[0-9]+([,.][0-9]+)?)[(<\\[{/\\s]".toRegex()
+                        t = p.find(s)?.value ?: ""
+
+                        // When end of stream is reached, the previous pattern will not match. Hence, just return the
+                        // remaining string.
+                        if (t != "") t.substring(0, t.length - 1) else s
+                    } else {
+                        t
+                    }
+                }
+            }
+        }
+    }
+
     fun parse(streamData: String): ArrayList<PageContent> {
-        reader = streamData.reader().buffered()
+        var s = streamData
+        println("ContentStream->\n$s")
+        val operands = ArrayList<PDFObject>()
         while (true) {
-            val s = reader.readLine() ?: break
-            parseDefault(s)
+            if (s == "") break
+            val token = getNextToken(s)
+            s = s.substringAfter(token).trim()
+            val operand = token.toPDFObject(true)
+            if (operand != null) {
+                operands.add(operand)
+            } else {
+                when (token) {
+                    "Tf" -> tf = "${operands[0]} ${operands[1]}"
+                    "BT" -> s = TextObjectParser().parse(s, contents, tf)
+                }
+                operands.clear()
+            }
         }
 
         return contents
     }
+}
 
-    private fun parseDefault(s: String) {
-        if (s == "BT") parseText()
-        else if (s.endsWith("Tf")) tf = s.substringBeforeLast("Tf").trim()
-    }
-
-    private fun parseText() {
-        var td = ""
-        var tm = ""
-        var tf = this.tf
-        while (true) {
-            val s = reader.readLine()
-            when {
-                s.endsWith("Tj") -> {
-                    val data = s.substringBeforeLast("Tj").trim()
-                    val tj = data.extractEnclosedObject().toPDFString().value
-                    val textObj = TextContent(
-                        tj = tj,
-                        td = td,
-                        tm = tm,
-                        tf = tf
-                    )
-                    contents.add(textObj)
-                }
-                s.endsWith("Td") -> {
-                    td = s.substringBeforeLast("Td").trim()
-                }
-                s.endsWith("Tm") -> {
-                    tm = s.substringBeforeLast("Tm").trim()
-                }
-                s.endsWith("Tf") -> {
-                    tf = s.substringBeforeLast("Tf").trim()
-                }
-                s == "ET" -> return
-            }
-        }
-    }
+fun String.getNextToken(): String {
+    return ContentStreamParser.getNextToken(this)
 }

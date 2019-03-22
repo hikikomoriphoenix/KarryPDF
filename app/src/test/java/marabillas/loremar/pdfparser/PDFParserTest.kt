@@ -58,7 +58,7 @@ class PDFParserTest {
             }
             .forEach {
                 val text = it as TextContent
-                println("tf=${text.tf} td=${text.td} tm=${text.tm} tj=${text.tj}")
+                println("tf=${text.tf} tx=${text.td[0]} ty=${text.td[1]} ts=${text.ts} tj=${text.tj}")
             }
     }
 }

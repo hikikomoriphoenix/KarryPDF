@@ -1,16 +1,36 @@
 package marabillas.loremar.pdfparser.contents
 
-import marabillas.loremar.pdfparser.objects.PDFObject
-import marabillas.loremar.pdfparser.objects.toPDFObject
+import marabillas.loremar.pdfparser.objects.*
 
 class TextObjectParser {
     fun parse(string: String, contents: ArrayList<PageContent>, tfDefault: String = ""): String {
-        var td = ""
-        var tm = ""
-        var tj = ""
+        val td = FloatArray(2)
+        var ts = 0f
+        var tl = 0f
         var tf = tfDefault
         var s = string
         val operands = ArrayList<PDFObject>()
+
+        val positionText: () -> Unit = {
+            td[0] = (operands[0] as Numeric).value.toFloat()
+            td[1] = (operands[1] as Numeric).value.toFloat()
+        }
+
+        val addContent: (string: String) -> Unit = {
+            val content = TextContent(
+                tf = tf,
+                td = td.copyOf(),
+                tj = it,
+                ts = ts
+            )
+            contents.add(content)
+        }
+
+        val toNextLine: () -> Unit = {
+            td[0] = 0f
+            td[1] = -tl
+        }
+
         while (true) {
             if (s == "") return ""
             val token = s.getNextToken()
@@ -21,15 +41,37 @@ class TextObjectParser {
             } else {
                 when (token) {
                     "Tf" -> tf = "${operands[0]} ${operands[1]}"
-                    "Td" -> td = "${operands[0]} ${operands[1]}"
-                    "Tj", "TJ" -> {
-                        tj = "${operands[0]}"
-                        val content = TextContent(
-                            tf = tf,
-                            td = td,
-                            tj = tj
-                        )
-                        contents.add(content)
+                    "Td" -> positionText()
+                    "TD" -> {
+                        positionText()
+                        tl = -td[1]
+                    }
+                    "T*" -> toNextLine()
+                    "Tm" -> {
+                        td[0] = (operands[4] as Numeric).value.toFloat()
+                        td[1] = (operands[5] as Numeric).value.toFloat()
+                    }
+                    "TL" -> tl = (operands[0] as Numeric).value.toFloat()
+                    "Ts" -> ts = (operands[0] as Numeric).value.toFloat()
+                    "Tj" -> addContent("${operands[0]}")
+                    "\"" -> addContent("${operands[2]}")
+                    "\'" -> {
+                        toNextLine()
+                        addContent("${operands[0]}")
+                    }
+                    "TJ" -> {
+                        val arr = operands[0] as PDFArray
+                        val sb = StringBuilder()
+                        arr.forEach {
+                            if (it is PDFString) {
+                                sb.append(it)
+                            } else {
+                                val space = Math.abs((it as Numeric).value.toFloat())
+                                val fontSize = tf.substringAfter(" ").toFloat()
+                                if (space > fontSize) sb.append(" ")
+                            }
+                        }
+                        addContent(sb.toString())
                     }
                     "ET" -> return s
                 }

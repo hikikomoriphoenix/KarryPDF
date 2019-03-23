@@ -66,9 +66,8 @@ class TextObjectParser {
                             if (it is PDFString) {
                                 sb.append(it)
                             } else {
-                                val space = Math.abs((it as Numeric).value.toFloat())
-                                val fontSize = tf.substringAfter(" ").toFloat()
-                                if (space > fontSize) sb.append(" ")
+                                val offset = (it as Numeric).value.toFloat()
+                                if (offset < 0) sb.append(" ")
                             }
                         }
                         addContent(sb.toString())

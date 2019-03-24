@@ -1,8 +1,10 @@
 package marabillas.loremar.pdfparser.contents
 
-import marabillas.loremar.pdfparser.objects.*
+import marabillas.loremar.pdfparser.objects.Numeric
+import marabillas.loremar.pdfparser.objects.PDFObject
+import marabillas.loremar.pdfparser.objects.toPDFObject
 
-class TextObjectParser {
+internal class TextObjectParser {
     fun parse(string: String, textObj: TextObject, tfDefault: String = ""): String {
         val td = FloatArray(2)
         var ts = 0f
@@ -16,7 +18,7 @@ class TextObjectParser {
             td[1] = (operands[1] as Numeric).value.toFloat()
         }
 
-        val addContent: (string: String) -> Unit = {
+        val addTextElement: (tj: PDFObject) -> Unit = {
             val content = TextElement(
                 tf = tf,
                 td = td.copyOf(),
@@ -57,24 +59,11 @@ class TextObjectParser {
                     }
                     "TL" -> tl = (operands[0] as Numeric).value.toFloat()
                     "Ts" -> ts = (operands[0] as Numeric).value.toFloat()
-                    "Tj" -> addContent("${operands[0]}")
-                    "\"" -> addContent("${operands[2]}")
+                    "Tj", "TJ" -> addTextElement(operands[0])
+                    "\"" -> addTextElement(operands[2])
                     "\'" -> {
                         toNextLine()
-                        addContent("${operands[0]}")
-                    }
-                    "TJ" -> {
-                        val arr = operands[0] as PDFArray
-                        val sb = StringBuilder()
-                        arr.forEach {
-                            if (it is PDFString) {
-                                sb.append(it)
-                            } else {
-                                val offset = (it as Numeric).value.toFloat()
-                                if (offset < 0) sb.append(" ")
-                            }
-                        }
-                        addContent(sb.toString())
+                        addTextElement(operands[0])
                     }
                     "ET" -> return s
                 }

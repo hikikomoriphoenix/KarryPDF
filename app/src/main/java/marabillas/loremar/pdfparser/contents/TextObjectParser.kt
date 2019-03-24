@@ -3,7 +3,7 @@ package marabillas.loremar.pdfparser.contents
 import marabillas.loremar.pdfparser.objects.*
 
 class TextObjectParser {
-    fun parse(string: String, contents: ArrayList<PageContent>, tfDefault: String = ""): String {
+    fun parse(string: String, textObj: TextObject, tfDefault: String = ""): String {
         val td = FloatArray(2)
         var ts = 0f
         var tl = 0f
@@ -17,13 +17,17 @@ class TextObjectParser {
         }
 
         val addContent: (string: String) -> Unit = {
-            val content = TextContent(
+            val content = TextElement(
                 tf = tf,
                 td = td.copyOf(),
                 tj = it,
                 ts = ts
             )
-            contents.add(content)
+            textObj.add(content)
+            if (textObj.count() == 1) {
+                textObj.td[0] = td[0]
+                textObj.td[1] = td[1]
+            }
         }
 
         val toNextLine: () -> Unit = {

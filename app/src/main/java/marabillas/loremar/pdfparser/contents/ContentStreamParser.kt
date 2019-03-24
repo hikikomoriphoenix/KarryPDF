@@ -6,9 +6,6 @@ import marabillas.loremar.pdfparser.objects.startsEnclosed
 import marabillas.loremar.pdfparser.objects.toPDFObject
 
 internal class ContentStreamParser {
-    private val contents = ArrayList<PageContent>()
-    private var tf = ""
-
     companion object {
         /**
          * Get the next token in the content stream which could either be a string representing a valid PDFObject or an
@@ -45,7 +42,10 @@ internal class ContentStreamParser {
     fun parse(streamData: String): ArrayList<PageContent> {
         var s = streamData
         println("ContentStream->\n$s")
+        val contents = ArrayList<PageContent>()
         val operands = ArrayList<PDFObject>()
+        val textObjects = ArrayList<TextObject>()
+        var tf = ""
         while (true) {
             if (s == "") break
             val token = getNextToken(s)
@@ -56,12 +56,18 @@ internal class ContentStreamParser {
             } else {
                 when (token) {
                     "Tf" -> tf = "${operands[0]} ${operands[1]}"
-                    "BT" -> s = TextObjectParser().parse(s, contents, tf)
+                    "BT" -> {
+                        val textObj = TextObject()
+                        s = TextObjectParser().parse(s, textObj, tf)
+                        textObjects.add(textObj)
+                    }
                 }
                 operands.clear()
             }
         }
 
+        TextContentAnalyzer(textObjects).analyze()
+        // TODO add results from analyze to contents. Make sure to arrange contents correctly.
         return contents
     }
 }

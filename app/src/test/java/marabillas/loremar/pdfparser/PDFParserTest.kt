@@ -1,6 +1,6 @@
 package marabillas.loremar.pdfparser
 
-import marabillas.loremar.pdfparser.contents.TextContent
+import marabillas.loremar.pdfparser.contents.TextElement
 import marabillas.loremar.pdfparser.objects.*
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
@@ -54,10 +54,10 @@ class PDFParserTest {
         val contents = parser.getPageContents(48)
         contents.asSequence()
             .filter {
-                it is TextContent
+                it is TextElement
             }
             .forEach {
-                val text = it as TextContent
+                val text = it as TextElement
                 println("tf=${text.tf} tx=${text.td[0]} ty=${text.td[1]} ts=${text.ts} tj=${text.tj}")
             }
     }

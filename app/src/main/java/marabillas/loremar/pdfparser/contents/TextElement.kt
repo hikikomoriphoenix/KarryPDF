@@ -1,6 +1,6 @@
 package marabillas.loremar.pdfparser.contents
 
-class TextContent internal constructor(
+class TextElement internal constructor(
     val tj: String = "",
     val tf: String = "",
     val td: FloatArray = FloatArray(2),

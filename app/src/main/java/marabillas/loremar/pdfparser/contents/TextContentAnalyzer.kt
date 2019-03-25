@@ -4,6 +4,8 @@ import marabillas.loremar.pdfparser.objects.Numeric
 import marabillas.loremar.pdfparser.objects.PDFArray
 import marabillas.loremar.pdfparser.objects.PDFString
 import marabillas.loremar.pdfparser.objects.toPDFString
+import java.util.*
+import kotlin.collections.HashSet
 
 internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject>) {
     fun analyze() {
@@ -21,12 +23,12 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
         // then add double space. Otherwise, add space. If number is positive don't add space.
         handleTJArrays()
 
-        // TODO Check for multi-column texts. Get all text objects with equal Tx origin and tag each as "columned".
-        // If there is more than one pair of text objects which are tagged as "columned" and have equal Ty origins, then
-        // these text objects form a table. Text in adjacent columns of the same row are concatenated after each other
-        // and are separated by " || ". The next row begins on the next paragraph. If "columned" text objects don't form
-        // a table, then they are arranged according to their Tx origins. All "columned" text objects with lesser Tx are
-        // displayed first before those with greater Tx.
+        // Check for multi-column texts. Get all text objects with equal Tx origin and flag each as "columned".
+        // If there is more than one multi-columned adjacent lines, then these text objects form a table.
+        // Text in adjacent columns of the same row are concatenated after each other and are separated by " || ".
+        // The next row begins on the next paragraph. If "columned" text objects don't form a table, then they are
+        // arranged according to their Tx origins. All "columned" text objects with lesser Tx are displayed first before those with greater Tx.
+        handleMultiColumnTexts()
 
         // TODO Group texts in the same line or in adjacent lines with line-spacing less than font size.
 
@@ -108,4 +110,118 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
                 }
             }
     }
+
+    internal fun handleMultiColumnTexts() {
+        checkForColumnsAndRows()
+        //sortColumnedTexts()
+    }
+
+    private fun checkForColumnsAndRows() {
+        val txes = HashMap<Float, ArrayList<TextObject>>()
+        val tys = HashMap<Float, ArrayList<TextObject>>()
+        val allTys = HashSet<Float>()
+        textObjects.forEach { textObj ->
+            // Group together TextObjects with equal Tx values.
+            val tx = textObj.td[0]
+            val arr = txes[tx] ?: ArrayList()
+            arr.add(textObj)
+            txes[tx] = arr
+            allTys.add(textObj.td[1])
+        }
+        txes.forEach {
+            // If more than one TextObjects have the same Tx value, then flag each as columned.
+            if (it.value.size > 1)
+                it.value.forEach { textObj ->
+                    textObj.columned = true
+
+                    // Group together columned TextObjects with equal Ty values.
+                    val ty = textObj.td[1]
+                    val arr = tys[ty] ?: ArrayList()
+                    arr.add(textObj)
+                    tys[ty] = arr
+                }
+        }
+        val allTysSorted = allTys.toSortedSet(compareByDescending { it }).toList()
+        var prevIsMultiColumned = false
+        var prevTyIndex = -1
+        tys.toSortedMap(compareByDescending { it })
+            .forEach {
+                // If more than one columned TextObjects have the same Ty value, then flag each as rowed. This helps in
+                // creating tables.
+                if (it.value.size > 1) {
+                    val currTyIndex = allTysSorted.indexOf(it.key)
+                    // If previous line is multi-columned and adjacent to this current line, All TextObjects of this current
+                    // line and previous line are flagged as rowed.
+                    if (currTyIndex - 1 == prevTyIndex && prevIsMultiColumned) {
+                        it.value.forEach { textObj ->
+                            textObj.rowed = true
+                        }
+                        val prevTy = allTysSorted[prevTyIndex]
+                        tys[prevTy]?.forEach { textObj ->
+                            textObj.rowed = true
+                        }
+                    }
+                    prevTyIndex = currTyIndex
+                    prevIsMultiColumned = true
+                } else {
+                    prevIsMultiColumned = false
+                }
+            }
+    }
+
+    /*private fun sortColumnedTexts() {
+        val columned = textObjects.filter {
+                it.columned && !it.rowed
+            }
+        val firstColumnedY = columned.first().td[1]
+        val lastColumnedY = columned.last().td[1]
+        val multiColumned = textObjects.filter {
+            it.td[1] in lastColumnedY..firstColumnedY
+        }
+        sortByColumn(columned as ArrayList<TextObject>)
+    }
+
+    private fun sortByColumn(columnedTexts: ArrayList<TextObject>) {
+        val skipped = ArrayList<TextObject>() // TextObjects that don't belong to the current column
+        var skipping = false // True if skipping the rest of the line
+        var prev: TextObject? = null // The first TextObject in the previous line
+        columnedTexts.forEach {
+            if (prev == null)
+                prev = it
+            else {
+                if (it.td[1] < (prev as TextObject).td[1]) {
+                    prev = it
+                    // Move to the end of the current column and before any skipped TextObjects
+                    val fromIndex = textObjects.indexOf(it)
+                    val toIndex = textObjects.indexOf(skipped.first())
+                    textObjects.removeAt(fromIndex)
+                    textObjects.add(toIndex, it)
+
+                    // Stop skipping. Next TextObjects belong to the current column until a columned TextObject is
+                    // encountered in the iteration
+                    skipping = false
+                } else {
+                    if (!skipping) {
+                        if (it.columned) {
+                            // This and the rest of the line doesn't belong to the current column
+                            skipping = true
+                            skipped.add(it)
+                        } else {
+                            // Current textObject belongs to the current column
+                            // Move to the end of the current column and before any skipped TextObjects
+                            val fromIndex = textObjects.indexOf(it)
+                            val toIndex = textObjects.indexOf(skipped.first())
+                            textObjects.removeAt(fromIndex)
+                            textObjects.add(toIndex, it)
+                        }
+                    } else {
+                        skipped.add(it)
+                    }
+                }
+            }
+        }
+
+        // Sort remaining TextObjects
+        if (skipped.size > 0) sortByColumn(skipped)
+    }*/
 }

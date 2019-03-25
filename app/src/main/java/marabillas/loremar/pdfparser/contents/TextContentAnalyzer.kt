@@ -7,6 +7,13 @@ import marabillas.loremar.pdfparser.objects.toPDFString
 
 internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject>) {
     fun analyze() {
+        // Sort according to descending Ty and then to ascending Tx
+        textObjects.sortWith(
+            compareBy(
+                { -it.td[1] },
+                { it.td[0] })
+        )
+
         // If tj values are arrays resulting from TJ operator, determine from the number values between strings
         // whether to add space or not while concatenating strings. First to get glyph width for space, get all the
         // negative numbers and identify the negative number with most occurrences. Rule: If the absolute value of a

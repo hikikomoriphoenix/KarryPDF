@@ -5,9 +5,12 @@ import marabillas.loremar.pdfparser.objects.PDFArray
 import marabillas.loremar.pdfparser.objects.PDFString
 import marabillas.loremar.pdfparser.objects.toPDFString
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.collections.HashSet
 
 internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject>) {
+    internal val contentGroups = ArrayList<ContentGroup>()
+
     fun analyze() {
         // Sort according to descending Ty and then to ascending Tx
         textObjects.sortWith(
@@ -30,11 +33,8 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
         // arranged according to their Tx origins. All "columned" text objects with lesser Tx are displayed first before those with greater Tx.
         handleMultiColumnTexts()
 
-        // TODO Group texts in the same line or in adjacent lines with line-spacing less than font size.
-
-        // TODO Concatenate text contents in the same line.
-
-        // Concatenated text contents should be merged into one.
+        // Group texts in the same line or in adjacent lines with line-spacing less than font size.
+        groupTexts()
 
         // TODO Check if lines end with a period. If yes, then lines stay as they were. If not, then proceed analysis.
 
@@ -224,4 +224,113 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
         // Sort remaining TextObjects
         if (skipped.size > 0) sortByColumn(skipped)
     }*/
+
+    internal fun groupTexts() {
+        var currTextGroup = TextGroup()
+        contentGroups.add(currTextGroup)
+        var table = Table()
+        var currLine = ArrayList<TextElement>()
+
+        fun sameLine(dty: Float): Boolean {
+            return dty == 0f
+        }
+
+        fun near(dty: Float, fSize: Float): Boolean {
+            return dty < fSize * 2
+        }
+
+        fun newLine(textElement: TextElement) {
+            currLine = ArrayList()
+            currLine.add(textElement)
+            currTextGroup.add(currLine)
+        }
+
+        fun newTextGroup(textElement: TextElement) {
+            currTextGroup = TextGroup()
+            newLine(textElement)
+
+            if (table.count() > 0) {
+                table.last().last().add(currTextGroup)
+            } else {
+                contentGroups.add(currTextGroup)
+            }
+        }
+
+        fun sortGroup(textElement: TextElement, dty: Float, fSize: Float) {
+            when {
+                currTextGroup.count() == 0 -> newLine(textElement)
+                sameLine(dty) -> currLine.add(textElement)
+                near(dty, fSize) -> newLine(textElement)
+                else -> newTextGroup(textElement)
+            }
+        }
+
+        textObjects.forEachIndexed { index, textObj ->
+            var prevTextObj: TextObject? = null
+            if (index > 0)
+                prevTextObj = textObjects[index - 1]
+
+            when {
+                textObj.rowed -> {
+                    currTextGroup = TextGroup()
+                    val cell = Table.Cell()
+                    cell.add(currTextGroup)
+
+                    // If first cell of table or if not in the same row, then add new row, else add cell to last row.
+                    if (table.count() == 0 || textObj.td[1] != (prevTextObj as TextObject).td[1]) {
+                        if (table.count() == 0) {
+                            contentGroups.add(table)
+                        }
+
+                        val row = Table.Row()
+                        row.add(cell)
+                        table.add(row)
+
+                    } else {
+                        table.last().add(cell)
+                    }
+
+                    textObj.forEach {
+                        var dty = -it.td[1]
+                        if (textObj.first() == it) dty = 0f
+                        val fSize = it.tf.substringAfter(" ").toFloat()
+                        sortGroup(it, dty, fSize)
+                    }
+                }
+                table.count() > 0 -> {
+                    table = Table() // Reset to empty table
+                    currTextGroup = TextGroup()
+                    contentGroups.add(currTextGroup)
+                    textObj.forEach {
+                        var dty = -it.td[1]
+                        if (textObj.first() == it) dty = 0f
+                        val fSize = it.tf.substringAfter(" ").toFloat()
+                        sortGroup(it, dty, fSize)
+                    }
+                }
+                /*textObj.columned -> {
+                    // TODO Handle column
+                }*/
+                else -> {
+                    textObj.forEach {
+                        var dty = -it.td[1]
+                        if (textObj.first() == it) {
+                            dty = if (prevTextObj == null)
+                                0f
+                            else {
+                                var yOfLast = prevTextObj.td[1]
+                                prevTextObj.forEach { e ->
+                                    if (prevTextObj.first() != e)
+                                        yOfLast += e.td[1]
+                                }
+                                yOfLast - it.td[1]
+                            }
+                        }
+                        val fSize = it.tf.substringAfter(" ").toFloat()
+                        sortGroup(it, dty, fSize)
+                    }
+                }
+            }
+        }
+    }
 }

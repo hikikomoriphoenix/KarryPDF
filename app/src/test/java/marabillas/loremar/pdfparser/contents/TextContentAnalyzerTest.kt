@@ -225,6 +225,22 @@ class TextContentAnalyzerTest {
     }
 
     @Test
+    fun testGetLargestWidth() {
+        val t1 = TextElement(tj = "(Hello)".toPDFString())
+        val t2 = TextElement(tj = "(World)".toPDFString())
+        val t3 = TextElement(tj = "(Hi)".toPDFString())
+        val g1 = TextGroup()
+        val g2 = TextGroup()
+        g1.add(arrayListOf(t1, t2))
+        g2.add(arrayListOf(t3))
+        val analyzer = TextContentAnalyzer(arrayListOf(TextObject()))
+        analyzer.contentGroups.add(g1)
+        analyzer.contentGroups.add(g2)
+        val w = analyzer.getLargestWidth()
+        assertThat(w, `is`(10))
+    }
+
+    @Test
     fun testConcatenateDividedByHyphen() {
         val t1 = TextElement(tj = "(United we stand. Di-)".toPDFString())
         val t2 = TextElement(tj = "(vided we fall.)".toPDFString())

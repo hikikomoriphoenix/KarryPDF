@@ -39,6 +39,9 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
         // Check if lines end with a period. If yes, then lines stay as they were. If not, then proceed analysis.
         checkForListTypeTextGroups()
 
+        // Estimate the width of the page by getting the largest width of a line of texts
+        val w = getLargestWidth()
+
         // If a line ends with '-', then append the next line to this line and remove the '-' character.
         concatenateDividedByHyphen()
 
@@ -360,6 +363,25 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
                 }
             }
         }
+    }
+
+    internal fun getLargestWidth(): Int {
+        var maxWidth = 0
+        contentGroups
+            .asSequence()
+            .filter { it is TextGroup }
+            .forEach {
+                val g = it as TextGroup
+                g.forEach { line ->
+                    var charCount = 0
+                    line.forEach { e ->
+                        charCount += (e.tj as PDFString).value.length
+                    }
+                    if (charCount > maxWidth)
+                        maxWidth = charCount
+                }
+            }
+        return maxWidth
     }
 
     internal fun concatenateDividedByHyphen() {

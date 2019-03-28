@@ -171,4 +171,56 @@ class TextContentAnalyzerTest {
         assertThat(g5[0].count(), `is`(1))
         assertThat(g5[0][0], `is`(t13))
     }
+
+    @Test
+    fun testCheckForListTypeTextGroups() {
+        val t0 = TextElement(tj = "(A)".toPDFString())
+        val t1 = TextElement(tj = "(Dog.)".toPDFString())
+        val t2 = TextElement(tj = "(cat.)".toPDFString())
+        val t3 = TextElement(tj = "(Rat.)".toPDFString())
+        val g1 = TextGroup()
+        g1.add(arrayListOf(t0, t1))
+        g1.add(arrayListOf(t2))
+        g1.add(arrayListOf(t3))
+        val t4 = TextElement(tj = "(Hi my name is)".toPDFString())
+        val t5 = TextElement(tj = "(James Bond.)".toPDFString())
+        val g2 = TextGroup()
+        g2.add(arrayListOf(t4))
+        g2.add(arrayListOf(t5))
+        val table = Table()
+        val row = Table.Row()
+        val cell1 = Table.Cell()
+        val cell2 = Table.Cell()
+        table.add(row)
+        row.add(cell1)
+        row.add(cell2)
+        cell1.add(g1)
+        cell2.add(g2)
+
+        val t6 = TextElement(tj = "(A)".toPDFString())
+        val t7 = TextElement(tj = "(Car.)".toPDFString())
+        val t8 = TextElement(tj = "(Plane.)".toPDFString())
+        val t9 = TextElement(tj = "(Boat.)".toPDFString())
+        val g3 = TextGroup()
+        g3.add(arrayListOf(t6, t7))
+        g3.add(arrayListOf(t8))
+        g3.add(arrayListOf(t9))
+        val t10 = TextElement(tj = "(Asta la vista)".toPDFString())
+        val t11 = TextElement(tj = "(Baby.)".toPDFString())
+        val g4 = TextGroup()
+        g4.add(arrayListOf(t10))
+        g4.add(arrayListOf(t11))
+
+        val analyzer = TextContentAnalyzer(arrayListOf(TextObject()))
+        analyzer.contentGroups.add(table)
+        analyzer.contentGroups.add(g3)
+        analyzer.contentGroups.add(g4)
+
+        analyzer.checkForListTypeTextGroups()
+
+        assertThat(g1.isAList, `is`(true))
+        assertThat(g2.isAList, `is`(false))
+        assertThat(g3.isAList, `is`(true))
+        assertThat(g4.isAList, `is`(false))
+    }
 }

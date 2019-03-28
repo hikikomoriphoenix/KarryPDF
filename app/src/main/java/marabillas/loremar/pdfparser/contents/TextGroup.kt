@@ -2,6 +2,7 @@ package marabillas.loremar.pdfparser.contents
 
 internal class TextGroup : Iterable<ArrayList<TextElement>>, ContentGroup {
     private val lines = ArrayList<ArrayList<TextElement>>()
+    var isAList = false
 
     override fun iterator(): Iterator<ArrayList<TextElement>> {
         return lines.iterator()

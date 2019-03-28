@@ -36,7 +36,8 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
         // Group texts in the same line or in adjacent lines with line-spacing less than font size.
         groupTexts()
 
-        // TODO Check if lines end with a period. If yes, then lines stay as they were. If not, then proceed analysis.
+        // Check if lines end with a period. If yes, then lines stay as they were. If not, then proceed analysis.
+        checkForListTypeTextGroups()
 
         // TODO If a line ends with '-', then append the next line to this line and remove the '-' character.
 
@@ -328,6 +329,32 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
                         }
                         val fSize = it.tf.substringAfter(" ").toFloat()
                         sortGroup(it, dty, fSize)
+                    }
+                }
+            }
+        }
+    }
+
+    internal fun checkForListTypeTextGroups() {
+        fun checkIfAllLinesEndWithPeriods(textGroup: TextGroup) {
+            textGroup.isAList = true
+            textGroup.forEach {
+                // For each line, check if the last element ends with a period.
+                val s = (it.last().tj as PDFString).value
+                if (!s.endsWith("."))
+                    textGroup.isAList = false
+            }
+        }
+        contentGroups.forEach {
+            when (it) {
+                is TextGroup -> checkIfAllLinesEndWithPeriods(it)
+                is Table -> {
+                    it.forEach { row ->
+                        row.forEach { cell ->
+                            cell.forEach { textGroup ->
+                                checkIfAllLinesEndWithPeriods(textGroup)
+                            }
+                        }
                     }
                 }
             }

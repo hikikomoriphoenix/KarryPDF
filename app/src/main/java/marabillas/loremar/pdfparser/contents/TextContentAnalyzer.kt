@@ -39,7 +39,8 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
         // Check if lines end with a period. If yes, then lines stay as they were. If not, then proceed analysis.
         checkForListTypeTextGroups()
 
-        // TODO If a line ends with '-', then append the next line to this line and remove the '-' character.
+        // If a line ends with '-', then append the next line to this line and remove the '-' character.
+        concatenateDividedByHyphen()
 
         // TODO If any line ends with a period or contains the following pattern: "\. [\p{Lu}\p{Lt]", find the
         // previous period or a capital letter positioned on the beginning of the line, and concatenate all the lines in
@@ -353,6 +354,45 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
                         row.forEach { cell ->
                             cell.forEach { textGroup ->
                                 checkIfAllLinesEndWithPeriods(textGroup)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    internal fun concatenateDividedByHyphen() {
+        fun findHyphenAndConcatenate(textGroup: TextGroup) {
+            var iterator = textGroup.iterator()
+            while (iterator.hasNext()) {
+                val line = iterator.next()
+                val last = line.last().tj as PDFString
+                if (last.value.endsWith("-") && iterator.hasNext()) {
+                    val s = "(${last.value.substringBeforeLast("-")})"
+                    val e = TextElement(
+                        tf = line.last().tf,
+                        tj = s.toPDFString(),
+                        td = line.last().td.copyOf(),
+                        ts = line.last().ts
+                    )
+                    line.remove(line.last())
+                    line.add(e)
+                    val next = iterator.next()
+                    line.addAll(next)
+                    textGroup.remove(next)
+                    iterator = textGroup.iterator()
+                }
+            }
+        }
+        contentGroups.forEach {
+            when (it) {
+                is TextGroup -> findHyphenAndConcatenate(it)
+                is Table -> {
+                    it.forEach { row ->
+                        row.forEach { cell ->
+                            cell.forEach { texGroup ->
+                                findHyphenAndConcatenate(texGroup)
                             }
                         }
                     }

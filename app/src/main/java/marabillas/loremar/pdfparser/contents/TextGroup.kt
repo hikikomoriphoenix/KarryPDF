@@ -15,4 +15,8 @@ internal class TextGroup : Iterable<ArrayList<TextElement>>, ContentGroup {
     fun add(textElements: ArrayList<TextElement>) {
         lines.add(textElements)
     }
+
+    fun remove(textElements: ArrayList<TextElement>) {
+        lines.remove(textElements)
+    }
 }

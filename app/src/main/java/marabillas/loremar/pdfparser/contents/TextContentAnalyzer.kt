@@ -45,9 +45,8 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
         // If a line ends with '-', then append the next line to this line and remove the '-' character.
         concatenateDividedByHyphen()
 
-        // TODO If any line ends with a period or contains the following pattern: "\. [\p{Lu}\p{Lt]", find the
-        // previous period or a capital letter positioned on the beginning of the line, and concatenate all the lines in
-        // between.
+        // If line is almost as long as the width of page, then append the next line in the TextGroup.
+        formParagraphs(w)
 
         // Check the y values of each content and rearrange accordingly.
     }
@@ -421,5 +420,56 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
                 }
             }
         }
+    }
+
+    internal fun formParagraphs(width: Int) {
+        contentGroups
+            .asSequence()
+            .filter { it is TextGroup }
+            .forEach {
+                var i = 0
+                val g = it as TextGroup
+                var toCount = g[0]
+
+                // Iterate until the second last of the list. The last line will be appended to it if necessary.
+                while (i + 1 < g.count()) {
+                    val line = g[i]
+
+                    // Count the number of characters of the text in toCount variable.
+                    var charCount = 0
+                    toCount.forEach { e ->
+                        charCount += (e.tj as PDFString).value.length
+                    }
+
+                    // If almost equal to estimated page width, append next line to current line and the number of lines
+                    // in TextGroup is reduced by 1. Else, evaluate the next line.
+                    if (charCount.toFloat() >= (0.8 * (width.toFloat()))) {
+                        val next = g[i + 1]
+
+                        // Add space in between when appending.
+                        val s = "( ${next.first().tj as PDFString})"
+                        val e = TextElement(
+                            tf = next.first().tf,
+                            tj = s.toPDFString(),
+                            td = next.first().td.copyOf(),
+                            ts = next.first().ts
+                        )
+                        next.remove(next.first())
+                        next.add(0, e)
+
+                        // Append next line to current line. The appended line will be removed from the TextGroup's list.
+                        // The line following it in the list will be the next to append in case.
+                        line.addAll(next)
+                        g.remove(next)
+
+                        // Do not increment i but the text that was just appended will be assigned to toCount variable
+                        // which will be evaluated for the next iteration.
+                        toCount = next
+                    } else {
+                        i++
+                        toCount = g[i]
+                    }
+                }
+            }
     }
 }

@@ -265,4 +265,33 @@ class TextContentAnalyzerTest {
         analyzer.concatenateDividedByHyphen()
         assertThat(g2.count(), `is`(2))
     }
+
+    @Test
+    fun testFormParagraphs() {
+        val t1 = TextElement(tj = "(Good Morning.)".toPDFString())
+        val t2 = TextElement(tj = "(The quick brown fox jumps over)".toPDFString())
+        val t3 = TextElement(tj = "(the lazy dog. The quick brown fox)".toPDFString())
+        val t4 = TextElement(tj = "(jumps over.)".toPDFString())
+        val t5 = TextElement(tj = "(Hello my name is Bond. James)".toPDFString())
+        val t6 = TextElement(tj = "(Bond.)".toPDFString())
+        val g = TextGroup()
+        g.add(arrayListOf(t1))
+        g.add(arrayListOf(t2))
+        g.add(arrayListOf(t3))
+        g.add(arrayListOf(t4))
+        g.add(arrayListOf(t5))
+        g.add(arrayListOf(t6))
+
+        val analyzer = TextContentAnalyzer(arrayListOf(TextObject()))
+        analyzer.contentGroups.add(g)
+        val w = analyzer.getLargestWidth()
+        analyzer.formParagraphs(w)
+
+        assertThat(g.count(), `is`(3))
+        assertThat((g[0][0].tj as PDFString).value, `is`("Good Morning."))
+        val s1 = "${g[1][0].tj as PDFString}${g[1][1].tj as PDFString}${g[1][2].tj as PDFString}"
+        assertThat(s1, `is`("The quick brown fox jumps over the lazy dog. The quick brown fox jumps over."))
+        val s2 = "${g[2][0].tj as PDFString}${g[2][1].tj}"
+        assertThat(s2, `is`("Hello my name is Bond. James Bond."))
+    }
 }

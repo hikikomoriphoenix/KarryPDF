@@ -243,23 +243,25 @@ class TextContentAnalyzerTest {
     @Test
     fun testConcatenateDividedByHyphen() {
         val t1 = TextElement(tj = "(United we stand. Di-)".toPDFString())
-        val t2 = TextElement(tj = "(vided we fall.)".toPDFString())
+        val t2 = TextElement(tj = "(vided we fall. Uni-)".toPDFString())
+        val t3 = TextElement(tj = "(ted we stand.)".toPDFString())
         val g1 = TextGroup()
         g1.add(arrayListOf(t1))
         g1.add(arrayListOf(t2))
+        g1.add(arrayListOf(t3))
         val analyzer = TextContentAnalyzer(arrayListOf(TextObject()))
         analyzer.contentGroups.add(g1)
         analyzer.concatenateDividedByHyphen()
         assertThat(g1.count(), `is`(1))
-        assertThat(g1[0].count(), `is`(2))
-        val s = "${g1[0][0].tj as PDFString}${g1[0][1].tj as PDFString}"
-        assertThat(s, `is`("United we stand. Divided we fall."))
+        assertThat(g1[0].count(), `is`(3))
+        val s = "${g1[0][0].tj as PDFString}${g1[0][1].tj as PDFString}${g1[0][2].tj as PDFString}"
+        assertThat(s, `is`("United we stand. Divided we fall. United we stand."))
 
-        val t3 = TextElement(tj = "(United we stand.)".toPDFString())
-        val t4 = TextElement(tj = "(Divided we fall.)".toPDFString())
+        val t4 = TextElement(tj = "(United we stand.)".toPDFString())
+        val t5 = TextElement(tj = "(Divided we fall.)".toPDFString())
         val g2 = TextGroup()
-        g2.add(arrayListOf(t3))
         g2.add(arrayListOf(t4))
+        g2.add(arrayListOf(t5))
         analyzer.contentGroups.clear()
         analyzer.contentGroups.add(g2)
         analyzer.concatenateDividedByHyphen()

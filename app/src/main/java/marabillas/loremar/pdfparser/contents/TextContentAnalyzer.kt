@@ -385,11 +385,11 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
 
     internal fun concatenateDividedByHyphen() {
         fun findHyphenAndConcatenate(textGroup: TextGroup) {
-            var iterator = textGroup.iterator()
-            while (iterator.hasNext()) {
-                val line = iterator.next()
+            var i = 0
+            while (i + 1 < textGroup.count()) {
+                val line = textGroup[i]
                 val last = line.last().tj as PDFString
-                if (last.value.endsWith("-") && iterator.hasNext()) {
+                if (last.value.endsWith(("-"))) {
                     val s = "(${last.value.substringBeforeLast("-")})"
                     val e = TextElement(
                         tf = line.last().tf,
@@ -399,10 +399,11 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
                     )
                     line.remove(line.last())
                     line.add(e)
-                    val next = iterator.next()
+                    val next = textGroup[i + 1]
                     line.addAll(next)
                     textGroup.remove(next)
-                    iterator = textGroup.iterator()
+                } else {
+                    i++
                 }
             }
         }

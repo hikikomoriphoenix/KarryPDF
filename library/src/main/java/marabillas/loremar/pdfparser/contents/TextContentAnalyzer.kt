@@ -383,6 +383,9 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
 
     internal fun concatenateDividedByHyphen() {
         fun findHyphenAndConcatenate(textGroup: TextGroup) {
+            if (textGroup.isAList)
+                return
+
             var i = 0
             while (i + 1 < textGroup.count()) {
                 val line = textGroup[i]
@@ -424,7 +427,7 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
     internal fun formParagraphs(width: Int) {
         contentGroups
             .asSequence()
-            .filter { it is TextGroup }
+            .filter { it is TextGroup && !it.isAList }
             .forEach {
                 var i = 0
                 val g = it as TextGroup

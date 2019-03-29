@@ -47,8 +47,6 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
 
         // If line is almost as long as the width of page, then append the next line in the TextGroup.
         formParagraphs(w)
-
-        // Check the y values of each content and rearrange accordingly.
     }
 
     internal fun handleTJArrays() {

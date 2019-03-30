@@ -27,6 +27,10 @@ internal class Dictionary(private val string: String) : PDFObject {
         return entries[entry]
     }
 
+    fun getKeys(): Set<String> {
+        return entries.keys
+    }
+
     fun resolveReferences(): Dictionary {
         entries.asSequence()
             .filter { it.value is Reference }

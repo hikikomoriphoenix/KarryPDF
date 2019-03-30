@@ -1,17 +1,21 @@
 package marabillas.loremar.pdfparser
 
+import android.graphics.Typeface
 import marabillas.loremar.pdfparser.contents.ContentStreamParser
 import marabillas.loremar.pdfparser.contents.PageContent
 import marabillas.loremar.pdfparser.exceptions.InvalidDocumentException
 import marabillas.loremar.pdfparser.exceptions.NoDocumentException
 import marabillas.loremar.pdfparser.exceptions.UnsupportedPDFElementException
+import marabillas.loremar.pdfparser.font.FontIdentifier
+import marabillas.loremar.pdfparser.font.FontMappings
+import marabillas.loremar.pdfparser.font.FontName
 import marabillas.loremar.pdfparser.objects.*
 import java.io.RandomAccessFile
 
 class PDFParser {
     private var fileReader: PDFFileReader? = null
     private var objects: HashMap<String, XRefEntry>? = null
-    private var pages: ArrayList<Reference> = ArrayList()
+    internal val pages: ArrayList<Reference> = ArrayList()
 
     fun loadDocument(file: RandomAccessFile): PDFParser {
         val fileReader = PDFFileReader(file)
@@ -80,6 +84,16 @@ class PDFParser {
     fun getPageContents(pageNum: Int): ArrayList<PageContent> {
         val contentsList = ArrayList<PageContent>()
         val pageDic = pages[pageNum].resolve() as Dictionary
+
+        // Get all fonts required for this page
+        pageDic.resolveReferences()
+        val resources = pageDic["Resources"] as Dictionary
+        resources.resolveReferences()
+        val fontsDic = resources["Font"] as Dictionary?
+        fontsDic?.resolveReferences()
+        var pageFonts = HashMap<String, Typeface>()
+        fontsDic?.let { pageFonts = getPageFonts(it) }
+
         val contents = pageDic["Contents"] ?: throw InvalidDocumentException("Missing Contents entry in Page object.")
         return if (contents is PDFArray) {
             contents.asSequence()
@@ -105,5 +119,22 @@ class PDFParser {
             return ContentStreamParser().parse(String(data))
         }
         return ArrayList()
+    }
+
+    internal fun getPageFonts(fontsDic: Dictionary): HashMap<String, Typeface> {
+        fontsDic.resolveReferences()
+        val fKeys = fontsDic.getKeys()
+        val idier = FontIdentifier()
+        val fonts = HashMap<String, Typeface>()
+        fKeys.forEach { key ->
+            val font = fontsDic[key] as Dictionary
+            val basefont = font["BaseFont"] as Name?
+            var typeface = FontMappings[FontName.DEFAULT]
+            basefont?.value?.let {
+                typeface = idier.identifyFont(it)
+            }
+            fonts[key] = typeface
+        }
+        return fonts
     }
 }

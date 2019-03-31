@@ -1,6 +1,6 @@
 package marabillas.loremar.pdfparser.contents
 
-internal class TextObject : Iterable<TextElement> {
+internal class TextObject : Iterable<TextElement>, PageObject {
     val td = FloatArray(2)
     var columned = false
     var rowed = false
@@ -17,5 +17,9 @@ internal class TextObject : Iterable<TextElement> {
 
     fun update(updated: TextElement, index: Int) {
         elements[index] = updated
+    }
+
+    override fun getY(): Float {
+        return td[1]
     }
 }

@@ -44,7 +44,7 @@ internal class ContentStreamParser {
         println("ContentStream->\n$s")
         val contents = ArrayList<PageContent>()
         val operands = ArrayList<PDFObject>()
-        val textObjects = ArrayList<TextObject>()
+        val pageObjects = ArrayList<PageObject>()
         var tf = ""
         while (true) {
             if (s == "") break
@@ -59,15 +59,37 @@ internal class ContentStreamParser {
                     "BT" -> {
                         val textObj = TextObject()
                         s = TextObjectParser().parse(s, textObj, tf)
-                        textObjects.add(textObj)
+                        pageObjects.add(textObj)
                     }
                 }
                 operands.clear()
             }
         }
 
-        TextContentAnalyzer(textObjects).analyze()
-        // TODO add results from analyze to contents. Make sure to arrange contents correctly.
+        // Arrange objects to correct vertical order.
+        pageObjects.sortWith(compareByDescending { it.getY() })
+
+        var i = 0
+        while (i < pageObjects.size) {
+            val next = pageObjects[i]
+            var skip = 0
+            when (next) {
+                is TextObject -> {
+                    val array = pageObjects
+                        .subList(i, pageObjects.size)
+                        .takeWhile { it is TextObject }
+                        .map { it as TextObject }
+                        .toTypedArray()
+                        .copyOf()
+                    val textObjs = array.toCollection(ArrayList())
+                    skip = textObjs.size
+                    val textContentGroups = TextContentAnalyzer(textObjs).analyze()
+                    // TODO Convert textContentGroups to ArrayList<TextContent> and add to contents.
+                }
+                // TODO Process other types of objects and add results to contents.
+            }
+            i += skip
+        }
         return contents
     }
 }

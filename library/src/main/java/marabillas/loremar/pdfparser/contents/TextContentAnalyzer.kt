@@ -11,7 +11,7 @@ import kotlin.collections.HashSet
 internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject>) {
     internal val contentGroups = ArrayList<ContentGroup>()
 
-    fun analyze() {
+    fun analyze(): ArrayList<ContentGroup> {
         // Sort according to descending Ty and then to ascending Tx
         textObjects.sortWith(
             compareBy(
@@ -47,6 +47,8 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
 
         // If line is almost as long as the width of page, then append the next line in the TextGroup.
         formParagraphs(w)
+
+        return contentGroups
     }
 
     internal fun handleTJArrays() {

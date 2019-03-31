@@ -137,4 +137,15 @@ class PDFParser {
         }
         return fonts
     }
+
+    /**
+     * Set the Typeface to use when a specific font is used in the PDF file. Fonts are initially set to Android SDK's
+     * default Typefaces for Serif, San-serif, and Monospace.
+     *
+     * @param fontName A value from the FontName enum class representing the font you want to set the Typeface for.
+     * @param typeface The Typeface you want to set for a specific font.
+     */
+    fun setPreferredTypeface(fontName: FontName, typeface: Typeface) {
+        FontMappings[fontName] = typeface
+    }
 }

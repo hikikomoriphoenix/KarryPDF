@@ -1,11 +1,12 @@
 package marabillas.loremar.pdfparser.contents
 
+import android.graphics.Typeface
 import marabillas.loremar.pdfparser.objects.PDFObject
 import marabillas.loremar.pdfparser.objects.extractEnclosedObject
 import marabillas.loremar.pdfparser.objects.startsEnclosed
 import marabillas.loremar.pdfparser.objects.toPDFObject
 
-internal class ContentStreamParser {
+internal class ContentStreamParser(private val pageFonts: HashMap<String, Typeface>) {
     companion object {
         /**
          * Get the next token in the content stream which could either be a string representing a valid PDFObject or an
@@ -83,8 +84,11 @@ internal class ContentStreamParser {
                         .copyOf()
                     val textObjs = array.toCollection(ArrayList())
                     skip = textObjs.size
-                    val textContentGroups = TextContentAnalyzer(textObjs).analyze()
-                    // TODO Convert textContentGroups to ArrayList<TextContent> and add to contents.
+                    val textContentGroups = TextContentAnalyzer(textObjs)
+                        .analyze()
+                    val textContents = TextContentAdapter(textContentGroups, pageFonts)
+                        .getContents()
+                    contents.addAll(textContents)
                 }
                 // TODO Process other types of objects and add results to contents.
             }

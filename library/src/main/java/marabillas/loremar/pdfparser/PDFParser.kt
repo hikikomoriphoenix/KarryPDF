@@ -99,16 +99,16 @@ class PDFParser {
             contents.asSequence()
                 .filterNotNull()
                 .forEach { content ->
-                    val pageContent = parseContent(content)
+                    val pageContent = parseContent(content, pageFonts)
                     contentsList.addAll(pageContent)
                 }
             contentsList
         } else {
-            parseContent(contents)
+            parseContent(contents, pageFonts)
         }
     }
 
-    private fun parseContent(content: PDFObject): ArrayList<PageContent> {
+    private fun parseContent(content: PDFObject, pageFonts: HashMap<String, Typeface>): ArrayList<PageContent> {
         val fileReader = fileReader ?: throw NoDocumentException()
         val ref = content as Reference
         val objects = this.objects ?: throw NoDocumentException()
@@ -116,7 +116,7 @@ class PDFParser {
         obj?.pos?.let {
             val stream = fileReader.getStream(it)
             val data = stream.decodeEncodedStream()
-            return ContentStreamParser().parse(String(data))
+            return ContentStreamParser(pageFonts).parse(String(data))
         }
         return ArrayList()
     }

@@ -26,5 +26,9 @@ class ContentStreamParserTest {
         s = "ET"
         token = ContentStreamParser.getNextToken(s)
         assertThat(token, `is`("ET"))
+
+        s = ".23999999 0 0 -.23999999"
+        token = ContentStreamParser.getNextToken(s)
+        assertThat(token, `is`(".23999999"))
     }
 }

@@ -53,6 +53,7 @@ internal class FontIdentifier {
             fontName.contains("Verdana", true) -> FontMappings[VERDANA]
             fontName.contains("Zapf", true) && fontName.contains("Dingbats", true) ->
                 FontMappings[ZAPFDINGBATS]
+            fontName.contains("Mono", true) -> FontMappings[MONOSPACE]
             fontName.contains("Sans", true) && fontName.contains("Serif", true) -> {
                 identifyWithStyle(
                     fontName,

@@ -18,11 +18,10 @@ internal class ObjectIdentifier {
                 s.isEnclosedWith("[", "]") -> s.toPDFArray(resolverReferences)
                 (s.let { "^\\d+ \\d+ R$".toRegex().matches(it) }) -> {
                     if (resolverReferences) {
-                        referenceResolver?.let {
-                            s.toReference().resolve(
-                                it
-                            ) ?: throw NoReferenceResolverException()
-                        }
+                        if (referenceResolver == null)
+                            throw NoReferenceResolverException()
+                        else
+                            s.toReference().resolve(referenceResolver)
                     } else {
                         s.toReference()
                     }

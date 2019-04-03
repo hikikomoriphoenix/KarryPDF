@@ -1,6 +1,5 @@
 package marabillas.loremar.pdfparser
 
-import marabillas.loremar.pdfparser.contents.TextElement
 import marabillas.loremar.pdfparser.objects.*
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
@@ -44,21 +43,5 @@ class PDFParserTest {
         assertTrue(obj is Reference)
         obj = "1 0 R".toPDFObject(true)
         assertTrue(obj is Dictionary)
-    }
-
-    @Test
-    fun testGetPageContents() {
-        val path = javaClass.classLoader.getResource("seeing-theory.pdf").path
-        val file = RandomAccessFile(path, "r")
-        val parser = PDFParser().loadDocument(file)
-        val contents = parser.getPageContents(48)
-        contents.asSequence()
-            .filter {
-                it is TextElement
-            }
-            .forEach {
-                val text = it as TextElement
-                println("tf=${text.tf} tx=${text.td[0]} ty=${text.td[1]} ts=${text.ts} tj=${text.tj}")
-            }
     }
 }

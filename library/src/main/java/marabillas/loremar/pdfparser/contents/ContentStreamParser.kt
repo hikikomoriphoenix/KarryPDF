@@ -26,7 +26,7 @@ internal class ContentStreamParser(private val pageFonts: HashMap<String, Typefa
 
                     // If not Reference then get the substring before any delimiter
                     if (t == "") {
-                        p = "^/?(\\w+|-?[0-9]+([,.][0-9]+)?|-?.?[0-9]+)[(<\\[{/\\s]".toRegex()
+                        p = "^/?([\\w*'\"]+|-?[0-9]+([,.][0-9]+)?|-?.?[0-9]+)[(<\\[{/\\s]".toRegex()
                         t = p.find(s)?.value ?: ""
 
                         // When end of stream is reached, the previous pattern will not match. Hence, just return the

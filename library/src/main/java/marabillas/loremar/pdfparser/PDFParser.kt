@@ -7,10 +7,7 @@ import marabillas.loremar.pdfparser.contents.PageContentAdapter
 import marabillas.loremar.pdfparser.exceptions.InvalidDocumentException
 import marabillas.loremar.pdfparser.exceptions.NoDocumentException
 import marabillas.loremar.pdfparser.exceptions.UnsupportedPDFElementException
-import marabillas.loremar.pdfparser.font.FontDecoder
-import marabillas.loremar.pdfparser.font.FontIdentifier
-import marabillas.loremar.pdfparser.font.FontMappings
-import marabillas.loremar.pdfparser.font.FontName
+import marabillas.loremar.pdfparser.font.*
 import marabillas.loremar.pdfparser.objects.*
 import java.io.RandomAccessFile
 
@@ -107,21 +104,25 @@ class PDFParser {
         val fontsDic = resources["Font"] as Dictionary?
         fontsDic?.resolveReferences()
         var pageFonts = HashMap<String, Typeface>()
-        fontsDic?.let { pageFonts = getPageFonts(it) }
+        var cmaps = HashMap<String, CMap>()
+        fontsDic?.let {
+            pageFonts = getPageFonts(it)
+            cmaps = getCMaps(it)
+        }
 
         val contents = pageDic["Contents"] ?: throw InvalidDocumentException("Missing Contents entry in Page object.")
         return if (contents is PDFArray) {
             contents.asSequence()
                 .filterNotNull()
                 .forEach { content ->
-                    val pageContent = parseContent(content, pageFonts, fontsDic)
+                    val pageContent = parseContent(content, pageFonts, cmaps)
                     contentsList.addAll(pageContent)
                 }
             println("PDFParser.getPageContents() -> ${tCtr.getTimeElapsed()} ms")
             contentsList
         } else {
             println("PDFParser.getPageContents() -> ${tCtr.getTimeElapsed()} ms")
-            parseContent(contents, pageFonts, fontsDic)
+            parseContent(contents, pageFonts, cmaps)
         }
 
     }
@@ -129,16 +130,14 @@ class PDFParser {
     private fun parseContent(
         content: PDFObject,
         pageFonts: HashMap<String, Typeface>,
-        fontsDic: Dictionary?
+        cmaps: HashMap<String, CMap>
     ): ArrayList<PageContent> {
         val ref = content as Reference
         val stream = resolveReferenceToStream(ref)
         stream?.let {
             val data = it.decodeEncodedStream()
             val pageObjs = ContentStreamParser().parse(String(data))
-            fontsDic?.let { it1 ->
-                FontDecoder(pageObjs, it1).decodeEncoded()
-            }
+            FontDecoder(pageObjs, cmaps).decodeEncoded()
             return PageContentAdapter(pageObjs, pageFonts).getPageContents()
         }
         return ArrayList()
@@ -159,6 +158,29 @@ class PDFParser {
             fonts[key] = typeface
         }
         return fonts
+    }
+
+    private fun getCMaps(fontsDic: Dictionary): HashMap<String, CMap> {
+        fontsDic.resolveReferences()
+        val fkeys = fontsDic.getKeys()
+        val cmaps = HashMap<String, CMap>()
+        fkeys.forEach foreachKey@{ key ->
+            val font = fontsDic[key] as Dictionary
+
+            val toUnicode = font["ToUnicode"]
+            if (toUnicode is Reference) {
+                val stream = resolveReferenceToStream(toUnicode)
+                val b = stream?.decodeEncodedStream()
+                b?.let {
+                    val cmap = ToUnicodeCMap(String(b)).parse()
+                    cmaps.put(key, cmap)
+                    return@foreachKey
+                }
+            }
+
+            // TODO Get Cmap from Encoding entry.
+        }
+        return cmaps
     }
 
     /**

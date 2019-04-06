@@ -1,12 +1,11 @@
 package marabillas.loremar.pdfparser.contents
 
-import android.graphics.Typeface
 import marabillas.loremar.pdfparser.objects.PDFObject
 import marabillas.loremar.pdfparser.objects.extractEnclosedObject
 import marabillas.loremar.pdfparser.objects.startsEnclosed
 import marabillas.loremar.pdfparser.objects.toPDFObject
 
-internal class ContentStreamParser(private val pageFonts: HashMap<String, Typeface>) {
+internal class ContentStreamParser {
     companion object {
         /**
          * Get the next token in the content stream which could either be a string representing a valid PDFObject or an
@@ -40,10 +39,9 @@ internal class ContentStreamParser(private val pageFonts: HashMap<String, Typefa
         }
     }
 
-    fun parse(streamData: String): ArrayList<PageContent> {
+    fun parse(streamData: String): ArrayList<PageObject> {
         var s = streamData
         //println("ContentStream->\n$s")
-        val contents = ArrayList<PageContent>()
         val operands = ArrayList<PDFObject>()
         val pageObjects = ArrayList<PageObject>()
         var tf = ""
@@ -67,34 +65,7 @@ internal class ContentStreamParser(private val pageFonts: HashMap<String, Typefa
             }
         }
 
-        // Arrange objects to correct vertical order.
-        pageObjects.sortWith(compareByDescending { it.getY() })
-
-        var i = 0
-        while (i < pageObjects.size) {
-            val next = pageObjects[i]
-            var skip = 0
-            when (next) {
-                is TextObject -> {
-                    val array = pageObjects
-                        .subList(i, pageObjects.size)
-                        .takeWhile { it is TextObject }
-                        .map { it as TextObject }
-                        .toTypedArray()
-                        .copyOf()
-                    val textObjs = array.toCollection(ArrayList())
-                    skip = textObjs.size
-                    val textContentGroups = TextContentAnalyzer(textObjs)
-                        .analyze()
-                    val textContents = TextContentAdapter(textContentGroups, pageFonts)
-                        .getContents()
-                    contents.addAll(textContents)
-                }
-                // TODO Process other types of objects and add results to contents.
-            }
-            i += skip
-        }
-        return contents
+        return pageObjects
     }
 }
 

@@ -3,9 +3,11 @@ package marabillas.loremar.pdfparser
 import android.graphics.Typeface
 import marabillas.loremar.pdfparser.contents.ContentStreamParser
 import marabillas.loremar.pdfparser.contents.PageContent
+import marabillas.loremar.pdfparser.contents.PageContentAdapter
 import marabillas.loremar.pdfparser.exceptions.InvalidDocumentException
 import marabillas.loremar.pdfparser.exceptions.NoDocumentException
 import marabillas.loremar.pdfparser.exceptions.UnsupportedPDFElementException
+import marabillas.loremar.pdfparser.font.FontDecoder
 import marabillas.loremar.pdfparser.font.FontIdentifier
 import marabillas.loremar.pdfparser.font.FontMappings
 import marabillas.loremar.pdfparser.font.FontName
@@ -99,16 +101,20 @@ class PDFParser {
             contents.asSequence()
                 .filterNotNull()
                 .forEach { content ->
-                    val pageContent = parseContent(content, pageFonts)
+                    val pageContent = parseContent(content, pageFonts, fontsDic)
                     contentsList.addAll(pageContent)
                 }
             contentsList
         } else {
-            parseContent(contents, pageFonts)
+            parseContent(contents, pageFonts, fontsDic)
         }
     }
 
-    private fun parseContent(content: PDFObject, pageFonts: HashMap<String, Typeface>): ArrayList<PageContent> {
+    private fun parseContent(
+        content: PDFObject,
+        pageFonts: HashMap<String, Typeface>,
+        fontsDic: Dictionary?
+    ): ArrayList<PageContent> {
         val fileReader = fileReader ?: throw NoDocumentException()
         val ref = content as Reference
         val objects = this.objects ?: throw NoDocumentException()
@@ -116,7 +122,11 @@ class PDFParser {
         obj?.pos?.let {
             val stream = fileReader.getStream(it)
             val data = stream.decodeEncodedStream()
-            return ContentStreamParser(pageFonts).parse(String(data))
+            val pageObjs = ContentStreamParser().parse(String(data))
+            fontsDic?.let { it1 ->
+                FontDecoder(pageObjs, it1).decodeEncoded()
+            }
+            return PageContentAdapter(pageObjs, pageFonts).getPageContents()
         }
         return ArrayList()
     }

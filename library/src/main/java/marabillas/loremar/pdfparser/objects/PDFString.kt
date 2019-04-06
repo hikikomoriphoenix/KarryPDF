@@ -7,6 +7,8 @@ internal class PDFString(private var string: String) : Any(), PDFObject {
     var value = ""
         private set
 
+    val original get() = string
+
     init {
         when {
             string.startsWith("(") && string.endsWith(")") -> {

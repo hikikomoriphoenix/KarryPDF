@@ -69,6 +69,14 @@ class PDFParser {
         }
     }
 
+    private fun resolveReferenceToStream(reference: Reference): Stream? {
+        val fileReader = fileReader ?: throw NoDocumentException()
+        val objects = this.objects ?: throw NoDocumentException()
+        val obj = objects["${reference.obj} ${reference.gen}"]
+        val pos = obj?.pos ?: return null
+        return fileReader.getStream(pos)
+    }
+
     private fun getPageTreeLeafNodes(pageTree: Dictionary) {
         pageTree.resolveReferences()
         val arr = pageTree["Kids"] as PDFArray
@@ -115,13 +123,10 @@ class PDFParser {
         pageFonts: HashMap<String, Typeface>,
         fontsDic: Dictionary?
     ): ArrayList<PageContent> {
-        val fileReader = fileReader ?: throw NoDocumentException()
         val ref = content as Reference
-        val objects = this.objects ?: throw NoDocumentException()
-        val obj = objects["${ref.obj} ${ref.gen}"]
-        obj?.pos?.let {
-            val stream = fileReader.getStream(it)
-            val data = stream.decodeEncodedStream()
+        val stream = resolveReferenceToStream(ref)
+        stream?.let {
+            val data = it.decodeEncodedStream()
             val pageObjs = ContentStreamParser().parse(String(data))
             fontsDic?.let { it1 ->
                 FontDecoder(pageObjs, it1).decodeEncoded()

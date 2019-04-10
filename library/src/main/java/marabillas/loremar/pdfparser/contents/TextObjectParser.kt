@@ -54,8 +54,17 @@ internal class TextObjectParser {
                     }
                     "T*" -> toNextLine()
                     "Tm" -> {
-                        td[0] = (operands[4] as Numeric).value.toFloat()
-                        td[1] = (operands[5] as Numeric).value.toFloat()
+                        var tx = (operands[4] as Numeric).value.toFloat()
+                        var ty = (operands[5] as Numeric).value.toFloat()
+
+                        // Handle mirroring
+                        val sx = (operands[0] as Numeric).value.toFloat()
+                        val sy = (operands[3] as Numeric).value.toFloat()
+                        if (sx < 0) tx *= -1
+                        if (sy < 0) ty *= -1
+
+                        td[0] = tx
+                        td[1] = ty
                     }
                     "TL" -> tl = (operands[0] as Numeric).value.toFloat()
                     "Ts" -> ts = (operands[0] as Numeric).value.toFloat()

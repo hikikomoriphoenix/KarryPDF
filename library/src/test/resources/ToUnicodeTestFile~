@@ -1,0 +1,19 @@
+begincmap
+
+2 begincodespacerange
+<1F> <DE>
+<EFB3> <FDD4>
+endcodespacerange
+
+3 beginbfrange
+<21> <DE> <B000>
+<EFB3> <EFB5> [<AAAA> <AABB> <AACC>]
+<FBB3> <FBD4> <D000>
+endbfrange
+
+2 beginbfchar
+<1F> <C222>
+<20> <AF56>
+endbfchar
+
+endcmap

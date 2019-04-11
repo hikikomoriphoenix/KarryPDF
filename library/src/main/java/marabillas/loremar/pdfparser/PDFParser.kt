@@ -20,6 +20,8 @@ class PDFParser {
     internal val pages: ArrayList<Reference> = ArrayList()
 
     fun loadDocument(file: RandomAccessFile): PDFParser {
+        val tCtr = TimeCounter()
+
         val fileReader = PDFFileReader(file)
         this.fileReader = fileReader
         ObjectIdentifier.referenceResolver = ReferenceResolverImpl()
@@ -40,6 +42,7 @@ class PDFParser {
         )) as Dictionary
         getPageTreeLeafNodes(pageTree)
 
+        println("PDFParser.loadDocument() -> ${tCtr.getTimeElapsed()} ms")
         return this
     }
 
@@ -92,6 +95,8 @@ class PDFParser {
     }
 
     fun getPageContents(pageNum: Int): ArrayList<PageContent> {
+        val tCtr = TimeCounter()
+
         val contentsList = ArrayList<PageContent>()
         val pageDic = pages[pageNum].resolve() as Dictionary
 
@@ -112,10 +117,13 @@ class PDFParser {
                     val pageContent = parseContent(content, pageFonts, fontsDic)
                     contentsList.addAll(pageContent)
                 }
+            println("PDFParser.getPageContents() -> ${tCtr.getTimeElapsed()} ms")
             contentsList
         } else {
+            println("PDFParser.getPageContents() -> ${tCtr.getTimeElapsed()} ms")
             parseContent(contents, pageFonts, fontsDic)
         }
+
     }
 
     private fun parseContent(

@@ -156,11 +156,25 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
                     val currTyIndex = allTysSorted.indexOf(it.key)
                     // If previous line is multi-columned and adjacent to this current line, All TextObjects of this current
                     // line and previous line are flagged as rowed.
-                    if (currTyIndex - 1 == prevTyIndex && prevIsMultiColumned) {
+                    if (currTyIndex - 1 == prevTyIndex && prevIsMultiColumned) run createRows@{
+                        // Check if TextObjects are columned due to whitespaces
+                        var first = it.value.first().first().tj
+                        if (first is PDFString) {
+                            if (first.value.isBlank())
+                                return@createRows
+                        }
+                        val prevTy = allTysSorted[prevTyIndex]
+                        tys[prevTy]?.let { textObj ->
+                            first = textObj.first().first().tj
+                            if (first is PDFString) {
+                                if ((first as PDFString).value.isBlank())
+                                    return@createRows
+                            }
+                        }
+
                         it.value.forEach { textObj ->
                             textObj.rowed = true
                         }
-                        val prevTy = allTysSorted[prevTyIndex]
                         tys[prevTy]?.forEach { textObj ->
                             textObj.rowed = true
                         }

@@ -1,54 +1,94 @@
 package marabillas.loremar.pdfparser.contents
 
+import marabillas.loremar.pdfparser.objects.EnclosedObjectExtractor
 import marabillas.loremar.pdfparser.objects.PDFObject
-import marabillas.loremar.pdfparser.objects.extractEnclosedObject
-import marabillas.loremar.pdfparser.objects.startsEnclosed
+import marabillas.loremar.pdfparser.objects.Reference
 import marabillas.loremar.pdfparser.objects.toPDFObject
 
 internal class ContentStreamParser {
     companion object {
-        /**
-         * Get the next token in the content stream which could either be a string representing a valid PDFObject or an
-         * operator.
-         *
-         * @param s Remaining string in the stream.
-         * @return the next token as a string.
-         */
-        fun getNextToken(s: String): String {
-            s.trim()
-            return when {
-                s.startsEnclosed() -> s.extractEnclosedObject()
+        val token = StringBuilder()
+
+        fun getNextToken(s: String, startIndex: Int): Int {
+            token.clear()
+            //println("Memory 0 -> ${Runtime.getRuntime().totalMemory()}")
+            var i = startIndex
+
+            // Skip white space characters
+            while (i < s.length && isWhiteSpaceAt(s, i))
+                i++
+            if (i >= s.length)
+                return i
+
+            when {
+                isEnclosingAt(s, i) -> {
+                    val close = EnclosedObjectExtractor.indexOfClosingChar(s, i)
+                    token.append(s.substring(i, close + 1))
+                    return close + 1
+                }
                 else -> {
-                    // Check if next token is a Reference Object
-                    var p = "^\\d+ \\d+ R".toRegex()
-                    var t = p.find(s)?.value ?: ""
-
-                    // If not Reference then get the substring before any delimiter
-                    if (t == "") {
-                        p = "^/?([\\w*'\"]+|-?[0-9]+([,.][0-9]+)?|-?.?[0-9]+)[(<\\[{/\\s]".toRegex()
-                        t = p.find(s)?.value ?: ""
-
-                        // When end of stream is reached, the previous pattern will not match. Hence, just return the
-                        // remaining string.
-                        if (t != "") t.substring(0, t.length - 1) else s
-                    } else {
-                        t
+                    if (s[i].isDigit()) {
+                        val firstSpace = s.indexOf(' ', i)
+                        val secondSpace = s.indexOf(' ', firstSpace + 1)
+                        if (s[secondSpace + 1] == 'R' && isDelimiterAt(s, secondSpace + 2)) {
+                            for (c in i..secondSpace + 1)
+                                token.append(s[c])
+                            if (Reference.REGEX.matches(token))
+                                return secondSpace + 2
+                        }
                     }
+
+                    val del: Int = if (s[i] == '/')
+                        indexOfDelimiter(s, i + 1)
+                    else
+                        indexOfDelimiter(s, i)
+
+                    for (c in i until del)
+                        token.append(s[c])
+                    return del
                 }
             }
+        }
+
+        private fun isEnclosingAt(s: String, i: Int): Boolean {
+            return (s[i] == '(' || s[i] == '[' || s[i] == '<' || s[i] == '{')
+        }
+
+        private fun isWhiteSpaceAt(s: String, i: Int): Boolean {
+            return (s[i] == ' ' || s[i] == '\n' || s[i] == '\r')
+        }
+
+        private fun isDelimiterAt(s: String, i: Int): Boolean {
+            return (isEnclosingAt(s, i) || isWhiteSpaceAt(s, i) || s[i] == '/')
+        }
+
+        private fun indexOfDelimiter(s: String, start: Int): Int {
+            var i = start
+            while (i < s.length) {
+                if (isEnclosingAt(s, i) || isWhiteSpaceAt(s, i) || s[i] == '/')
+                    return i
+                i++
+            }
+            return i
         }
     }
 
     fun parse(streamData: String): ArrayList<PageObject> {
-        var s = streamData
-        //println("ContentStream->\n$s")
         val operands = ArrayList<PDFObject>()
         val pageObjects = ArrayList<PageObject>()
+        val textObjectParser = TextObjectParser()
         var tf = ""
-        while (true) {
-            if (s == "") break
-            val token = getNextToken(s)
-            s = s.substringAfter(token).trim()
+        var i = 0
+        var ts = 0L
+
+        //println("stream->\n$streamData")
+
+        while (i < streamData.length) {
+            i = getNextToken(streamData, i)
+            if (token.isBlank())
+                break
+            //println("token->$token")
+            val token = token.toString()
             val operand = token.toPDFObject(true)
             if (operand != null) {
                 operands.add(operand)
@@ -57,7 +97,7 @@ internal class ContentStreamParser {
                     "Tf" -> tf = "${operands[0]} ${operands[1]}"
                     "BT" -> {
                         val textObj = TextObject()
-                        s = TextObjectParser().parse(s, textObj, tf)
+                        i = textObjectParser.parse(streamData, textObj, tf, i)
                         pageObjects.add(textObj)
                     }
                 }
@@ -65,10 +105,11 @@ internal class ContentStreamParser {
             }
         }
 
+        println("Time spent for TextObjectParser operation -> ${textObjectParser.tctr} ms")
         return pageObjects
     }
 }
 
-fun String.getNextToken(): String {
-    return ContentStreamParser.getNextToken(this)
+fun String.getNextToken(startIndex: Int): Int {
+    return ContentStreamParser.getNextToken(this, startIndex)
 }

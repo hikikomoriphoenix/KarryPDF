@@ -1,46 +1,36 @@
 package marabillas.loremar.pdfparser.contents
 
+import marabillas.loremar.pdfparser.TimeCounter
 import marabillas.loremar.pdfparser.objects.Numeric
 import marabillas.loremar.pdfparser.objects.PDFObject
 import marabillas.loremar.pdfparser.objects.toPDFObject
 
 internal class TextObjectParser {
-    fun parse(string: String, textObj: TextObject, tfDefault: String = ""): String {
-        val td = FloatArray(2)
-        var ts = 0f
-        var tl = 0f
-        var tf = tfDefault
-        var s = string
-        val operands = ArrayList<PDFObject>()
+    var tctr = 0L
+    private val td = FloatArray(2)
+    private var ts = 0f
+    private var tl = 0f
+    private var tf = ""
+    private val operands = ArrayList<PDFObject>()
+    private var i = 0
 
-        val positionText: () -> Unit = {
-            td[0] = (operands[0] as Numeric).value.toFloat()
-            td[1] = (operands[1] as Numeric).value.toFloat()
+    fun parse(s: String, textObj: TextObject, tfDefault: String = "", startIndex: Int): Int {
+        TimeCounter.reset()
+
+        td[0] = 0f
+        td[1] = 0f
+        ts = 0f
+        tl = 0f
+        if (tfDefault.isNotBlank()) {
+            tf = tfDefault
         }
+        operands.clear()
+        i = startIndex
 
-        val addTextElement: (tj: PDFObject) -> Unit = {
-            val content = TextElement(
-                tf = tf,
-                td = td.copyOf(),
-                tj = it,
-                ts = ts
-            )
-            textObj.add(content)
-            if (textObj.count() == 1) {
-                textObj.td[0] = td[0]
-                textObj.td[1] = td[1]
-            }
-        }
-
-        val toNextLine: () -> Unit = {
-            td[0] = 0f
-            td[1] = -tl
-        }
-
-        while (true) {
-            if (s == "") return ""
-            val token = s.getNextToken()
-            s = s.substringAfter(token).trim()
+        while (i < s.length) {
+            i = s.getNextToken(i)
+            val token = ContentStreamParser.token.toString()
+            //println("token -> $token")
             val operand = token.toPDFObject(true)
             if (operand != null) {
                 operands.add(operand)
@@ -68,16 +58,45 @@ internal class TextObjectParser {
                     }
                     "TL" -> tl = (operands[0] as Numeric).value.toFloat()
                     "Ts" -> ts = (operands[0] as Numeric).value.toFloat()
-                    "Tj", "TJ" -> addTextElement(operands[0])
-                    "\"" -> addTextElement(operands[2])
+                    "Tj", "TJ" -> addTextElement(textObj, operands[0])
+                    "\"" -> addTextElement(textObj, operands[2])
                     "\'" -> {
                         toNextLine()
-                        addTextElement(operands[0])
+                        addTextElement(textObj, operands[0])
                     }
-                    "ET" -> return s
+                    "ET" -> {
+                        tctr += TimeCounter.getTimeElapsed()
+                        return i
+                    }
                 }
                 operands.clear()
             }
         }
+
+        return i
+    }
+
+    private fun positionText() {
+        td[0] = (operands[0] as Numeric).value.toFloat()
+        td[1] = (operands[1] as Numeric).value.toFloat()
+    }
+
+    private fun addTextElement(textObj: TextObject, tj: PDFObject) {
+        val content = TextElement(
+            tf = tf,
+            td = td.copyOf(),
+            tj = tj,
+            ts = ts
+        )
+        textObj.add(content)
+        if (textObj.count() == 1) {
+            textObj.td[0] = td[0]
+            textObj.td[1] = td[1]
+        }
+    }
+
+    private fun toNextLine() {
+        td[0] = 0f
+        td[1] = -tl
     }
 }

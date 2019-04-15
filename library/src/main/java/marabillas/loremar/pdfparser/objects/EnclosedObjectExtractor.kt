@@ -4,75 +4,90 @@ package marabillas.loremar.pdfparser.objects
  * Extracts enclosed objects from a string. An enclosed object is an object with enclosing delimiters i.e. arrays,
  * dictionaries, and string.
  *
- * @param string String that contains the enclosed object.
- * @param start Index of the enclosed object's first character.
+ * @param stringWithEnclosed String that contains the enclosed object.
+ * @param startIndex Index of the enclosed object's first character.
  */
-internal class EnclosedObjectExtractor(private val string: String, private val start: Int = 0) {
+internal class EnclosedObjectExtractor(private val stringWithEnclosed: String, private val startIndex: Int = 0) {
+    init {
+        string = stringWithEnclosed
+        start = startIndex
+    }
+
     fun extract(): String {
-        val s = string.substring(start)
-        val close = findIndexOfClosingDelimiter(s)
-        return if (close != 0) {
-            string.substring(start, close + 1)
-        } else {
-            ""
-        }
+        return EnclosedObjectExtractor.extract()
     }
 
-    /**
-     * Locates the closing delimiter of the first opening delimiter in a string and returns its index. This helps in
-     * parsing objects enclosed with enclosing delimiters i.e. '()','[]','<>','{}' in a PDF file.
-     *
-     * @param string String enclosed by enclosing delimiters.
-     *
-     * @return the index of the closing delimiter or 0 if no closing delimiter for the first opening delimiter exists.
-     */
-    private fun findIndexOfClosingDelimiter(string: String): Int {
-        var unb = 1
-        var closeIndex = 0
-        var prev = ""
+    internal companion object {
+        var string = ""
+        var start = 0
 
-        val open = string.first()
-        val close = getClosingChar(string.first())
+        fun extract(): String {
+            val close = indexOfClosingChar(string, start)
+            return if (close > start) {
+                string.substring(start, close + 1)
+            } else {
+                ""
+            }
+        }
 
-        var dictionary = false
-        if (open == '<' && string[1] == '<') dictionary = true
+        fun indexOfClosingChar(string: String, start: Int): Int {
+            var unb = 0
+            var closeIndex = start - 1
+            var prev = ""
 
-        string.substringAfter(open).forEachIndexed { i, c ->
-            when (c) {
-                open -> {
-                    if (dictionary) {
-                        if (prev != "\\" && string[i + 1] == '<')
+            val open = string[start]
+            val close = getClosingChar(open)
+
+            var dictionary = false
+            if (open == '<' && string[start + 1] == '<') dictionary = true
+
+            var i = start
+            while (i < string.length) {
+                val c = string[i]
+                when (c) {
+                    open -> {
+                        if (dictionary) {
+                            if (prev != "\\" && string[i + 1] == '<') {
+                                unb++
+                                i++
+                                closeIndex++
+                            }
+                        } else if (prev != "\\") {
                             unb++
-                    } else if (prev != "\\") {
-                        unb++
+                        }
                     }
-                }
-                close -> {
-                    if (dictionary) {
-                        if (prev != "\\" && string[i + 1] == '>')
+                    close -> {
+                        if (dictionary) {
+                            if (prev != "\\" && string[i + 1] == '>') {
+                                unb--
+                                i++
+                                closeIndex++
+                            }
+                        } else if (prev != "\\") {
                             unb--
-                    } else if (prev != "\\") {
-                        unb--
+                        }
                     }
                 }
+                prev = c.toString()
+                closeIndex++
+                if (unb == 0) {
+                    println()
+                    return closeIndex
+                }
+                i++
             }
-            prev = c.toString()
-            closeIndex++
-            if (unb == 0) {
-                return closeIndex
-            }
+
+            return start
         }
 
-        return 0
-    }
-
-    private fun getClosingChar(c: Char): Char? {
-        return when (c) {
-            '(' -> ')'
-            '[' -> ']'
-            '<' -> '>'
-            '{' -> '}'
-            else -> null
+        private fun getClosingChar(c: Char): Char? {
+            return when (c) {
+                '(' -> ')'
+                '[' -> ']'
+                '<' -> '>'
+                '{' -> '}'
+                else -> null
+            }
         }
     }
 }
@@ -92,6 +107,8 @@ internal fun String.startsEnclosed(): Boolean {
     }
 }
 
-internal fun String.extractEnclosedObject(start: Int = 0): String {
-    return EnclosedObjectExtractor(this, start).extract()
+internal fun String.extractEnclosedObject(startIndex: Int = 0): String {
+    EnclosedObjectExtractor.start = startIndex
+    EnclosedObjectExtractor.string = this
+    return EnclosedObjectExtractor.extract()
 }

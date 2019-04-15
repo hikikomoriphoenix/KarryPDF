@@ -121,8 +121,9 @@ class PDFParser {
             println("PDFParser.getPageContents() -> ${tCtr.getTimeElapsed()} ms")
             contentsList
         } else {
+            val pageContents = parseContent(contents, pageFonts, cmaps)
             println("PDFParser.getPageContents() -> ${tCtr.getTimeElapsed()} ms")
-            parseContent(contents, pageFonts, cmaps)
+            return pageContents
         }
 
     }

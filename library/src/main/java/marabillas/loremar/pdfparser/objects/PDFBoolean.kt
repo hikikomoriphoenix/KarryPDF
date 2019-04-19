@@ -1,15 +1,19 @@
 package marabillas.loremar.pdfparser.objects
 
-internal class PDFBoolean(string: String) : PDFObject {
+internal class PDFBoolean : PDFObject {
     var value = false
         private set
 
-    init {
+    constructor(string: String) {
         value = when (string) {
             "true" -> true
             "false" -> false
             else -> throw IllegalArgumentException("Give string ")
         }
+    }
+
+    constructor(bool: Boolean) {
+        value = bool
     }
 
     override fun equals(other: Any?): Boolean {

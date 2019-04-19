@@ -1,11 +1,7 @@
 package marabillas.loremar.pdfparser.objects
 
-internal class Name(string: String) : Any(), PDFObject {
-    val value = string.substringAfter("/")
-
-    init {
-        if (!string.startsWith("/")) throw IllegalArgumentException("Name object should start with '/'")
-    }
+internal class Name(val string: String) : Any(), PDFObject {
+    val value: String get() = string
 
     override fun toString(): String {
         return value
@@ -25,5 +21,11 @@ internal class Name(string: String) : Any(), PDFObject {
 }
 
 internal fun String.toName(): Name {
-    return Name(this)
+    if (!this.startsWith("/")) throw IllegalArgumentException("Name object should start with '/'")
+    return Name(this.substringAfter("/"))
+}
+
+internal fun StringBuilder.toName(): Name {
+    if (!this.startsWith("/")) throw IllegalArgumentException("Name object should start with '/'")
+    return Name(this.substring(1, this.length))
 }

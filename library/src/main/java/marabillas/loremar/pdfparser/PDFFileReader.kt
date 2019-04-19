@@ -258,7 +258,7 @@ internal class PDFFileReader(private val file: RandomAccessFile) {
         }
 
         s = EnclosedObjectExtractor(sb.toString()).extract()
-        return Dictionary(s).parse(resolveReferences)
+        return s.toDictionary(resolveReferences)
     }
 
     fun getObjectStream(pos: Long): ObjectStream {

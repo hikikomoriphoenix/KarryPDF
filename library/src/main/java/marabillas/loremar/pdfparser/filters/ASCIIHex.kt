@@ -8,6 +8,8 @@ import java.math.BigInteger
  */
 internal class ASCIIHex : Decoder {
     override fun decode(encoded: ByteArray): ByteArray {
+        // TODO Change to a more GC-friendly implementation getting rid of substring use
+
         val s = String(encoded, Charsets.US_ASCII)
         if (s.length % 2 != 0) throw IllegalArgumentException()
 

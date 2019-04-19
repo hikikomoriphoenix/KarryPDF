@@ -7,6 +7,8 @@ import marabillas.loremar.pdfparser.objects.*
 import java.math.BigInteger
 
 internal class FontDecoder(private val pageObjects: ArrayList<PageObject>, private val cmaps: HashMap<String, CMap>) {
+    private val secondaryStringBuilder = StringBuilder()
+
     fun decodeEncoded() {
         pageObjects
             .asSequence()
@@ -31,7 +33,7 @@ internal class FontDecoder(private val pageObjects: ArrayList<PageObject>, priva
                                 }
                             }
                             sb.append("]")
-                            newTj = PDFArray(sb.toString()).parse()
+                            newTj = sb.toPDFArray(secondaryStringBuilder)
                         }
                         is PDFString -> {
                             newTj = decodeString(e.tj, cmap)

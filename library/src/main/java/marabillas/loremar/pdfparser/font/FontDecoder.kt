@@ -25,8 +25,15 @@ internal class FontDecoder(private val pageObjects: ArrayList<PageObject>, priva
                             val sb = StringBuilder("[")
                             e.tj.forEach { p ->
                                 if (p is PDFString) {
-                                    val s = decodeString(p, cmap)
-                                    sb.append(s.original)
+                                    if (cmap != null) {
+                                        sb.append(
+                                            cmap.decodeString(p.original)
+                                        )
+                                    } else {
+                                        sb.append(
+                                            p.original
+                                        )
+                                    }
                                 } else {
                                     val n = p as Numeric
                                     sb.append(n.value.toFloat())
@@ -36,7 +43,11 @@ internal class FontDecoder(private val pageObjects: ArrayList<PageObject>, priva
                             newTj = sb.toPDFArray(secondaryStringBuilder)
                         }
                         is PDFString -> {
-                            newTj = decodeString(e.tj, cmap)
+                            if (cmap != null) {
+                                newTj = cmap.decodeString(e.tj.original).toPDFString()
+                            } else {
+                                newTj = e.tj
+                            }
                         }
                     }
 
@@ -50,18 +61,6 @@ internal class FontDecoder(private val pageObjects: ArrayList<PageObject>, priva
                     textObject.update(updated, i)
                 }
             }
-    }
-
-    private fun decodeString(s: PDFString, cmap: CMap?): PDFString {
-        cmap?.let {
-            var pdfS = s
-            if (pdfS.original.startsWith("(") && pdfS.original.endsWith(")"))
-                pdfS = convertLiteralToHex(pdfS)
-            val encoded = pdfS.original.removeSurrounding("<", ">")
-            val decoded = it.decodeString(encoded)
-            return "($decoded)".toPDFString()
-        }
-        return s
     }
 
     private fun convertLiteralToHex(s: PDFString): PDFString {

@@ -1,6 +1,8 @@
 package marabillas.loremar.pdfparser
 
 import junit.framework.Assert.assertTrue
+import org.hamcrest.CoreMatchers.`is`
+import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
 
 class StringBuilderExtsTest {
@@ -17,5 +19,17 @@ class StringBuilderExtsTest {
 
         sb.clear().append("[Hello World]")
         assertTrue(sb.isEnclosedWith(arrayOf('['), arrayOf(']')))
+    }
+
+    @Test
+    fun testHexToInt() {
+        val i = StringBuilder("ffff").hexToInt()
+        assertThat(i, `is`(65535))
+    }
+
+    @Test
+    fun testHexFromInt() {
+        val sb = StringBuilder().hexFromInt(65535)
+        assertThat(sb.toString(), `is`("FFFF"))
     }
 }

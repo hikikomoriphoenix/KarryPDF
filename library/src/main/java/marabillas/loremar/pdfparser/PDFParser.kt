@@ -1,6 +1,7 @@
 package marabillas.loremar.pdfparser
 
 import android.graphics.Typeface
+import android.util.SparseArray
 import marabillas.loremar.pdfparser.contents.ContentStreamParser
 import marabillas.loremar.pdfparser.contents.PageContent
 import marabillas.loremar.pdfparser.contents.PageContentAdapter
@@ -104,7 +105,7 @@ class PDFParser {
         val fontsDic = resources["Font"] as Dictionary?
         fontsDic?.resolveReferences()
         var pageFonts = HashMap<String, Typeface>()
-        var cmaps = HashMap<String, CMap>()
+        var cmaps = SparseArray<CMap>()
         fontsDic?.let {
             pageFonts = getPageFonts(it)
             cmaps = getCMaps(it)
@@ -131,7 +132,7 @@ class PDFParser {
     private fun parseContent(
         content: PDFObject,
         pageFonts: HashMap<String, Typeface>,
-        cmaps: HashMap<String, CMap>
+        cmaps: SparseArray<CMap>
     ): ArrayList<PageContent> {
         val ref = content as Reference
         val stream = resolveReferenceToStream(ref)
@@ -161,10 +162,10 @@ class PDFParser {
         return fonts
     }
 
-    private fun getCMaps(fontsDic: Dictionary): HashMap<String, CMap> {
+    private fun getCMaps(fontsDic: Dictionary): SparseArray<CMap> {
         fontsDic.resolveReferences()
         val fkeys = fontsDic.getKeys()
-        val cmaps = HashMap<String, CMap>()
+        val cmaps = SparseArray<CMap>()
         fkeys.forEach foreachKey@{ key ->
             val font = fontsDic[key] as Dictionary
 
@@ -174,7 +175,7 @@ class PDFParser {
                 val b = stream?.decodeEncodedStream()
                 b?.let {
                     val cmap = ToUnicodeCMap(String(b)).parse()
-                    cmaps.put(key, cmap)
+                    cmaps.put(key.substring(1, key.length).toInt(), cmap)
                     return@foreachKey
                 }
             }

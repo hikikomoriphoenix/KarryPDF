@@ -22,4 +22,8 @@ internal class TextObject : Iterable<TextElement>, PageObject {
     override fun getY(): Float {
         return td[1]
     }
+
+    override fun getX(): Float {
+        return td[0]
+    }
 }

@@ -1,29 +1,29 @@
 package marabillas.loremar.pdfparser.contents
 
-internal class Table : Iterable<Table.Row>, ContentGroup {
+internal class Table : ContentGroup {
     private val table = ArrayList<Row>()
-
-    override fun iterator(): Iterator<Row> {
-        return table.iterator()
-    }
 
     operator fun get(i: Int): Row {
         return table[i]
+    }
+
+    fun size(): Int {
+        return table.size
     }
 
     fun add(row: Row) {
         table.add(row)
     }
 
-    class Row : Iterable<Cell> {
+    class Row {
         private val cells = ArrayList<Cell>()
-
-        override fun iterator(): Iterator<Cell> {
-            return cells.iterator()
-        }
 
         operator fun get(i: Int): Cell {
             return cells[i]
+        }
+
+        fun size(): Int {
+            return cells.size
         }
 
         fun add(cell: Cell) {
@@ -31,15 +31,15 @@ internal class Table : Iterable<Table.Row>, ContentGroup {
         }
     }
 
-    class Cell : Iterable<TextGroup> {
+    class Cell {
         private val txtGrps = ArrayList<TextGroup>()
-
-        override fun iterator(): Iterator<TextGroup> {
-            return txtGrps.iterator()
-        }
 
         operator fun get(i: Int): TextGroup {
             return txtGrps[i]
+        }
+
+        fun size(): Int {
+            return txtGrps.size
         }
 
         fun add(textGroup: TextGroup) {

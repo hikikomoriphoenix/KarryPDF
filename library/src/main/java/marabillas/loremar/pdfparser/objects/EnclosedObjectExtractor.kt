@@ -9,7 +9,7 @@ package marabillas.loremar.pdfparser.objects
  */
 internal class EnclosedObjectExtractor(private val stringWithEnclosed: String, private val startIndex: Int = 0) {
     init {
-        string = stringWithEnclosed
+        stringBuilder.clear().append(stringWithEnclosed)
         start = startIndex
     }
 
@@ -18,19 +18,19 @@ internal class EnclosedObjectExtractor(private val stringWithEnclosed: String, p
     }
 
     internal companion object {
-        var string = ""
+        var stringBuilder = StringBuilder()
         var start = 0
 
         fun extract(): String {
-            val close = indexOfClosingChar(string, start)
+            val close = indexOfClosingChar(stringBuilder, start)
             return if (close > start) {
-                string.substring(start, close + 1)
+                stringBuilder.substring(start, close + 1)
             } else {
                 ""
             }
         }
 
-        fun indexOfClosingChar(string: String, start: Int): Int {
+        fun indexOfClosingChar(string: StringBuilder, start: Int): Int {
             var unb = 0
             var closeIndex = start - 1
             var prev = ""
@@ -109,6 +109,6 @@ internal fun String.startsEnclosed(): Boolean {
 
 internal fun String.extractEnclosedObject(startIndex: Int = 0): String {
     EnclosedObjectExtractor.start = startIndex
-    EnclosedObjectExtractor.string = this
+    EnclosedObjectExtractor.stringBuilder.clear().append(this)
     return EnclosedObjectExtractor.extract()
 }

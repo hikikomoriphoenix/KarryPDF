@@ -18,15 +18,15 @@ internal class FontDecoder(private val pageObjects: ArrayList<PageObject>, priva
             .forEach {
                 val textObject = it as TextObject
                 textObject.forEachIndexed forEachTextElement@{ i, e ->
-                    val fEnd = mainSB.clear().append(e.tf).indexOf(" ")
+                    val fEnd = mainSB.clear().append(e.tf).indexOf(' ')
                     mainSB.delete(fEnd, mainSB.length)
-                    mainSB.delete(0, 1)
+                    mainSB.delete(0, 2)
                     val cmap = cmaps[mainSB.toInt()]
 
                     var newTj: PDFObject? = null
                     when (e.tj) {
                         is PDFArray -> {
-                            mainSB.clear().append("[")
+                            mainSB.clear().append('[')
                             e.tj.forEach { p ->
                                 if (p is PDFString) {
                                     if (cmap != null) {
@@ -43,7 +43,7 @@ internal class FontDecoder(private val pageObjects: ArrayList<PageObject>, priva
                                     mainSB.append(n.value.toFloat())
                                 }
                             }
-                            mainSB.append("]")
+                            mainSB.append(']')
                             newTj = mainSB.toPDFArray(secondarySB.clear())
                         }
                         is PDFString -> {

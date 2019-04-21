@@ -105,7 +105,7 @@ class PDFParser {
         resources.resolveReferences()
         val fontsDic = resources["Font"] as Dictionary?
         fontsDic?.resolveReferences()
-        var pageFonts = HashMap<String, Typeface>()
+        var pageFonts = SparseArray<Typeface>()
         var cmaps = SparseArray<CMap>()
         fontsDic?.let {
             pageFonts = getPageFonts(it)
@@ -131,7 +131,7 @@ class PDFParser {
 
     private fun parseContent(
         content: PDFObject,
-        pageFonts: HashMap<String, Typeface>,
+        pageFonts: SparseArray<Typeface>,
         cmaps: SparseArray<CMap>
     ): ArrayList<PageContent> {
         TimeCounter.reset()
@@ -147,19 +147,16 @@ class PDFParser {
             TimeCounter.reset()
             FontDecoder(pageObjs, cmaps).decodeEncoded()
             println("FontDecoder.decodeEncoded -> ${TimeCounter.getTimeElapsed()} ms")
-            TimeCounter.reset()
-            val pageContents = PageContentAdapter(pageObjs, pageFonts).getPageContents()
-            println("PageContentAdapter.getPageContents -> ${TimeCounter.getTimeElapsed()} ms")
-            return pageContents
+            return PageContentAdapter(pageObjs, pageFonts).getPageContents()
         }
         return ArrayList()
     }
 
-    internal fun getPageFonts(fontsDic: Dictionary): HashMap<String, Typeface> {
+    internal fun getPageFonts(fontsDic: Dictionary): SparseArray<Typeface> {
         fontsDic.resolveReferences()
         val fKeys = fontsDic.getKeys()
         val idier = FontIdentifier()
-        val fonts = HashMap<String, Typeface>()
+        val fonts = SparseArray<Typeface>()
         fKeys.forEach { key ->
             val font = fontsDic[key] as Dictionary
             val basefont = font["BaseFont"] as Name?
@@ -167,7 +164,7 @@ class PDFParser {
             basefont?.value?.let {
                 typeface = idier.identifyFont(it)
             }
-            fonts[key] = typeface
+            fonts.put(key.substring(1, key.length).toInt(), typeface)
         }
         return fonts
     }

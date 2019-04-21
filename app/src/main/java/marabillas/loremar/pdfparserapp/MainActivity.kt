@@ -19,12 +19,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
+        val file = RandomAccessFile("${filesDir.path}/sample2.pdf", "r")
+        val parser = PDFParser().loadDocument(file)
 
         Handler(mainLooper).postDelayed(
             {
-                val file = RandomAccessFile("${filesDir.path}/sample2.pdf", "r")
-                val parser = PDFParser().loadDocument(file)
-
                 TimeCounter.reset()
                 val contents = parser.getPageContents(0)
                 println("App getting page contents -> ${TimeCounter.getTimeElapsed()} ms")

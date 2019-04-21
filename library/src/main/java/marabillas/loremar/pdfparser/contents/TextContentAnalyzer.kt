@@ -4,20 +4,23 @@ import marabillas.loremar.pdfparser.objects.Numeric
 import marabillas.loremar.pdfparser.objects.PDFArray
 import marabillas.loremar.pdfparser.objects.PDFString
 import marabillas.loremar.pdfparser.objects.toPDFString
+import marabillas.loremar.pdfparser.toDouble
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashSet
 
-internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject>) {
+internal class TextContentAnalyzer() {
     internal val contentGroups = ArrayList<ContentGroup>()
+    private val textObjects = mutableListOf<TextObject>()
+    private val sb = StringBuilder()
 
-    fun analyze(): ArrayList<ContentGroup> {
-        // Sort according to descending Ty and then to ascending Tx
-        textObjects.sortWith(
-            compareBy(
-                { -it.td[1] },
-                { it.td[0] })
-        )
+    private var currTextGroup = TextGroup()
+    private var table = Table()
+    private var currLine = ArrayList<TextElement>()
+
+    fun analyze(textObjs: MutableList<TextObject>): ArrayList<ContentGroup> {
+        textObjects.clear()
+        textObjects.addAll(textObjs)
 
         // If tj values are arrays resulting from TJ operator, determine from the number values between strings
         // whether to add space or not while concatenating strings. First to get glyph width for space, get all the
@@ -47,6 +50,9 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
 
         // If line is almost as long as the width of page, then append the next line in the TextGroup.
         formParagraphs(w)
+
+        // Convert adjacent elements with same tf into one element
+        mergeElementsWithSameFont()
 
         return contentGroups
     }
@@ -91,19 +97,19 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
     private fun handleSpacing(width: Float, textObj: TextObject) {
         textObj.forEachIndexed { index, textElement ->
                 if (textElement.tj is PDFArray) {
-                    val sb = StringBuilder("(")
+                    sb.clear().append('(')
                     (textElement.tj).forEach {
                             if (it is PDFString)
                                 sb.append(it.value) // If string, append
                             else if (it is Numeric) {
                                 val num = -it.value.toFloat()
                                 if (num >= 1.15 * width)
-                                    sb.append("  ") // If more than 115% of space width, add double space
+                                    sb.append(' ') // If more than 115% of space width, add double space
                                 else if (num >= 0.15 * width)
-                                    sb.append(" ") // If between 15% or 115% of space width, add space
+                                    sb.append(' ') // If between 15% or 115% of space width, add space
                             }
                         }
-                    sb.append(")")
+                    sb.append(')')
                     val transformed = TextElement(
                         td = textElement.td,
                         tf = textElement.tf,
@@ -244,44 +250,10 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
     }*/
 
     internal fun groupTexts() {
-        var currTextGroup = TextGroup()
+        currTextGroup = TextGroup()
         contentGroups.add(currTextGroup)
-        var table = Table()
-        var currLine = ArrayList<TextElement>()
-
-        fun sameLine(dty: Float): Boolean {
-            return dty == 0f
-        }
-
-        fun near(dty: Float, fSize: Float): Boolean {
-            return dty < fSize * 2
-        }
-
-        fun newLine(textElement: TextElement) {
-            currLine = ArrayList()
-            currLine.add(textElement)
-            currTextGroup.add(currLine)
-        }
-
-        fun newTextGroup(textElement: TextElement) {
-            currTextGroup = TextGroup()
-            newLine(textElement)
-
-            if (table.count() > 0) {
-                table.last().last().add(currTextGroup)
-            } else {
-                contentGroups.add(currTextGroup)
-            }
-        }
-
-        fun sortGroup(textElement: TextElement, dty: Float, fSize: Float) {
-            when {
-                currTextGroup.count() == 0 -> newLine(textElement)
-                sameLine(dty) -> currLine.add(textElement)
-                near(dty, fSize) -> newLine(textElement)
-                else -> newTextGroup(textElement)
-            }
-        }
+        table = Table()
+        currLine = ArrayList()
 
         textObjects.forEachIndexed { index, textObj ->
             var prevTextObj: TextObject? = null
@@ -295,8 +267,8 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
                     cell.add(currTextGroup)
 
                     // If first cell of table or if not in the same row, then add new row, else add cell to last row.
-                    if (table.count() == 0 || textObj.td[1] != (prevTextObj as TextObject).td[1]) {
-                        if (table.count() == 0) {
+                    if (table.size() == 0 || textObj.td[1] != (prevTextObj as TextObject).td[1]) {
+                        if (table.size() == 0) {
                             contentGroups.add(table)
                         }
 
@@ -305,24 +277,30 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
                         table.add(row)
 
                     } else {
-                        table.last().add(cell)
+                        table[table.size() - 1].add(cell)
                     }
 
                     textObj.forEach {
                         var dty = -it.td[1]
                         if (textObj.first() == it) dty = 0f
-                        val fSize = it.tf.substringAfter(" ").toFloat()
+                        sb.clear().append(it.tf)
+                        val fSizeStart = sb.indexOf(' ') + 1
+                        sb.delete(0, fSizeStart)
+                        val fSize = sb.toDouble().toFloat()
                         sortGroup(it, dty, fSize)
                     }
                 }
-                table.count() > 0 -> {
+                table.size() > 0 -> {
                     table = Table() // Reset to empty table
                     currTextGroup = TextGroup()
                     contentGroups.add(currTextGroup)
                     textObj.forEach {
                         var dty = -it.td[1]
                         if (textObj.first() == it) dty = 0f
-                        val fSize = it.tf.substringAfter(" ").toFloat()
+                        sb.clear().append(it.tf)
+                        val fSizeStart = sb.indexOf(' ') + 1
+                        sb.delete(0, fSizeStart)
+                        val fSize = sb.toDouble().toFloat()
                         sortGroup(it, dty, fSize)
                     }
                 }
@@ -344,7 +322,10 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
                                 yOfLast - it.td[1]
                             }
                         }
-                        val fSize = it.tf.substringAfter(" ").toFloat()
+                        sb.clear().append(it.tf)
+                        val fSizeStart = sb.indexOf(' ') + 1
+                        sb.delete(0, fSizeStart)
+                        val fSize = sb.toDouble().toFloat()
                         sortGroup(it, dty, fSize)
                     }
                 }
@@ -352,13 +333,49 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
         }
     }
 
+    private fun sameLine(dty: Float): Boolean {
+        return dty == 0f
+    }
+
+    private fun near(dty: Float, fSize: Float): Boolean {
+        return dty < fSize * 2
+    }
+
+    private fun newLine(textElement: TextElement) {
+        currLine = ArrayList()
+        currLine.add(textElement)
+        currTextGroup.add(currLine)
+    }
+
+    private fun newTextGroup(textElement: TextElement) {
+        currTextGroup = TextGroup()
+        newLine(textElement)
+
+        if (table.size() > 0) {
+            val lastRow = table[table.size() - 1]
+            lastRow[lastRow.size() - 1].add(currTextGroup)
+        } else {
+            contentGroups.add(currTextGroup)
+        }
+    }
+
+    private fun sortGroup(textElement: TextElement, dty: Float, fSize: Float) {
+        when {
+            currTextGroup.size() == 0 -> newLine(textElement)
+            sameLine(dty) -> currLine.add(textElement)
+            near(dty, fSize) -> newLine(textElement)
+            else -> newTextGroup(textElement)
+        }
+    }
+
     internal fun checkForListTypeTextGroups() {
         fun checkIfAllLinesEndWithPeriods(textGroup: TextGroup) {
             textGroup.isAList = true
-            textGroup.forEach {
+            for (i in 0 until textGroup.size()) {
                 // For each line, check if the last element ends with a period.
-                val s = (it.last().tj as PDFString).value
-                if (!s.endsWith("."))
+                val line = textGroup[i]
+                val s = (line[line.size - 1].tj as PDFString).value
+                if (!s.endsWith('.'))
                     textGroup.isAList = false
             }
         }
@@ -366,9 +383,10 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
             when (it) {
                 is TextGroup -> checkIfAllLinesEndWithPeriods(it)
                 is Table -> {
-                    it.forEach { row ->
-                        row.forEach { cell ->
-                            cell.forEach { textGroup ->
+                    for (i in 0 until it.size()) {
+                        for (j in 0 until it[i].size()) {
+                            for (k in 0 until it[i][j].size()) {
+                                val textGroup = it[i][j][k]
                                 checkIfAllLinesEndWithPeriods(textGroup)
                             }
                         }
@@ -385,10 +403,11 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
             .filter { it is TextGroup }
             .forEach {
                 val g = it as TextGroup
-                g.forEach { line ->
+                for (i in 0 until g.size()) {
                     var charCount = 0
-                    line.forEach { e ->
-                        charCount += (e.tj as PDFString).value.length
+                    val line = g[i]
+                    for (j in 0 until line.size) {
+                        charCount += (line[j].tj as PDFString).value.length
                     }
                     if (charCount > maxWidth)
                         maxWidth = charCount
@@ -403,14 +422,14 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
                 return
 
             var i = 0
-            while (i + 1 < textGroup.count()) {
+            while (i + 1 < textGroup.size()) {
                 val line = textGroup[i]
                 val last = line.last().tj as PDFString
-                if (last.value.endsWith(("-"))) {
-                    val s = "(${last.value.substringBeforeLast("-")})"
+                if (last.value.endsWith(('-'))) {
+                    sb.clear().append(last.value, 0, last.value.lastIndex - 1)
                     val e = TextElement(
                         tf = line.last().tf,
-                        tj = s.toPDFString(),
+                        tj = sb.toPDFString(),
                         td = line.last().td.copyOf(),
                         ts = line.last().ts
                     )
@@ -428,10 +447,13 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
             when (it) {
                 is TextGroup -> findHyphenAndConcatenate(it)
                 is Table -> {
-                    it.forEach { row ->
-                        row.forEach { cell ->
-                            cell.forEach { texGroup ->
-                                findHyphenAndConcatenate(texGroup)
+                    for (i in 0 until it.size()) {
+                        val row = it[i]
+                        for (j in 0 until row.size()) {
+                            val cell = row[j]
+                            for (k in 0 until cell.size()) {
+                                val textGroup = cell[k]
+                                findHyphenAndConcatenate(textGroup)
                             }
                         }
                     }
@@ -450,7 +472,7 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
                 var toCount = g[0]
 
                 // Iterate until the second last of the list. The last line will be appended to it if necessary.
-                while (i + 1 < g.count()) {
+                while (i + 1 < g.size()) {
                     val line = g[i]
 
                     // Count the number of characters of the text in toCount variable.
@@ -465,10 +487,10 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
                         val next = g[i + 1]
 
                         // Add space in between when appending.
-                        val s = "( ${next.first().tj as PDFString})"
+                        sb.clear().append('(').append(' ').append((next.first().tj as PDFString).value).append(')')
                         val e = TextElement(
                             tf = next.first().tf,
-                            tj = s.toPDFString(),
+                            tj = sb.toPDFString(),
                             td = next.first().td.copyOf(),
                             ts = next.first().ts
                         )
@@ -489,5 +511,78 @@ internal class TextContentAnalyzer(private val textObjects: ArrayList<TextObject
                     }
                 }
             }
+    }
+
+    internal fun mergeElementsWithSameFont() {
+        contentGroups.forEach {
+            when (it) {
+                is TextGroup -> mergeElementsInTextGroup(it)
+                is Table -> {
+                    for (i in 0 until it.size()) {
+                        val row = it[i]
+                        for (j in 0 until row.size()) {
+                            val cell = row[j]
+                            for (k in 0 until cell.size()) {
+                                val textGroup = cell[k]
+                                mergeElementsInTextGroup(textGroup)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun mergeElementsInTextGroup(textGroup: TextGroup) {
+        for (i in 0 until textGroup.size()) {
+            val line = textGroup[i]
+            var first = 0
+            var j = 1
+            sb.clear()
+            while (j < line.size) {
+                if (line[j].tf == line[j - 1].tf) {
+                    if (sb.isEmpty()) {
+                        first = j - 1
+                        sb.append(
+                            (line[j - 1].tj as PDFString).value
+                        )
+                        sb.append(
+                            (line[j].tj as PDFString).value
+                        )
+                    } else {
+                        sb.append(
+                            (line[j].tj as PDFString).value
+                        )
+                    }
+                } else {
+                    if (sb.isNotEmpty()) {
+                        mergeTextElements(line, first, j)
+                        sb.clear()
+                    }
+                    first = j
+                }
+                j++
+            }
+            if (sb.isNotEmpty()) {
+                mergeTextElements(line, first, line.size)
+                sb.clear()
+            }
+        }
+    }
+
+    private fun mergeTextElements(line: ArrayList<TextElement>, start: Int, end: Int) {
+        for (k in (end - 1) downTo (start + 1)) {
+            line.removeAt(k)
+        }
+        sb.insert(0, '(')
+        sb.append(')')
+        val newTextElement = TextElement(
+            tf = line[start].tf,
+            td = line[start].td.copyOf(),
+            ts = line[start].ts,
+            tj = sb.toPDFString()
+        )
+        line.removeAt(start)
+        line.add(start, newTextElement)
     }
 }

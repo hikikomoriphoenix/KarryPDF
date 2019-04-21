@@ -1,83 +1,111 @@
 package marabillas.loremar.pdfparser.contents
 
-import marabillas.loremar.pdfparser.objects.Numeric
 import marabillas.loremar.pdfparser.objects.PDFObject
 import marabillas.loremar.pdfparser.objects.toPDFObject
+import marabillas.loremar.pdfparser.objects.toPDFString
+import marabillas.loremar.pdfparser.toDouble
 
 internal class TextObjectParser {
-    private val td = FloatArray(2)
+    private val operandsIndices = IntArray(6)
+    private val operand = StringBuilder()
+    private var pos = 0
+    private var td = FloatArray(2)
+    private var tf = StringBuilder()
+    private var tfDef = StringBuilder()
     private var ts = 0f
     private var tl = 0f
-    private var tf = ""
-    private val operands = ArrayList<PDFObject>()
-    private var i = 0
 
-    fun parse(s: String, textObj: TextObject, tfDefault: String = "", startIndex: Int): Int {
-        td[0] = 0f
-        td[1] = 0f
-        ts = 0f
-        tl = 0f
+    fun parse(s: StringBuilder, textObj: TextObject, tfDefault: StringBuilder = tfDef, startIndex: Int): Int {
         if (tfDefault.isNotBlank()) {
-            tf = tfDefault
+            tf.clear().append(tfDefault)
         }
-        operands.clear()
-        i = startIndex
 
-        while (i < s.length) {
-            i = s.getNextToken(i)
-            val token = ContentStreamParser.token.toString()
-            val operand = token.toPDFObject(true)
-            if (operand != null) {
-                operands.add(operand)
-            } else {
-                when (token) {
-                    "Tf" -> tf = "${operands[0]} ${operands[1]}"
-                    "Td" -> positionText()
-                    "TD" -> {
-                        positionText()
+        pos = startIndex
+        var operandsCount = 0
+        var expectToken = true
+        while (pos < s.length) {
+            if (expectToken) {
+                if (s[pos].isDigit() || s[pos] == '<' || s[pos] == '(' ||
+                    s[pos] == '.' || s[pos] == '[' || s[pos] == '/' || s[pos] == '-'
+                ) {
+                    operandsIndices[operandsCount] = pos
+                    operandsCount++
+                    expectToken = false
+                } else if (s[pos] == 'T') {
+                    pos++
+                    if (s[pos] == 'j' || s[pos] == 'J') {
+                        operand.clear().append(s, operandsIndices[0], pos - 2)
+                        addTextElement(textObj, operand.toPDFObject() ?: "()".toPDFString())
+                    } else if (s[pos] == 'd') {
+                        positionText(s)
+                    } else if (s[pos] == 'm') {
+                        td[0] = operand
+                            .clear()
+                            .append(s, operandsIndices[4], operandsIndices[5] - 1)
+                            .toDouble()
+                            .toFloat()
+                        td[1] = operand
+                            .clear()
+                            .append(s, operandsIndices[5], pos - 2)
+                            .toDouble()
+                            .toFloat()
+                        val sx = operand
+                            .clear()
+                            .append(s, operandsIndices[0], operandsIndices[1] - 1)
+                            .toDouble()
+                            .toFloat()
+                        if (sx < 0) {
+                            td[0] = td[0] * (-1)
+                        }
+                        val sy = operand
+                            .clear()
+                            .append(s, operandsIndices[3], operandsIndices[4] - 1)
+                            .toDouble()
+                            .toFloat()
+                        if (sy < 0) {
+                            td[1] = td[1] * (-1)
+                        }
+                    } else if (s[pos] == 'f') {
+                        tf.clear().append(s, operandsIndices[0], pos - 2)
+                    } else if (s[pos] == 'D') {
+                        positionText(s)
                         tl = -td[1]
+                    } else if (s[pos] == 'L') {
+                        tl = operand
+                            .clear()
+                            .append(s, operandsIndices[0], pos - 2)
+                            .toDouble()
+                            .toFloat()
+                    } else if (s[pos] == '*') {
+                        td[0] = 0f
+                        td[1] = -tl
+                    } else if (s[pos] == 's') {
+                        ts = operand
+                            .clear()
+                            .append(s, operandsIndices[0], pos - 2)
+                            .toDouble()
+                            .toFloat()
                     }
-                    "T*" -> toNextLine()
-                    "Tm" -> {
-                        var tx = (operands[4] as Numeric).value.toFloat()
-                        var ty = (operands[5] as Numeric).value.toFloat()
-
-                        // Handle mirroring
-                        val sx = (operands[0] as Numeric).value.toFloat()
-                        val sy = (operands[3] as Numeric).value.toFloat()
-                        if (sx < 0) tx *= -1
-                        if (sy < 0) ty *= -1
-
-                        td[0] = tx
-                        td[1] = ty
-                    }
-                    "TL" -> tl = (operands[0] as Numeric).value.toFloat()
-                    "Ts" -> ts = (operands[0] as Numeric).value.toFloat()
-                    "Tj", "TJ" -> addTextElement(textObj, operands[0])
-                    "\"" -> addTextElement(textObj, operands[2])
-                    "\'" -> {
-                        toNextLine()
-                        addTextElement(textObj, operands[0])
-                    }
-                    "ET" -> {
-                        return i
-                    }
+                    operandsCount = 0
+                } else if (s[pos] == 'E' && s[pos + 1] == 'T') {
+                    pos += 2
+                    return pos
+                } else if (s[pos] == '\"') {
+                    operandsCount = 0
+                } else if (s[pos] == '\'') {
+                    operandsCount = 0
                 }
-                operands.clear()
+            } else if (s[pos] == ' ') {
+                expectToken = true
             }
+            pos++
         }
-
-        return i
-    }
-
-    private fun positionText() {
-        td[0] = (operands[0] as Numeric).value.toFloat()
-        td[1] = (operands[1] as Numeric).value.toFloat()
+        return pos
     }
 
     private fun addTextElement(textObj: TextObject, tj: PDFObject) {
         val content = TextElement(
-            tf = tf,
+            tf = tf.toString(),
             td = td.copyOf(),
             tj = tj,
             ts = ts
@@ -89,8 +117,16 @@ internal class TextObjectParser {
         }
     }
 
-    private fun toNextLine() {
-        td[0] = 0f
-        td[1] = -tl
+    private fun positionText(s: StringBuilder) {
+        td[0] = operand
+            .clear()
+            .append(s, operandsIndices[0], operandsIndices[1] - 1)
+            .toDouble()
+            .toFloat()
+        td[1] = operand
+            .clear()
+            .append(s, operandsIndices[1], pos - 2)
+            .toDouble()
+            .toFloat()
     }
 }

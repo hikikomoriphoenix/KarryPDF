@@ -59,7 +59,7 @@ internal fun StringBuilder.toDouble(): Double {
     for (i in (this.length - 1) downTo 0) {
         val num = Character.getNumericValue(this[i])
 
-        if ((num == -2 || num == -1) && (this[i] != '-' || this[i] != '.')) throw NumberFormatException()
+        if ((num == -2 || num == -1) && this[i] != '-' && this[i] != '.') throw NumberFormatException()
 
         if (this[i] == '-') {
             if (i == 0) {

@@ -4,19 +4,61 @@ import android.util.SparseIntArray
 import marabillas.loremar.pdfparser.hexFromInt
 import marabillas.loremar.pdfparser.hexToInt
 
+/**
+ * @param stream The stream contents of this ToUnicodeCMap
+ */
 internal class ToUnicodeCMap(private var stream: String) : CMap {
+    /**
+     * List of code spaces. A code that is outside the code space range does not have mapping.
+     */
     private val codeSpaceRange = ArrayList<Array<String>>()
+    /**
+     * A list of single mappings
+     */
     private val bfChars = SparseIntArray()
+    /**
+     * A list of ranged mappings
+     */
     private val bfRanges = mutableListOf<BfRange>()
+    /**
+     * CMapName value indicated in the cmap file. Empty means not indicated
+     */
     private var cMapName = ""
+    /**
+     * Current position in text being parsed or decoded
+     */
     private var ptr = 0
+    /**
+     * Position of endcodespacerange, endbfchar, or endbfrange
+     */
     private var end = 0
+    /**
+     * Position of a ranges's starting value's '<'
+     */
     private var loStart = 0
+    /**
+     * Position of a range's starting value's '>'
+     */
     private var loEnd = 0
+    /**
+     * Position of a range's ending value's '<'
+     */
     private var hiStart = 0
+    /**
+     * Position of a range's ending value's '>'
+     */
     private var hiEnd = 0
+    /**
+     * Starting position of a mapping's value
+     */
     private var dstStart = 0
+    /**
+     * Ending position of a mapping's value
+     */
     private var dstEnd = 0
+    /**
+     * Position of beginbfchar, beginbfrange, or endcmap
+     */
     private var operator = 0
 
     // Operators
@@ -36,10 +78,22 @@ internal class ToUnicodeCMap(private var stream: String) : CMap {
     /*private val IDENTITY = "Identity"
     private val UCS = "UCS"
     private val ZERO = "00"*/
+    /**
+     * Length of current code to be decoded.
+     */
     private var codeLength = 0
+    /**
+     * StringBuilder to hold code to be decoded.
+     */
     private val srcCodeSB = StringBuilder()
+    /**
+     * StringBuilder to hold map value for code
+     */
     private val dstCodeSB = StringBuilder()
 
+    /**
+     * Class to hold values for a mapping within beginbfrange and endbfrange
+     */
     data class BfRange(val lo: Int, val hi: Int, val dst: String)
 
     fun parse(): ToUnicodeCMap {
@@ -156,16 +210,19 @@ internal class ToUnicodeCMap(private var stream: String) : CMap {
 
         ptr = 0
         while (ptr < encodedSB.length) {
-            // Determine if next code is valid.
+            // Determine if next code is within code space range. If not, proceed to next code.
             if (!isNextValid()) {
                 decodedSB.append(" ")
                 ptr += 2
                 continue
             }
 
+            // Extract code to be decoded into the appropriate StringBuilder.
             srcCodeSB.clear()
             srcCodeSB.append(encodedSB, ptr, ptr + codeLength)
 
+            // Convert code to integer. This integer will help determine the code's position within a range or get the
+            // actual value mapped to this integer
             val srcInt = srcCodeSB.hexToInt()
 
             // Attempt to get unicode from bfChars
@@ -177,21 +234,27 @@ internal class ToUnicodeCMap(private var stream: String) : CMap {
                 continue
             }
 
+            // Get mapped value within beginbfrange and endbfrange
             try {
+                // Get the range which includes the code.
                 val range = bfRanges.first { srcInt in it.lo..it.hi }
+                // The offset value is the position of the code within the range.
                 val offset = srcInt - range.lo
                 if (range.dst.startsWith('<') && range.dst.endsWith('>')) {
+                    // Get mapped value. This value is mapped to the starting code in the range. Add offset to this value
+                    // to get the required code.
                     dstCodeSB
                         .clear()
                         .append(range.dst)
                         .deleteCharAt(0)              // Delete '<'
                         .deleteCharAt(dstCodeSB.lastIndex)  // Delete '>'
                     dstInt = dstCodeSB.hexToInt() + offset
+                    // Get required code.
                     dstCodeSB.hexFromInt(dstInt)
-                } else {
+                } else { //Else when value is an array of codes mapped to each code in the range.
                     dstCodeSB.clear().append(range.dst)
 
-                    // Locate the required dstCode
+                    // Locate the required code in the array.
                     dstStart = 0
                     for (i in 0..offset) {
                         dstStart = dstCodeSB.indexOf('<', dstStart + 1)
@@ -199,7 +262,7 @@ internal class ToUnicodeCMap(private var stream: String) : CMap {
                     if (dstStart != -1) {
                         dstEnd = dstCodeSB.indexOf('>', dstStart)
                         if (dstEnd != -1) {
-                            // Delete everything in dst except the required dstCode
+                            // Delete everything in the array except the required code
                             dstCodeSB.delete(dstEnd + 1, dstCodeSB.length)
                             dstCodeSB.delete(0, dstStart)
                         } else {
@@ -220,6 +283,7 @@ internal class ToUnicodeCMap(private var stream: String) : CMap {
             }
         }
 
+        // Convert to literal string for PDF
         decodedSB.insert(0, '(').append(')')
         return decodedSB.toString()
     }

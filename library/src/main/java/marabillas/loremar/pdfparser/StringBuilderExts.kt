@@ -20,6 +20,9 @@ internal fun StringBuilder.trimEndOfContainedChars() {
 }
 
 internal fun StringBuilder.containedEqualsWith(vararg chars: Char): Boolean {
+    if (chars.size != this.length)
+        return false
+
     for (i in 0 until chars.size) {
         if (this[i] != chars[i])
             return false

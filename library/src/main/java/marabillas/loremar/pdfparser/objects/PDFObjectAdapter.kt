@@ -21,7 +21,7 @@ internal class PDFObjectAdapter {
                 sb.isEnclosedWith('(', ')') -> sb.toPDFString()
                 sb.isEnclosedWith(arrayOf('<', '<'), arrayOf('>', '>')) ->
                     sb.toDictionary(auxiliaryStringBuilder, resolverReferences)
-                sb.isEnclosedWith('(', ')') -> sb.toPDFString()
+                sb.isEnclosedWith('<', '>') -> sb.toPDFString()
                 sb.startsWith("/") -> sb.toName()
                 sb.isEnclosedWith('[', ']') -> sb.toPDFArray(auxiliaryStringBuilder, resolverReferences)
                 Reference.REGEX.matches(sb) -> {

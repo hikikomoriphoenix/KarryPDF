@@ -18,7 +18,7 @@ class PDFParser {
     internal val pages: ArrayList<Reference> = ArrayList()
 
     fun loadDocument(file: RandomAccessFile): PDFParser {
-        val tCtr = TimeCounter()
+        TimeCounter.reset()
 
         val fileReader = PDFFileReader(file)
         this.fileReader = fileReader
@@ -40,7 +40,7 @@ class PDFParser {
         )) as Dictionary
         getPageTreeLeafNodes(pageTree)
 
-        println("PDFParser.loadDocument() -> ${tCtr.getTimeElapsed()} ms")
+        println("PDFParser.loadDocument() -> ${TimeCounter.getTimeElapsed()} ms")
         return this
     }
 
@@ -93,7 +93,8 @@ class PDFParser {
     }
 
     fun getPageContents(pageNum: Int): ArrayList<PageContent> {
-        val tCtr = TimeCounter()
+        println("Getting page $pageNum")
+        TimeCounter.reset()
 
         val contentsList = ArrayList<PageContent>()
         val pageDic = pages[pageNum].resolve() as Dictionary
@@ -112,6 +113,7 @@ class PDFParser {
         }
 
         val contents = pageDic["Contents"] ?: throw InvalidDocumentException("Missing Contents entry in Page object.")
+        println("Preparations -> ${TimeCounter.getTimeElapsed()} ms")
         return if (contents is PDFArray) {
             contents.asSequence()
                 .filterNotNull()
@@ -119,12 +121,10 @@ class PDFParser {
                     val pageContent = parseContent(content, pageFonts, cmaps)
                     contentsList.addAll(pageContent)
                 }
-            println("PDFParser.getPageContents() -> ${tCtr.getTimeElapsed()} ms")
             contentsList
         } else {
-            val pageContents = parseContent(contents, pageFonts, cmaps)
-            println("PDFParser.getPageContents() -> ${tCtr.getTimeElapsed()} ms")
-            return pageContents
+            TimeCounter.reset()
+            return parseContent(contents, pageFonts, cmaps)
         }
 
     }
@@ -134,13 +134,23 @@ class PDFParser {
         pageFonts: HashMap<String, Typeface>,
         cmaps: SparseArray<CMap>
     ): ArrayList<PageContent> {
+        TimeCounter.reset()
         val ref = content as Reference
         val stream = resolveReferenceToStream(ref)
         stream?.let {
+            TimeCounter.reset()
             val data = it.decodeEncodedStream()
+            println("Stream.decodeEncodedStream -> ${TimeCounter.getTimeElapsed()} ms")
+            TimeCounter.reset()
             val pageObjs = ContentStreamParser().parse(String(data))
+            println("ContentStreamParser.parse -> ${TimeCounter.getTimeElapsed()} ms")
+            TimeCounter.reset()
             FontDecoder(pageObjs, cmaps).decodeEncoded()
-            return PageContentAdapter(pageObjs, pageFonts).getPageContents()
+            println("FontDecoder.decodeEncoded -> ${TimeCounter.getTimeElapsed()} ms")
+            TimeCounter.reset()
+            val pageContents = PageContentAdapter(pageObjs, pageFonts).getPageContents()
+            println("PageContentAdapter.getPageContents -> ${TimeCounter.getTimeElapsed()} ms")
+            return pageContents
         }
         return ArrayList()
     }

@@ -1,12 +1,10 @@
 package marabillas.loremar.pdfparser.contents
 
-import marabillas.loremar.pdfparser.TimeCounter
 import marabillas.loremar.pdfparser.objects.Numeric
 import marabillas.loremar.pdfparser.objects.PDFObject
 import marabillas.loremar.pdfparser.objects.toPDFObject
 
 internal class TextObjectParser {
-    var tctr = 0L
     private val td = FloatArray(2)
     private var ts = 0f
     private var tl = 0f
@@ -15,8 +13,6 @@ internal class TextObjectParser {
     private var i = 0
 
     fun parse(s: String, textObj: TextObject, tfDefault: String = "", startIndex: Int): Int {
-        TimeCounter.reset()
-
         td[0] = 0f
         td[1] = 0f
         ts = 0f
@@ -30,7 +26,6 @@ internal class TextObjectParser {
         while (i < s.length) {
             i = s.getNextToken(i)
             val token = ContentStreamParser.token.toString()
-            //println("token -> $token")
             val operand = token.toPDFObject(true)
             if (operand != null) {
                 operands.add(operand)
@@ -65,7 +60,6 @@ internal class TextObjectParser {
                         addTextElement(textObj, operands[0])
                     }
                     "ET" -> {
-                        tctr += TimeCounter.getTimeElapsed()
                         return i
                     }
                 }

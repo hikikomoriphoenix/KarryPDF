@@ -11,7 +11,6 @@ internal class ContentStreamParser {
 
         fun getNextToken(s: String, startIndex: Int): Int {
             token.clear()
-            //println("Memory 0 -> ${Runtime.getRuntime().totalMemory()}")
             var i = startIndex
 
             // Skip white space characters
@@ -79,15 +78,11 @@ internal class ContentStreamParser {
         val textObjectParser = TextObjectParser()
         var tf = ""
         var i = 0
-        var ts = 0L
-
-        //println("stream->\n$streamData")
 
         while (i < streamData.length) {
             i = getNextToken(streamData, i)
             if (token.isBlank())
                 break
-            //println("token->$token")
             val token = token.toString()
             val operand = token.toPDFObject(true)
             if (operand != null) {
@@ -105,7 +100,6 @@ internal class ContentStreamParser {
             }
         }
 
-        println("Time spent for TextObjectParser operation -> ${textObjectParser.tctr} ms")
         return pageObjects
     }
 }

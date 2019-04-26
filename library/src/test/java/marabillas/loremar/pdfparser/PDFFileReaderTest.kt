@@ -1,6 +1,6 @@
 package marabillas.loremar.pdfparser
 
-import marabillas.loremar.pdfparser.objects.Numeric
+import marabillas.loremar.pdfparser.objects.*
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.CoreMatchers.startsWith
 import org.hamcrest.MatcherAssert.assertThat
@@ -74,6 +74,11 @@ class PDFFileReaderTest {
         var path = javaClass.classLoader.getResource("samplepdf1.4.pdf").path
         var file = RandomAccessFile(path, "r")
         var reader = PDFFileReader(file)
+        ObjectIdentifier.referenceResolver = object : ReferenceResolver {
+            override fun resolveReference(reference: Reference): PDFObject? {
+                return null
+            }
+        }
         var entries = reader.getTrailerEntries()
         assertTrue(entries["Size"] is Numeric)
         println("Size entry in trailer for samplepdf1.4.pdf is ${(entries["Size"] as Numeric).value.toInt()}")

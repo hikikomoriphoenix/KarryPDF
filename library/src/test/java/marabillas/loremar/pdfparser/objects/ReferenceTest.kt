@@ -8,7 +8,7 @@ class ReferenceTest {
     @Test
     fun testReference() {
         val s = "12 0 R"
-        val r = Reference(s)
+        val r = s.toReference()
         assertThat(r.obj, `is`(12))
         assertThat(r.gen, `is`(0))
     }

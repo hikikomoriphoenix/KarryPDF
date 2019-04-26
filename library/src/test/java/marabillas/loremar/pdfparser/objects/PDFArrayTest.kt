@@ -8,7 +8,7 @@ class PDFArrayTest {
     @Test
     fun testParse() {
         val s = "[54 (Hello World) /Name]"
-        val array = PDFArray(s).parse()
+        val array = s.toPDFArray()
         assertThat((array[0] as Numeric).value.toInt(), `is`(54))
         assertThat((array[1] as PDFString).value, `is`("Hello World"))
         assertThat((array[2] as Name).value, `is`("Name"))
@@ -22,7 +22,7 @@ class PDFArrayTest {
             }
         }
         val s = "[(Hello World)12 0 R/Nameless]"
-        val array = PDFArray(s).parse()
+        val array = s.toPDFArray()
         assertThat((array[1] as Reference).obj, `is`(12))
         assertThat((array[1] as Reference).gen, `is`(0))
     }

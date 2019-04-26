@@ -5,6 +5,7 @@ import android.util.SparseArray
 import marabillas.loremar.pdfparser.contents.ContentStreamParser
 import marabillas.loremar.pdfparser.contents.PageContent
 import marabillas.loremar.pdfparser.contents.PageContentAdapter
+import marabillas.loremar.pdfparser.contents.XObjectsResolver
 import marabillas.loremar.pdfparser.exceptions.InvalidDocumentException
 import marabillas.loremar.pdfparser.exceptions.NoDocumentException
 import marabillas.loremar.pdfparser.exceptions.UnsupportedPDFElementException
@@ -99,10 +100,11 @@ class PDFParser {
         val contentsList = ArrayList<PageContent>()
         val pageDic = pages[pageNum].resolve() as Dictionary
 
-        // Get all fonts required for this page
         pageDic.resolveReferences()
         val resources = pageDic["Resources"] as Dictionary
         resources.resolveReferences()
+
+        // Get all fonts and CMaps required for this page
         val fontsDic = resources["Font"] as Dictionary?
         fontsDic?.resolveReferences()
         var pageFonts = SparseArray<Typeface>()
@@ -112,19 +114,26 @@ class PDFParser {
             cmaps = getCMaps(it)
         }
 
+        // Get XObjects
+        val xObjectDic = resources["XObject"] as Dictionary?
+        var xObjs = HashMap<String, Stream>()
+        xObjectDic?.let {
+            xObjs = getXObjects(it)
+        }
+
         val contents = pageDic["Contents"] ?: throw InvalidDocumentException("Missing Contents entry in Page object.")
         println("Preparations -> ${TimeCounter.getTimeElapsed()} ms")
         return if (contents is PDFArray) {
             contents.asSequence()
                 .filterNotNull()
                 .forEach { content ->
-                    val pageContent = parseContent(content, pageFonts, cmaps)
+                    val pageContent = parseContent(content, pageFonts, cmaps, xObjs)
                     contentsList.addAll(pageContent)
                 }
             contentsList
         } else {
             TimeCounter.reset()
-            return parseContent(contents, pageFonts, cmaps)
+            return parseContent(contents, pageFonts, cmaps, xObjs)
         }
 
     }
@@ -132,7 +141,8 @@ class PDFParser {
     private fun parseContent(
         content: PDFObject,
         pageFonts: SparseArray<Typeface>,
-        cmaps: SparseArray<CMap>
+        cmaps: SparseArray<CMap>,
+        xObjects: HashMap<String, Stream>
     ): ArrayList<PageContent> {
         TimeCounter.reset()
         val ref = content as Reference
@@ -141,12 +151,19 @@ class PDFParser {
             TimeCounter.reset()
             val data = it.decodeEncodedStream()
             println("Stream.decodeEncodedStream -> ${TimeCounter.getTimeElapsed()} ms")
+
             TimeCounter.reset()
             val pageObjs = ContentStreamParser().parse(String(data))
             println("ContentStreamParser.parse -> ${TimeCounter.getTimeElapsed()} ms")
+
             TimeCounter.reset()
             FontDecoder(pageObjs, cmaps).decodeEncoded()
             println("FontDecoder.decodeEncoded -> ${TimeCounter.getTimeElapsed()} ms")
+
+            TimeCounter.reset()
+            XObjectsResolver(pageObjs, xObjects).resolve()
+            println("XObjectsResolver.resolve -> ${TimeCounter.getTimeElapsed()} ms")
+
             return PageContentAdapter(pageObjs, pageFonts).getPageContents()
         }
         return ArrayList()
@@ -190,6 +207,19 @@ class PDFParser {
             // TODO Get Cmap from Encoding entry.
         }
         return cmaps
+    }
+
+    private fun getXObjects(xObjectDic: Dictionary): HashMap<String, Stream> {
+        val xKeys = xObjectDic.getKeys()
+        val xObjMap = HashMap<String, Stream>()
+        xKeys.forEach { xKey ->
+            val xObjRef = xObjectDic[xKey] as Reference
+            val xObj = resolveReferenceToStream(xObjRef)
+            xObj?.let {
+                xObjMap[xKey] = it
+            }
+        }
+        return xObjMap
     }
 
     /**

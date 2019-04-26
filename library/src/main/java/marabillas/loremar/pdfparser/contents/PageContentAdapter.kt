@@ -3,6 +3,8 @@ package marabillas.loremar.pdfparser.contents
 import android.graphics.Typeface
 import android.util.SparseArray
 import marabillas.loremar.pdfparser.TimeCounter
+import marabillas.loremar.pdfparser.contents.image.ImageContent
+import marabillas.loremar.pdfparser.contents.image.ImageObject
 import marabillas.loremar.pdfparser.contents.text.TextContentAdapter
 import marabillas.loremar.pdfparser.contents.text.TextContentAnalyzer
 import marabillas.loremar.pdfparser.contents.text.TextObject
@@ -65,9 +67,16 @@ internal class PageContentAdapter(
                     println("TextContentAdapter.getContents -> ${TimeCounter.getTimeElapsed()} ms")
                     contents.addAll(textContents)
                 }
+                is ImageObject -> {
+                    contents.add(
+                        ImageContent(next.imageData)
+                    )
+                    i++
+                }
                 // TODO Process other types of objects and add results to contents.
             }
         }
+
         return contents
     }
 }

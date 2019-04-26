@@ -1,6 +1,6 @@
 package marabillas.loremar.pdfparser.font
 
-import android.util.SparseIntArray
+import android.support.v4.util.SparseArrayCompat
 import marabillas.loremar.pdfparser.hexFromInt
 import marabillas.loremar.pdfparser.hexToInt
 
@@ -15,7 +15,7 @@ internal class ToUnicodeCMap(private var stream: String) : CMap {
     /**
      * A list of single mappings
      */
-    private val bfChars = SparseIntArray()
+    private val bfChars = SparseArrayCompat<Int>()
     /**
      * A list of ranged mappings
      */
@@ -227,7 +227,7 @@ internal class ToUnicodeCMap(private var stream: String) : CMap {
 
             // Attempt to get unicode from bfChars
             var dstInt = bfChars[srcInt]
-            if (dstInt != 0) {
+            if (dstInt != null) {
                 convertCodeToCharAndAppend(
                     srcCodeSB.hexFromInt(dstInt)
                 )
@@ -262,9 +262,10 @@ internal class ToUnicodeCMap(private var stream: String) : CMap {
                     if (dstStart != -1) {
                         dstEnd = dstCodeSB.indexOf('>', dstStart)
                         if (dstEnd != -1) {
-                            // Delete everything in the array except the required code
-                            dstCodeSB.delete(dstEnd + 1, dstCodeSB.length)
-                            dstCodeSB.delete(0, dstStart)
+                            // Delete everything in the array except the required code, also deleting surrounding
+                            // '<' and '>'.
+                            dstCodeSB.delete(dstEnd, dstCodeSB.length)
+                            dstCodeSB.delete(0, dstStart + 1)
                         } else {
                             dstCodeSB.clear()
                         }

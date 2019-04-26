@@ -196,7 +196,7 @@ internal fun StringBuilder.hexToInt(start: Int = 0, end: Int = this.length): Int
     for (i in start until end) {
         int = Character.getNumericValue(this[i])
         if (int < 0 || int > 15) throw NumberFormatException()
-        sum += (int * Math.pow(16.0, (this.lastIndex - i).toDouble()).toInt())
+        sum += (int * Math.pow(16.0, (end - 1 - i).toDouble()).toInt())
     }
     return sum
 }

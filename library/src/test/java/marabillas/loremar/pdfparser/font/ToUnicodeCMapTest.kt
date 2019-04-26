@@ -11,9 +11,9 @@ class ToUnicodeCMapTest {
         val file = File(path.toURI())
         val cmapSrc = file.readText()
         val map = ToUnicodeCMap(cmapSrc).parse()
-        val encoded = "011F2023EFB3EFB4EFB5FBB3FBD3"
+        val encoded = "<011F2023EFB3EFB4EFB5FBB3FBD3>"
         val decoded = map.decodeString(encoded)
-        val expected = " 숢꽖뀂ꪪꪻᄢ㍄啦퀀퀠"
+        val expected = "( 숢꽖뀂ꪪꪻᄢ㍄啦퀀퀠)"
         assertEquals(expected, decoded)
         println("$encoded is decoded to $expected")
     }

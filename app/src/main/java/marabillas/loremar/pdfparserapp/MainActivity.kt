@@ -6,7 +6,7 @@ import android.support.v7.app.AppCompatActivity
 import android.text.SpannableStringBuilder
 import android.widget.TextView
 import marabillas.loremar.pdfparser.PDFParser
-import marabillas.loremar.pdfparser.contents.TextContent
+import marabillas.loremar.pdfparser.contents.text.TextContent
 import java.io.RandomAccessFile
 import java.util.concurrent.TimeUnit
 

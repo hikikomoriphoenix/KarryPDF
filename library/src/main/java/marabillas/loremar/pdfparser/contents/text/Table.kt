@@ -1,4 +1,6 @@
-package marabillas.loremar.pdfparser.contents
+package marabillas.loremar.pdfparser.contents.text
+
+import marabillas.loremar.pdfparser.contents.ContentGroup
 
 internal class Table : ContentGroup {
     private val table = ArrayList<Row>()

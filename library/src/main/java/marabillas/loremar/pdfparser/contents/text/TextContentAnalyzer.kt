@@ -1,5 +1,6 @@
-package marabillas.loremar.pdfparser.contents
+package marabillas.loremar.pdfparser.contents.text
 
+import marabillas.loremar.pdfparser.contents.ContentGroup
 import marabillas.loremar.pdfparser.objects.Numeric
 import marabillas.loremar.pdfparser.objects.PDFArray
 import marabillas.loremar.pdfparser.objects.PDFString

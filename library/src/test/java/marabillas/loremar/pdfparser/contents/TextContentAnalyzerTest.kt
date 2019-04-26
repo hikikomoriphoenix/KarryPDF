@@ -1,5 +1,6 @@
 package marabillas.loremar.pdfparser.contents
 
+import marabillas.loremar.pdfparser.contents.text.*
 import marabillas.loremar.pdfparser.objects.PDFString
 import marabillas.loremar.pdfparser.objects.toPDFArray
 import marabillas.loremar.pdfparser.objects.toPDFString
@@ -12,7 +13,8 @@ class TextContentAnalyzerTest {
     @Test
     fun testHandleTJArrays() {
         val t1 = TextElement(tj = "(Hello World)".toPDFString())
-        val t2 = TextElement(tj = "[(Good) 20 (Bye) -300 (World)]".toPDFArray())
+        val t2 =
+            TextElement(tj = "[(Good) 20 (Bye) -300 (World)]".toPDFArray())
         val t3 = TextElement(
             tj = ("[(The) -300 (quick) -300 (brown) -300 (fox) -300 (jumps) -300 (over) -300 " +
                     " (the) -300 (lazy) -300 (dog.)]").toPDFArray()
@@ -80,13 +82,41 @@ class TextContentAnalyzerTest {
 
     @Test
     fun testGroupTexts() {
-        val t1 = TextElement(tf = "/Font 10", tj = "(Hello)".toPDFString(), td = floatArrayOf(0f, 100f))
-        val t2 = TextElement(tf = "/Font 10", tj = "(World)".toPDFString(), td = floatArrayOf(50f, 0f))
-        val t3 = TextElement(tf = "/Font 10", tj = "(Goodbye)".toPDFString(), td = floatArrayOf(0f, -15f))
-        val t4 = TextElement(tf = "/Font 10", tj = "(I love you)".toPDFString(), td = floatArrayOf(0f, -22f))
-        val t5 = TextElement(tf = "/Font 10", tj = "(Monday)".toPDFString(), td = floatArrayOf(100f, 100f))
-        val t6 = TextElement(tf = "/Font 10", tj = "(Tuesday)".toPDFString(), td = floatArrayOf(0f, 50f))
-        val t7 = TextElement(tf = "/Font 10", tj = "(Wednesday)".toPDFString(), td = floatArrayOf(100f, 50f))
+        val t1 = TextElement(
+            tf = "/Font 10",
+            tj = "(Hello)".toPDFString(),
+            td = floatArrayOf(0f, 100f)
+        )
+        val t2 = TextElement(
+            tf = "/Font 10",
+            tj = "(World)".toPDFString(),
+            td = floatArrayOf(50f, 0f)
+        )
+        val t3 = TextElement(
+            tf = "/Font 10",
+            tj = "(Goodbye)".toPDFString(),
+            td = floatArrayOf(0f, -15f)
+        )
+        val t4 = TextElement(
+            tf = "/Font 10",
+            tj = "(I love you)".toPDFString(),
+            td = floatArrayOf(0f, -22f)
+        )
+        val t5 = TextElement(
+            tf = "/Font 10",
+            tj = "(Monday)".toPDFString(),
+            td = floatArrayOf(100f, 100f)
+        )
+        val t6 = TextElement(
+            tf = "/Font 10",
+            tj = "(Tuesday)".toPDFString(),
+            td = floatArrayOf(0f, 50f)
+        )
+        val t7 = TextElement(
+            tf = "/Font 10",
+            tj = "(Wednesday)".toPDFString(),
+            td = floatArrayOf(100f, 50f)
+        )
         val tObj1 = TextObject()
         tObj1.add(t1)
         tObj1.add(t2)
@@ -107,12 +137,36 @@ class TextContentAnalyzerTest {
         tObj4.td[0] = t7.td[0]
         tObj4.td[1] = t7.td[1]
 
-        val t8 = TextElement(tf = "/Font 10", tj = "(The quick)".toPDFString(), td = floatArrayOf(0f, 40f))
-        val t9 = TextElement(tf = "/Font 10", tj = "(brown fox)".toPDFString(), td = floatArrayOf(20f, 0f))
-        val t10 = TextElement(tf = "/Font 10", tj = "(jumps over)".toPDFString(), td = floatArrayOf(0f, 25f))
-        val t11 = TextElement(tf = "/Font 10", tj = "(the lazy dog)".toPDFString(), td = floatArrayOf(0f, -15f))
-        val t12 = TextElement(tf = "/Font 10", tj = "(Good Morning)".toPDFString(), td = floatArrayOf(0f, -22f))
-        val t13 = TextElement(tf = "/Font 10", tj = "(Good Night)".toPDFString(), td = floatArrayOf(0f, -40f))
+        val t8 = TextElement(
+            tf = "/Font 10",
+            tj = "(The quick)".toPDFString(),
+            td = floatArrayOf(0f, 40f)
+        )
+        val t9 = TextElement(
+            tf = "/Font 10",
+            tj = "(brown fox)".toPDFString(),
+            td = floatArrayOf(20f, 0f)
+        )
+        val t10 = TextElement(
+            tf = "/Font 10",
+            tj = "(jumps over)".toPDFString(),
+            td = floatArrayOf(0f, 25f)
+        )
+        val t11 = TextElement(
+            tf = "/Font 10",
+            tj = "(the lazy dog)".toPDFString(),
+            td = floatArrayOf(0f, -15f)
+        )
+        val t12 = TextElement(
+            tf = "/Font 10",
+            tj = "(Good Morning)".toPDFString(),
+            td = floatArrayOf(0f, -22f)
+        )
+        val t13 = TextElement(
+            tf = "/Font 10",
+            tj = "(Good Night)".toPDFString(),
+            td = floatArrayOf(0f, -40f)
+        )
         val tObj5 = TextObject()
         tObj5.add(t8)
         tObj5.add(t9)
@@ -129,13 +183,28 @@ class TextContentAnalyzerTest {
         tObj7.td[0] = t13.td[0]
         tObj7.td[1] = t13.td[1]
 
-        val t14 = TextElement(tf = "/Font 10", tj = "(Hi)".toPDFString(), td = floatArrayOf(0f, 115f))
+        val t14 = TextElement(
+            tf = "/Font 10",
+            tj = "(Hi)".toPDFString(),
+            td = floatArrayOf(0f, 115f)
+        )
         val tObj8 = TextObject()
         tObj8.add(t14)
         tObj8.td[0] = t14.td[0]
         tObj8.td[1] = t14.td[1]
 
-        val analyzer = TextContentAnalyzer(arrayListOf(tObj8, tObj1, tObj2, tObj3, tObj4, tObj5, tObj6, tObj7))
+        val analyzer = TextContentAnalyzer(
+            arrayListOf(
+                tObj8,
+                tObj1,
+                tObj2,
+                tObj3,
+                tObj4,
+                tObj5,
+                tObj6,
+                tObj7
+            )
+        )
         analyzer.handleMultiColumnTexts()
         analyzer.groupTexts()
 
@@ -219,7 +288,8 @@ class TextContentAnalyzerTest {
         g4.add(arrayListOf(t10))
         g4.add(arrayListOf(t11))
 
-        val analyzer = TextContentAnalyzer(arrayListOf(TextObject()))
+        val analyzer =
+            TextContentAnalyzer(arrayListOf(TextObject()))
         analyzer.contentGroups.add(table)
         analyzer.contentGroups.add(g3)
         analyzer.contentGroups.add(g4)
@@ -241,7 +311,8 @@ class TextContentAnalyzerTest {
         val g2 = TextGroup()
         g1.add(arrayListOf(t1, t2))
         g2.add(arrayListOf(t3))
-        val analyzer = TextContentAnalyzer(arrayListOf(TextObject()))
+        val analyzer =
+            TextContentAnalyzer(arrayListOf(TextObject()))
         analyzer.contentGroups.add(g1)
         analyzer.contentGroups.add(g2)
         val w = analyzer.getLargestWidth()
@@ -257,7 +328,8 @@ class TextContentAnalyzerTest {
         g1.add(arrayListOf(t1))
         g1.add(arrayListOf(t2))
         g1.add(arrayListOf(t3))
-        val analyzer = TextContentAnalyzer(arrayListOf(TextObject()))
+        val analyzer =
+            TextContentAnalyzer(arrayListOf(TextObject()))
         analyzer.contentGroups.add(g1)
         analyzer.concatenateDividedByHyphen()
         assertThat(g1.size(), `is`(1))
@@ -279,10 +351,13 @@ class TextContentAnalyzerTest {
     @Test
     fun testFormParagraphs() {
         val t1 = TextElement(tj = "(Good Morning.)".toPDFString())
-        val t2 = TextElement(tj = "(The quick brown fox jumps over)".toPDFString())
-        val t3 = TextElement(tj = "(the lazy dog. The quick brown fox)".toPDFString())
+        val t2 =
+            TextElement(tj = "(The quick brown fox jumps over)".toPDFString())
+        val t3 =
+            TextElement(tj = "(the lazy dog. The quick brown fox)".toPDFString())
         val t4 = TextElement(tj = "(jumps over.)".toPDFString())
-        val t5 = TextElement(tj = "(Hello my name is Bond. James)".toPDFString())
+        val t5 =
+            TextElement(tj = "(Hello my name is Bond. James)".toPDFString())
         val t6 = TextElement(tj = "(Bond.)".toPDFString())
         val g = TextGroup()
         g.add(arrayListOf(t1))
@@ -292,7 +367,8 @@ class TextContentAnalyzerTest {
         g.add(arrayListOf(t5))
         g.add(arrayListOf(t6))
 
-        val analyzer = TextContentAnalyzer(arrayListOf(TextObject()))
+        val analyzer =
+            TextContentAnalyzer(arrayListOf(TextObject()))
         analyzer.contentGroups.add(g)
         val w = analyzer.getLargestWidth()
         analyzer.formParagraphs(w)

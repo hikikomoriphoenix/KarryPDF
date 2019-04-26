@@ -1,4 +1,4 @@
-package marabillas.loremar.pdfparser.contents
+package marabillas.loremar.pdfparser.contents.text
 
 import marabillas.loremar.pdfparser.objects.PDFObject
 import marabillas.loremar.pdfparser.objects.toPDFObject

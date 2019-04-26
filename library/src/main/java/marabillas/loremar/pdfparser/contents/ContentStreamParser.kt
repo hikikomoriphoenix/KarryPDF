@@ -1,5 +1,8 @@
 package marabillas.loremar.pdfparser.contents
 
+import marabillas.loremar.pdfparser.contents.text.TextObject
+import marabillas.loremar.pdfparser.contents.text.TextObjectParser
+
 internal class ContentStreamParser {
     private val sb = StringBuilder()
     private val TF = "TF"

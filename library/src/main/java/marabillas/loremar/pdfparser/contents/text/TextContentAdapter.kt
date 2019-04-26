@@ -1,9 +1,11 @@
-package marabillas.loremar.pdfparser.contents
+package marabillas.loremar.pdfparser.contents.text
 
 import android.graphics.Typeface
 import android.text.SpannableString
 import android.text.SpannableStringBuilder
 import android.util.SparseArray
+import marabillas.loremar.pdfparser.contents.ContentGroup
+import marabillas.loremar.pdfparser.contents.PageContent
 import marabillas.loremar.pdfparser.font.CustomTypefaceSpan
 import marabillas.loremar.pdfparser.font.FontMappings
 import marabillas.loremar.pdfparser.font.FontName

@@ -1,6 +1,9 @@
-package marabillas.loremar.pdfparser.contents
+package marabillas.loremar.pdfparser.contents.text
 
-internal class TextObject : Iterable<TextElement>, PageObject {
+import marabillas.loremar.pdfparser.contents.PageObject
+
+internal class TextObject : Iterable<TextElement>,
+    PageObject {
     val td = FloatArray(2)
     var columned = false
     var rowed = false

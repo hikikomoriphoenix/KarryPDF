@@ -2,8 +2,8 @@ package marabillas.loremar.pdfparser.font
 
 import android.util.SparseArray
 import marabillas.loremar.pdfparser.contents.PageObject
-import marabillas.loremar.pdfparser.contents.TextElement
-import marabillas.loremar.pdfparser.contents.TextObject
+import marabillas.loremar.pdfparser.contents.text.TextElement
+import marabillas.loremar.pdfparser.contents.text.TextObject
 import marabillas.loremar.pdfparser.objects.*
 import marabillas.loremar.pdfparser.toInt
 

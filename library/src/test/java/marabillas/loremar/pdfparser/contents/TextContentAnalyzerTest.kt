@@ -38,6 +38,7 @@ class TextContentAnalyzerTest {
 
     @Test
     fun testHandleMultiColumnTexts() {
+        val te1 = TextElement(tj = "(A)".toPDFString())
         val t1 = TextObject(); t1.td[0] = 0f; t1.td[1] = 0f
         val t2 = TextObject(); t2.td[0] = 100f; t2.td[1] = 0f
         val t3 = TextObject(); t3.td[0] = 0f; t3.td[1] = 100f
@@ -45,6 +46,13 @@ class TextContentAnalyzerTest {
         val t5 = TextObject(); t5.td[0] = 0f; t5.td[1] = 80f
         val t6 = TextObject(); t6.td[0] = 100f; t6.td[1] = 80f
         val t7 = TextObject(); t7.td[0] = 0f; t7.td[1] = 50f
+        t1.add(te1)
+        t2.add(te1)
+        t3.add(te1)
+        t4.add(te1)
+        t5.add(te1)
+        t6.add(te1)
+        t7.add(te1)
         val textObjs = ArrayList<TextObject>()
         textObjs.add(t1)
         textObjs.add(t2)
@@ -139,13 +147,13 @@ class TextContentAnalyzerTest {
         val g4 = analyzer.contentGroups[3] as TextGroup
         val g5 = analyzer.contentGroups[4] as TextGroup
 
-        assertThat(g1.count(), `is`(1))
+        assertThat(g1.size(), `is`(1))
         assertThat(g1[0].count(), `is`(1))
         assertThat(g1[0][0], `is`(t14))
 
-        assertThat(g2[0][0].count(), `is`(2))
-        assertThat(g2[0][0][0].count(), `is`(2))
-        assertThat(g2[0][0][1].count(), `is`(1))
+        assertThat(g2[0][0].size(), `is`(2))
+        assertThat(g2[0][0][0].size(), `is`(2))
+        assertThat(g2[0][0][1].size(), `is`(1))
         assertThat(g2[0][0][0][0].count(), `is`(2))
         assertThat(g2[0][0][0][1].count(), `is`(1))
         assertThat(g2[0][0][1][0].count(), `is`(1))
@@ -154,7 +162,7 @@ class TextContentAnalyzerTest {
         assertThat(g2[0][0][0][1][0], `is`(t3))
         assertThat(g2[0][0][1][0][0], `is`(t4))
 
-        assertThat(g3.count(), `is`(3))
+        assertThat(g3.size(), `is`(3))
         assertThat(g3[0].count(), `is`(2))
         assertThat(g3[1].count(), `is`(1))
         assertThat(g3[2].count(), `is`(1))
@@ -163,11 +171,11 @@ class TextContentAnalyzerTest {
         assertThat(g3[1][0], `is`(t10))
         assertThat(g3[2][0], `is`(t11))
 
-        assertThat(g4.count(), `is`(1))
+        assertThat(g4.size(), `is`(1))
         assertThat(g4[0].count(), `is`(1))
         assertThat(g4[0][0], `is`(t12))
 
-        assertThat(g5.count(), `is`(1))
+        assertThat(g5.size(), `is`(1))
         assertThat(g5[0].count(), `is`(1))
         assertThat(g5[0][0], `is`(t13))
     }
@@ -252,7 +260,7 @@ class TextContentAnalyzerTest {
         val analyzer = TextContentAnalyzer(arrayListOf(TextObject()))
         analyzer.contentGroups.add(g1)
         analyzer.concatenateDividedByHyphen()
-        assertThat(g1.count(), `is`(1))
+        assertThat(g1.size(), `is`(1))
         assertThat(g1[0].count(), `is`(3))
         val s = "${g1[0][0].tj as PDFString}${g1[0][1].tj as PDFString}${g1[0][2].tj as PDFString}"
         assertThat(s, `is`("United we stand. Divided we fall. United we stand."))
@@ -265,7 +273,7 @@ class TextContentAnalyzerTest {
         analyzer.contentGroups.clear()
         analyzer.contentGroups.add(g2)
         analyzer.concatenateDividedByHyphen()
-        assertThat(g2.count(), `is`(2))
+        assertThat(g2.size(), `is`(2))
     }
 
     @Test
@@ -289,7 +297,7 @@ class TextContentAnalyzerTest {
         val w = analyzer.getLargestWidth()
         analyzer.formParagraphs(w)
 
-        assertThat(g.count(), `is`(3))
+        assertThat(g.size(), `is`(3))
         assertThat((g[0][0].tj as PDFString).value, `is`("Good Morning."))
         val s1 = "${g[1][0].tj as PDFString}${g[1][1].tj as PDFString}${g[1][2].tj as PDFString}"
         assertThat(s1, `is`("The quick brown fox jumps over the lazy dog. The quick brown fox jumps over."))

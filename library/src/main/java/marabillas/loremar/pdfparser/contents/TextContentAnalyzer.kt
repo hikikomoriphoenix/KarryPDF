@@ -9,7 +9,7 @@ import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashSet
 
-internal class TextContentAnalyzer() {
+internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableListOf()) {
     internal val contentGroups = ArrayList<ContentGroup>()
     private val textObjects = mutableListOf<TextObject>()
     private val sb = StringBuilder()
@@ -17,6 +17,11 @@ internal class TextContentAnalyzer() {
     private var currTextGroup = TextGroup()
     private var table = Table()
     private var currLine = ArrayList<TextElement>()
+
+    init {
+        textObjects.clear()
+        textObjects.addAll(textObjs)
+    }
 
     fun analyze(textObjs: MutableList<TextObject>): ArrayList<ContentGroup> {
         textObjects.clear()
@@ -104,7 +109,7 @@ internal class TextContentAnalyzer() {
                             else if (it is Numeric) {
                                 val num = -it.value.toFloat()
                                 if (num >= 1.15 * width)
-                                    sb.append(' ') // If more than 115% of space width, add double space
+                                    sb.append(' ').append(' ') // If more than 115% of space width, add double space
                                 else if (num >= 0.15 * width)
                                     sb.append(' ') // If between 15% or 115% of space width, add space
                             }
@@ -155,16 +160,16 @@ internal class TextContentAnalyzer() {
         var prevIsMultiColumned = false
         var prevTyIndex = -1
         tys.toSortedMap(compareByDescending { it })
-            .forEach {
+            .forEach { tysEntry ->
                 // If more than one columned TextObjects have the same Ty value, then flag each as rowed. This helps in
                 // creating tables.
-                if (it.value.size > 1) {
-                    val currTyIndex = allTysSorted.indexOf(it.key)
+                if (tysEntry.value.size > 1) {
+                    val currTyIndex = allTysSorted.indexOf(tysEntry.key)
                     // If previous line is multi-columned and adjacent to this current line, All TextObjects of this current
                     // line and previous line are flagged as rowed.
                     if (currTyIndex - 1 == prevTyIndex && prevIsMultiColumned) run createRows@{
                         // Check if TextObjects are columned due to whitespaces
-                        var first = it.value.first().first().tj
+                        var first = tysEntry.value.first().first().tj
                         if (first is PDFString) {
                             if (first.value.isBlank())
                                 return@createRows
@@ -178,7 +183,7 @@ internal class TextContentAnalyzer() {
                             }
                         }
 
-                        it.value.forEach { textObj ->
+                        tysEntry.value.forEach { textObj ->
                             textObj.rowed = true
                         }
                         tys[prevTy]?.forEach { textObj ->
@@ -426,7 +431,9 @@ internal class TextContentAnalyzer() {
                 val line = textGroup[i]
                 val last = line.last().tj as PDFString
                 if (last.value.endsWith(('-'))) {
-                    sb.clear().append(last.value, 0, last.value.lastIndex - 1)
+                    sb.clear().append(last.value, 0, last.value.lastIndex)
+                    sb.insert(0, '(')
+                    sb.append(')')
                     val e = TextElement(
                         tf = line.last().tf,
                         tj = sb.toPDFString(),

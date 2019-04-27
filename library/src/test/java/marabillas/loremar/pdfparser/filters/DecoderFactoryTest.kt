@@ -33,7 +33,7 @@ class DecoderFactoryTest {
 
     @Test
     fun testForCCITTFax() {
-        val objDic = "<</DecodeParams <<>>/height 0>>".toDictionary()
+        val objDic = "<</DecodeParams <<>>/Height 0>>".toDictionary()
         val decoder = DecoderFactory().getDecoder("CCITTFaxDecode", objDic)
         assertTrue(decoder is CCITTFax)
     }

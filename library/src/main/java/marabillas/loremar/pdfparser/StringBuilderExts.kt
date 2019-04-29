@@ -72,8 +72,7 @@ internal fun StringBuilder.toDouble(): Double {
 
         if (this[i] == '.') {
             double /= factor
-            double += num
-            factor = 10
+            factor = 1
         } else {
             double += (num * factor)
             factor *= 10

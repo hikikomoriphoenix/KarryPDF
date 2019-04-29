@@ -17,7 +17,14 @@ internal class TextContentAdapter {
     private val pageContents = ArrayList<PageContent>()
     private val sb = StringBuilder()
 
+    private fun resetAdapter() {
+        spanBuilder = SpannableStringBuilder()
+        pageContents.clear()
+        sb.clear()
+    }
+
     fun getContents(contentGroups: ArrayList<ContentGroup>, pageFonts: SparseArray<Typeface>): ArrayList<PageContent> {
+        resetAdapter()
         var contentGroup: ContentGroup
         for (i in 0 until contentGroups.size) {
             contentGroup = contentGroups[i]

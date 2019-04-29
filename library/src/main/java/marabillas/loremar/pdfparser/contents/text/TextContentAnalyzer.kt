@@ -24,8 +24,17 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         textObjects.addAll(textObjs)
     }
 
-    fun analyze(textObjs: MutableList<TextObject>): ArrayList<ContentGroup> {
+    private fun resetAnalyzer() {
+        contentGroups.clear()
         textObjects.clear()
+        sb.clear()
+        currTextGroup = TextGroup()
+        table = Table()
+        currLine.clear()
+    }
+
+    fun analyze(textObjs: MutableList<TextObject>): ArrayList<ContentGroup> {
+        resetAnalyzer()
         textObjects.addAll(textObjs)
 
         // If tj values are arrays resulting from TJ operator, determine from the number values between strings
@@ -292,7 +301,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                         sb.clear().append(it.tf)
                         val fSizeStart = sb.indexOf(' ') + 1
                         sb.delete(0, fSizeStart)
-                        val fSize = sb.toDouble().toFloat()
+                        val fSize = sb.toDouble().toFloat() * textObj.scaleY
                         sortGroup(it, dty, fSize)
                     }
                 }
@@ -306,7 +315,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                         sb.clear().append(it.tf)
                         val fSizeStart = sb.indexOf(' ') + 1
                         sb.delete(0, fSizeStart)
-                        val fSize = sb.toDouble().toFloat()
+                        val fSize = sb.toDouble().toFloat() * textObj.scaleY
                         sortGroup(it, dty, fSize)
                     }
                 }
@@ -331,7 +340,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                         sb.clear().append(it.tf)
                         val fSizeStart = sb.indexOf(' ') + 1
                         sb.delete(0, fSizeStart)
-                        val fSize = sb.toDouble().toFloat()
+                        val fSize = sb.toDouble().toFloat() * textObj.scaleY
                         sortGroup(it, dty, fSize)
                     }
                 }

@@ -44,7 +44,9 @@ internal class PageContentAdapter(
                      contents.addAll(textContents)*/
 
                     TimeCounter.reset()
+                    textObjects.clear()
                     textObjects.add(next)
+
                     i++
                     var nextTextObject: PageObject
                     while (i < pageObjects.size) {
@@ -61,10 +63,11 @@ internal class PageContentAdapter(
 
                     val textContentGroups = textContentAnalyzer.analyze(textObjects)
                     println("TextContentAnalyzer.analyze -> ${TimeCounter.getTimeElapsed()} ms")
-                    textObjects.clear()
+
                     TimeCounter.reset()
                     val textContents = textContentAdapter.getContents(textContentGroups, pageFonts)
                     println("TextContentAdapter.getContents -> ${TimeCounter.getTimeElapsed()} ms")
+
                     contents.addAll(textContents)
                 }
                 is ImageObject -> {

@@ -15,7 +15,13 @@ internal class TextObjectParser {
     private var ts = 0f
     private var tl = 0f
 
-    fun parse(s: StringBuilder, textObj: TextObject, tfDefault: StringBuilder = tfDef, startIndex: Int): Int {
+    fun parse(
+        s: StringBuilder,
+        textObj: TextObject,
+        tfDefault: StringBuilder = tfDef,
+        startIndex: Int,
+        ctm: FloatArray
+    ): Int {
         if (tfDefault.isNotBlank()) {
             tf.clear().append(tfDefault)
         }
@@ -35,7 +41,7 @@ internal class TextObjectParser {
                     pos++
                     if (s[pos] == 'j' || s[pos] == 'J') {
                         operand.clear().append(s, operandsIndices[0], pos - 2)
-                        addTextElement(textObj, operand.toPDFObject() ?: "()".toPDFString())
+                        addTextElement(textObj, operand.toPDFObject() ?: "()".toPDFString(), ctm)
                     } else if (s[pos] == 'd') {
                         positionText(s)
                     } else if (s[pos] == 'm') {
@@ -103,7 +109,9 @@ internal class TextObjectParser {
         return pos
     }
 
-    private fun addTextElement(textObj: TextObject, tj: PDFObject) {
+    private fun addTextElement(textObj: TextObject, tj: PDFObject, ctm: FloatArray) {
+        td[0] = td[0] * ctm[0] + ctm[4]
+        td[1] = td[1] * ctm[3] + ctm[5]
         val content = TextElement(
             tf = tf.toString(),
             td = td.copyOf(),

@@ -5,6 +5,8 @@ import marabillas.loremar.pdfparser.contents.text.TextObject
 import marabillas.loremar.pdfparser.contents.text.TextObjectParser
 import marabillas.loremar.pdfparser.objects.toName
 import marabillas.loremar.pdfparser.toDouble
+import java.util.*
+import kotlin.collections.ArrayList
 
 internal class ContentStreamParser {
     private val sb = StringBuilder()
@@ -18,14 +20,12 @@ internal class ContentStreamParser {
     private val operatorList = hashSetOf(TF, BT, QSTART, QEND, CM, DO) // TODO Add BI
     private val token = StringBuilder()
 
-    /**
-     * All cm operations within nested q and Q.
-     */
-    private val allCMs = mutableListOf<MutableList<FloatArray>>()
+    private val ctmStack = Stack<FloatArray>()
+    private val identityCm = floatArrayOf(1f, 0f, 0f, 1f, 0f, 0f)
 
     fun parse(streamData: String): ArrayList<PageObject> {
         sb.clear().append(streamData)
-        allCMs.add(mutableListOf())
+        ctmStack.push(identityCm)
         println("ContentStreamParser.parse begins")
         //println("stream->$streamData")
         val pageObjects = ArrayList<PageObject>()
@@ -51,30 +51,48 @@ internal class ContentStreamParser {
                 }
                 sb.startsWith(BT, i) -> {
                     val textObj = TextObject()
-                    i = textObjectParser.parse(sb, textObj, tf, i + 2)
+                    val cm = ctmStack.last()
+                    i = textObjectParser.parse(sb, textObj, tf, i + 2, cm)
+                    textObj.scaleY = Math.abs(cm[3])
                     pageObjects.add(textObj)
+                    //println("textObj -> ${textObj.getX()}, ${textObj.getY()}")
                 }
                 i == -1 -> i = sb.length
                 sb.startsWith(QSTART, i) -> {
-                    allCMs.add(mutableListOf())
+                    //println("QSTART")
+                    ctmStack.push(identityCm)
                     i++
                 }
                 sb.startsWith(QEND, i) -> {
-                    allCMs.remove(allCMs.last())
+                    //println("QEND")
+                    ctmStack.pop()
                     i++
                 }
                 sb.startsWith(CM, i) -> {
                     val cm = getCM(i)
-                    allCMs.last().add(cm)
+                    //println("cm -> ${cm[0]}, ${cm[1]}, ${cm[2]}, ${cm[3]}, ${cm[4]}, ${cm[5]}")
+                    ctmStack.pop()
+                    ctmStack.push(cm)
                     i += 2
                 }
                 sb.startsWith(DO, i) -> {
+                    //println("Do XObject")
                     val nameIndex = sb.lastIndexOf('/', i)
                     token.clear().append(sb, nameIndex, i - 1)
+
+                    var x = ctmStack.last()[4]
+                    var y = ctmStack.last()[5]
+                    val sx = ctmStack.last()[0]
+                    val sy = ctmStack.last()[3]
+                    if (sx < 0)
+                        x = -x
+                    if (sy < 0)
+                        y = -y
                     pageObjects.add(
-                        XObject(getTotalX(), getTotalY(), token.toName())
+                        XObject(x, y, token.toName())
                     )
                     i += 2
+                    //println("xObj -> ${pageObjects.last().getX()}, ${pageObjects.last().getY()}")
                 }
                 /*sb.startsWith(BI, i) -> {
                     // TODO parse inline image object
@@ -117,39 +135,5 @@ internal class ContentStreamParser {
         }
 
         return cm
-    }
-
-    private fun getTotalX(): Float {
-        var tx = 0f
-        var sx = 1f
-        allCMs.forEach { q ->
-            q.forEach { cm ->
-                tx += cm[4]
-                if (cm[0] < 0) {
-                    sx *= (-1)
-                }
-            }
-        }
-        if (sx < 0) {
-            tx = -tx
-        }
-        return tx
-    }
-
-    private fun getTotalY(): Float {
-        var ty = 0f
-        var sy = 0f
-        allCMs.forEach { q ->
-            q.forEach { cm ->
-                ty += cm[5]
-                if (cm[3] < 0) {
-                    sy *= (-1)
-                }
-            }
-        }
-        if (sy < 0) {
-            ty = -ty
-        }
-        return ty
     }
 }

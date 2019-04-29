@@ -7,6 +7,7 @@ internal class TextObject : Iterable<TextElement>,
     val td = FloatArray(2)
     var columned = false
     var rowed = false
+    var scaleY = 1f
 
     private val elements = ArrayList<TextElement>()
 

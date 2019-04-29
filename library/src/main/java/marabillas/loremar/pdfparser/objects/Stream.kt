@@ -6,7 +6,7 @@ import java.io.RandomAccessFile
 
 internal open class Stream(file: RandomAccessFile, start: Long) : Indirect(file, start) {
     val dictionary = PDFFileReader(file).getDictionary(start)
-    var streamData = ByteArray((dictionary["Length"] as Numeric).value.toInt())
+    var streamData = ByteArray((dictionary.resolveReferences()["Length"] as Numeric).value.toInt())
         private set
 
     init {

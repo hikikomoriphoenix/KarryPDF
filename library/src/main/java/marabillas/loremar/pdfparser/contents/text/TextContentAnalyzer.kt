@@ -69,6 +69,8 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         // Convert adjacent elements with same tf into one element
         mergeElementsWithSameFont()
 
+        deleteBlankLines()
+
         return contentGroups
     }
 
@@ -601,5 +603,28 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         )
         line.removeAt(start)
         line.add(start, newTextElement)
+    }
+
+    private fun deleteBlankLines() {
+        var i = 0
+        while (i < contentGroups.size) {
+            val textGroup = contentGroups[i]
+            if (textGroup is TextGroup) {
+                for (j in 0 until textGroup.size()) {
+                    val line = textGroup[j]
+                    sb.clear()
+                    line.forEach { e ->
+                        sb.append((e.tj as PDFString).value)
+                    }
+                    if (sb.isBlank())
+                        textGroup.remove(line)
+                }
+
+                if (textGroup.size() == 0)
+                    contentGroups.remove(textGroup)
+            }
+            // Ignore table, since a blank line may mean an empty cell.
+            i++
+        }
     }
 }

@@ -33,7 +33,7 @@ internal class EnclosedObjectExtractor(private val stringWithEnclosed: String, p
         fun indexOfClosingChar(string: StringBuilder, start: Int): Int {
             var unb = 0
             var closeIndex = start - 1
-            var prev = ""
+            var prev = string[start]
 
             val open = string[start]
             val close = getClosingChar(open)
@@ -47,31 +47,30 @@ internal class EnclosedObjectExtractor(private val stringWithEnclosed: String, p
                 when (c) {
                     open -> {
                         if (dictionary) {
-                            if (prev != "\\" && string[i + 1] == '<') {
+                            if (prev != '\\' && string[i + 1] == '<') {
                                 unb++
                                 i++
                                 closeIndex++
                             }
-                        } else if (prev != "\\") {
+                        } else if (prev != '\\') {
                             unb++
                         }
                     }
                     close -> {
                         if (dictionary) {
-                            if (prev != "\\" && string[i + 1] == '>') {
+                            if (prev != '\\' && string[i + 1] == '>') {
                                 unb--
                                 i++
                                 closeIndex++
                             }
-                        } else if (prev != "\\") {
+                        } else if (prev != '\\') {
                             unb--
                         }
                     }
                 }
-                prev = c.toString()
+                prev = c
                 closeIndex++
                 if (unb == 0) {
-                    println()
                     return closeIndex
                 }
                 i++

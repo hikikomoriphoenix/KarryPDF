@@ -19,4 +19,11 @@ class EnclosedObjectExtractorTest {
         extracted = s.extractEnclosedObject()
         assertThat(extracted, `is`("<Hello World>"))
     }
+
+    @Test
+    fun testIndexOfClosingChar() {
+        val s = StringBuilder("Hello World(Hello World)")
+        val closeIndex = EnclosedObjectExtractor.indexOfClosingChar(s, 11)
+        assertThat(s[closeIndex], `is`(')'))
+    }
 }

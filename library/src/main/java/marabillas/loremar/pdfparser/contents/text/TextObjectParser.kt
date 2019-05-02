@@ -1,5 +1,8 @@
 package marabillas.loremar.pdfparser.contents.text
 
+import marabillas.loremar.pdfparser.isEnclosingAt
+import marabillas.loremar.pdfparser.isWhiteSpaceAt
+import marabillas.loremar.pdfparser.objects.EnclosedObjectExtractor
 import marabillas.loremar.pdfparser.objects.PDFObject
 import marabillas.loremar.pdfparser.objects.toPDFObject
 import marabillas.loremar.pdfparser.objects.toPDFString
@@ -37,6 +40,9 @@ internal class TextObjectParser {
                     operandsIndices[operandsCount] = pos
                     operandsCount++
                     expectToken = false
+
+                    if (s[pos] == '[' || s[pos] == '(')
+                        pos = EnclosedObjectExtractor.indexOfClosingChar(s, pos)
                 } else if (s[pos] == 'T') {
                     pos++
                     if (s[pos] == 'j' || s[pos] == 'J') {
@@ -100,9 +106,18 @@ internal class TextObjectParser {
                     operandsCount = 0
                 } else if (s[pos] == '\'') {
                     operandsCount = 0
+                } else {
+                    operandsCount = 0
+                    expectToken = false
+                    if (s.isEnclosingAt(pos))
+                        pos = EnclosedObjectExtractor.indexOfClosingChar(s, pos)
                 }
-            } else if (s[pos] == ' ') {
+            } else if (s.isWhiteSpaceAt(pos)) {
                 expectToken = true
+            } else if (s[pos] == '/' || s.isEnclosingAt(pos)) {
+                operandsIndices[operandsCount] = pos
+                operandsCount++
+                expectToken = false
             }
             pos++
         }

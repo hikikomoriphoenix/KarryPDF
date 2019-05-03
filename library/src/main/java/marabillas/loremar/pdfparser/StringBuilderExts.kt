@@ -101,6 +101,10 @@ internal fun StringBuilder.isEnclosingAt(i: Int): Boolean {
     return (this[i] == '(' || this[i] == '[' || this[i] == '<' || this[i] == '{')
 }
 
+internal fun StringBuilder.isUnEnclosingAt(i: Int): Boolean {
+    return (this[i] == ')' || this[i] == ']' || this[i] == '>' || this[i] == '}')
+}
+
 internal fun StringBuilder.indexOfClosingChar(start: Int): Int {
     var unb = 0
     var closeIndex = start - 1

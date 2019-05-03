@@ -1,6 +1,7 @@
 package marabillas.loremar.pdfparser.contents.text
 
 import marabillas.loremar.pdfparser.isEnclosingAt
+import marabillas.loremar.pdfparser.isUnEnclosingAt
 import marabillas.loremar.pdfparser.isWhiteSpaceAt
 import marabillas.loremar.pdfparser.objects.EnclosedObjectExtractor
 import marabillas.loremar.pdfparser.objects.PDFObject
@@ -39,14 +40,18 @@ internal class TextObjectParser {
                 ) {
                     operandsIndices[operandsCount] = pos
                     operandsCount++
-                    expectToken = false
 
-                    if (s[pos] == '[' || s[pos] == '(')
+                    if (s.isEnclosingAt(pos)) {
                         pos = EnclosedObjectExtractor.indexOfClosingChar(s, pos)
+                        pos--
+                    }
                 } else if (s[pos] == 'T') {
                     pos++
                     if (s[pos] == 'j' || s[pos] == 'J') {
-                        operand.clear().append(s, operandsIndices[0], pos - 2)
+                        var tjEnd = pos - 2
+                        if (s.isUnEnclosingAt(tjEnd))
+                            tjEnd = pos - 1
+                        operand.clear().append(s, operandsIndices[0], tjEnd)
                         addTextElement(textObj, operand.toPDFObject() ?: "()".toPDFString(), ctm)
                     } else if (s[pos] == 'd') {
                         positionText(s)
@@ -108,16 +113,17 @@ internal class TextObjectParser {
                     operandsCount = 0
                 } else {
                     operandsCount = 0
-                    expectToken = false
-                    if (s.isEnclosingAt(pos))
+                    if (s.isEnclosingAt(pos)) {
                         pos = EnclosedObjectExtractor.indexOfClosingChar(s, pos)
+                        pos--
+                    }
                 }
-            } else if (s.isWhiteSpaceAt(pos)) {
+                expectToken = false
+            } else if (s.isWhiteSpaceAt(pos) || s.isUnEnclosingAt(pos)) {
                 expectToken = true
             } else if (s[pos] == '/' || s.isEnclosingAt(pos)) {
                 operandsIndices[operandsCount] = pos
                 operandsCount++
-                expectToken = false
             }
             pos++
         }

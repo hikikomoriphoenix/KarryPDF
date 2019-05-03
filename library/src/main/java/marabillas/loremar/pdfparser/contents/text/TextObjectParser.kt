@@ -118,7 +118,8 @@ internal class TextObjectParser {
                         pos--
                     }
                 }
-                expectToken = false
+                if (!s.isWhiteSpaceAt(pos) && !s.isUnEnclosingAt(pos))
+                    expectToken = false
             } else if (s.isWhiteSpaceAt(pos) || s.isUnEnclosingAt(pos)) {
                 expectToken = true
             } else if (s[pos] == '/' || s.isEnclosingAt(pos)) {

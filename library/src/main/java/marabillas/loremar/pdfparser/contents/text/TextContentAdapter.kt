@@ -64,7 +64,7 @@ internal class TextContentAdapter {
                 sb.clear().append(line[j].tf)
                 val fEnd = sb.indexOf(' ')
                 sb.delete(fEnd, sb.length)
-                sb.delete(0, 1)
+                sb.delete(0, 2)
                 val t = pageFonts[sb.toInt()] ?: FontMappings[FontName.DEFAULT]
 
                 val span = CustomTypefaceSpan(t)

@@ -3,6 +3,7 @@ package marabillas.loremar.pdfparser.contents
 import marabillas.loremar.pdfparser.contents.image.ImageObjectParser
 import marabillas.loremar.pdfparser.contents.text.TextObject
 import marabillas.loremar.pdfparser.contents.text.TextObjectParser
+import marabillas.loremar.pdfparser.exceptions.UnsupportedPDFElementException
 import marabillas.loremar.pdfparser.objects.toName
 import marabillas.loremar.pdfparser.toDouble
 import java.util.*
@@ -94,9 +95,10 @@ internal class ContentStreamParser {
                     i += 2
                     //println("xObj -> ${pageObjects.last().getX()}, ${pageObjects.last().getY()}")
                 }
-                /*sb.startsWith(BI, i) -> {
+                sb.startsWith(BI, i) -> {
                     // TODO parse inline image object
-                }*/
+                    throw UnsupportedPDFElementException("Extraction of inline image objects is not yet supported.")
+                }
             }
         }
 

@@ -205,6 +205,16 @@ class PDFParser {
             }
 
             // TODO Get Cmap from Encoding entry.
+            val encoding = font["Encoding"]
+            if (
+                (encoding is Name && !encoding.value.endsWith("Encoding"))
+                || (encoding != null && encoding !is Name)
+            ) {
+                throw UnsupportedPDFElementException(
+                    "Decoding of characters with the given type of encoding is not yet" +
+                            "supported."
+                )
+            }
         }
         return cmaps
     }

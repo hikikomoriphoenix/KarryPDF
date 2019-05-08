@@ -54,6 +54,7 @@ internal class ContentStreamParser {
                     val textObj = TextObject()
                     val cm = ctmStack.last()
                     i = textObjectParser.parse(sb, textObj, tf, i + 2, cm)
+                    textObj.scaleX = Math.abs(cm[0])
                     textObj.scaleY = Math.abs(cm[3])
                     pageObjects.add(textObj)
                     //println("textObj -> ${textObj.getX()}, ${textObj.getY()}")

@@ -5,9 +5,9 @@ import marabillas.loremar.pdfparser.contents.PageObject
 internal class TextObject : Iterable<TextElement>,
     PageObject {
     val td = FloatArray(2)
-    var columned = false
-    var rowed = false
+    var scaleX = 1f
     var scaleY = 1f
+    var column = -1
 
     private val elements = ArrayList<TextElement>()
 

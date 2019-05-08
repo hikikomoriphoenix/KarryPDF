@@ -1,6 +1,7 @@
 package marabillas.loremar.pdfparser.contents
 
 import android.graphics.Typeface
+import android.support.v4.util.SparseArrayCompat
 import android.util.SparseArray
 import marabillas.loremar.pdfparser.TimeCounter
 import marabillas.loremar.pdfparser.contents.image.ImageContent
@@ -11,7 +12,9 @@ import marabillas.loremar.pdfparser.contents.text.TextObject
 
 internal class PageContentAdapter(
     private val pageObjects: ArrayList<PageObject>,
-    private val pageFonts: SparseArray<Typeface>
+    private val pageFonts: SparseArray<Typeface>,
+    private val characterWidths: SparseArrayCompat<FloatArray>,
+    private val firstChars: SparseArrayCompat<Int>
 ) {
     private val textContentAnalyzer = TextContentAnalyzer()
     private val textContentAdapter = TextContentAdapter()
@@ -61,7 +64,7 @@ internal class PageContentAdapter(
                     println("Collecting successive TextObjects -> ${TimeCounter.getTimeElapsed()} ms")
                     TimeCounter.reset()
 
-                    val textContentGroups = textContentAnalyzer.analyze(textObjects)
+                    val textContentGroups = textContentAnalyzer.analyze(textObjects, characterWidths, firstChars)
                     println("TextContentAnalyzer.analyze -> ${TimeCounter.getTimeElapsed()} ms")
 
                     TimeCounter.reset()

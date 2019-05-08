@@ -39,214 +39,124 @@ class TextContentAnalyzerTest {
     }
 
     @Test
-    fun testHandleMultiColumnTexts() {
-        val te1 = TextElement(tj = "(A)".toPDFString())
-        val t1 = TextObject(); t1.td[0] = 0f; t1.td[1] = 0f
-        val t2 = TextObject(); t2.td[0] = 100f; t2.td[1] = 0f
-        val t3 = TextObject(); t3.td[0] = 0f; t3.td[1] = 100f
-        val t4 = TextObject(); t4.td[0] = 100f; t4.td[1] = 100f
-        val t5 = TextObject(); t5.td[0] = 0f; t5.td[1] = 80f
-        val t6 = TextObject(); t6.td[0] = 100f; t6.td[1] = 80f
-        val t7 = TextObject(); t7.td[0] = 0f; t7.td[1] = 50f
-        t1.add(te1)
-        t2.add(te1)
-        t3.add(te1)
-        t4.add(te1)
-        t5.add(te1)
-        t6.add(te1)
-        t7.add(te1)
-        val textObjs = ArrayList<TextObject>()
-        textObjs.add(t1)
-        textObjs.add(t2)
-        textObjs.add(t3)
-        textObjs.add(t4)
-        textObjs.add(t5)
-        textObjs.add(t6)
-        textObjs.add(t7)
-        TextContentAnalyzer(textObjs).handleMultiColumnTexts()
-        assertThat(t1.columned, `is`(true))
-        assertThat(t2.columned, `is`(true))
-        assertThat(t3.columned, `is`(true))
-        assertThat(t4.columned, `is`(true))
-        assertThat(t5.columned, `is`(true))
-        assertThat(t6.columned, `is`(true))
-        assertThat(t7.columned, `is`(true))
-        assertThat(t1.rowed, `is`(false))
-        assertThat(t2.rowed, `is`(false))
-        assertThat(t3.rowed, `is`(true))
-        assertThat(t4.rowed, `is`(true))
-        assertThat(t5.rowed, `is`(true))
-        assertThat(t6.rowed, `is`(true))
-        assertThat(t7.rowed, `is`(false))
-    }
-
-    @Test
     fun testGroupTexts() {
         val t1 = TextElement(
-            tf = "/Font 10",
             tj = "(Hello)".toPDFString(),
-            td = floatArrayOf(0f, 100f)
+            td = floatArrayOf(0f, 100f),
+            tf = "/Font 10"
         )
         val t2 = TextElement(
-            tf = "/Font 10",
             tj = "(World)".toPDFString(),
-            td = floatArrayOf(50f, 0f)
+            td = floatArrayOf(7f, 0f),
+            tf = "/Font 10"
         )
         val t3 = TextElement(
-            tf = "/Font 10",
             tj = "(Goodbye)".toPDFString(),
-            td = floatArrayOf(0f, -15f)
+            td = floatArrayOf(0f, -15f),
+            tf = "/Font 10"
         )
         val t4 = TextElement(
-            tf = "/Font 10",
-            tj = "(I love you)".toPDFString(),
-            td = floatArrayOf(0f, -22f)
+            tj = "(Sayonara)".toPDFString(),
+            td = floatArrayOf(0f, -22f),
+            tf = "/Font 10"
         )
         val t5 = TextElement(
-            tf = "/Font 10",
-            tj = "(Monday)".toPDFString(),
-            td = floatArrayOf(100f, 100f)
+            tj = "(How are you?)".toPDFString(),
+            td = floatArrayOf(0f, 40f),
+            tf = "/Font 10"
         )
         val t6 = TextElement(
-            tf = "/Font 10",
-            tj = "(Tuesday)".toPDFString(),
-            td = floatArrayOf(0f, 50f)
+            tj = "(I'm fine)".toPDFString(),
+            td = floatArrayOf(15f, 40f),
+            tf = "/Font 10"
         )
         val t7 = TextElement(
-            tf = "/Font 10",
-            tj = "(Wednesday)".toPDFString(),
-            td = floatArrayOf(100f, 50f)
+            tj = "(Thank you)".toPDFString(),
+            td = floatArrayOf(0f, 25f),
+            tf = "/Font 10"
         )
-        val tObj1 = TextObject()
-        tObj1.add(t1)
-        tObj1.add(t2)
-        tObj1.add(t3)
-        tObj1.add(t4)
-        tObj1.td[0] = t1.td[0]
-        tObj1.td[1] = t1.td[1]
-        val tObj2 = TextObject()
-        tObj2.add(t5)
-        tObj2.td[0] = t5.td[0]
-        tObj2.td[1] = t5.td[1]
-        val tObj3 = TextObject()
-        tObj3.add(t6)
-        tObj3.td[0] = t6.td[0]
-        tObj3.td[1] = t6.td[1]
-        val tObj4 = TextObject()
-        tObj4.add(t7)
-        tObj4.td[0] = t7.td[0]
-        tObj4.td[1] = t7.td[1]
-
         val t8 = TextElement(
-            tf = "/Font 10",
-            tj = "(The quick)".toPDFString(),
-            td = floatArrayOf(0f, 40f)
+            tj = "()".toPDFString(),
+            td = floatArrayOf(0f, 10f),
+            tf = "/Font 10"
         )
         val t9 = TextElement(
-            tf = "/Font 10",
-            tj = "(brown fox)".toPDFString(),
-            td = floatArrayOf(20f, 0f)
+            tj = "()".toPDFString(),
+            td = floatArrayOf(10f, 10f),
+            tf = "/Font 10"
         )
         val t10 = TextElement(
-            tf = "/Font 10",
-            tj = "(jumps over)".toPDFString(),
-            td = floatArrayOf(0f, 25f)
+            tj = "()".toPDFString(),
+            td = floatArrayOf(10f, -15f),
+            tf = "/Font 10"
         )
         val t11 = TextElement(
-            tf = "/Font 10",
-            tj = "(the lazy dog)".toPDFString(),
-            td = floatArrayOf(0f, -15f)
+            tj = "()".toPDFString(),
+            td = floatArrayOf(20f, 10f),
+            tf = "/Font 10"
         )
-        val t12 = TextElement(
-            tf = "/Font 10",
-            tj = "(Good Morning)".toPDFString(),
-            td = floatArrayOf(0f, -22f)
-        )
-        val t13 = TextElement(
-            tf = "/Font 10",
-            tj = "(Good Night)".toPDFString(),
-            td = floatArrayOf(0f, -40f)
-        )
-        val tObj5 = TextObject()
-        tObj5.add(t8)
-        tObj5.add(t9)
-        tObj5.td[0] = t8.td[0]
-        tObj5.td[1] = t8.td[1]
-        val tObj6 = TextObject()
-        tObj6.add(t10)
-        tObj6.add(t11)
-        tObj6.add(t12)
-        tObj6.td[0] = t10.td[0]
-        tObj6.td[1] = t10.td[1]
-        val tObj7 = TextObject()
-        tObj7.add(t13)
-        tObj7.td[0] = t13.td[0]
-        tObj7.td[1] = t13.td[1]
 
-        val t14 = TextElement(
-            tf = "/Font 10",
-            tj = "(Hi)".toPDFString(),
-            td = floatArrayOf(0f, 115f)
-        )
-        val tObj8 = TextObject()
-        tObj8.add(t14)
-        tObj8.td[0] = t14.td[0]
-        tObj8.td[1] = t14.td[1]
+        // Create a TextObject that will produce two TextGroups
+        val g1 = TextObject()
+        g1.td[0] = t1.td[0]
+        g1.td[1] = t1.td[1]
+        g1.add(t1)
+        g1.add(t2)
+        g1.add(t3)
+        g1.add(t4)
 
-        val analyzer = TextContentAnalyzer(
-            arrayListOf(
-                tObj8,
-                tObj1,
-                tObj2,
-                tObj3,
-                tObj4,
-                tObj5,
-                tObj6,
-                tObj7
-            )
+        // Create three TextObjects that will produce one TextGroup. The first one is far enough from the previous
+        // TextObject to avoid being added to previous TextGroup.
+        val g2 = TextObject()
+        g2.td[0] = t5.td[0]
+        g2.td[1] = t5.td[1]
+        g2.add(t5)
+        val g3 = TextObject()
+        g3.td[0] = t6.td[0]
+        g3.td[1] = t6.td[1]
+        g3.add(t6)
+        val g4 = TextObject()
+        g4.td[0] = t7.td[0]
+        g4.td[1] = t7.td[1]
+        g4.add(t7)
+
+        // Create one row Table with second TextObject being multi-linear.
+        val g5 = TextObject()
+        g5.td[0] = t8.td[0]
+        g5.td[1] = t8.td[1]
+        g5.add(t8)
+        val g6 = TextObject()
+        g6.td[0] = t9.td[0]
+        g6.td[1] = t9.td[1]
+        g6.add(t9)
+        g6.add(t10)
+        val g7 = TextObject()
+        g7.td[0] = t11.td[0]
+        g7.td[1] = t11.td[1]
+        g7.add(t11)
+
+        val textObjects = arrayListOf(g1, g2, g3, g4, g5, g6, g7)
+        textObjects.sortWith(
+            compareBy(
+                { -it.getY() },
+                { it.getX() })
         )
-        analyzer.handleMultiColumnTexts()
+        val analyzer = TextContentAnalyzer(textObjects)
+        analyzer.detectTableComponents()
         analyzer.groupTexts()
 
-        assertThat(analyzer.contentGroups.count(), `is`(5))
-        assertTrue(analyzer.contentGroups[1] is Table)
-        val g1 = analyzer.contentGroups[0] as TextGroup
-        val g2 = analyzer.contentGroups[1] as Table
-        val g3 = analyzer.contentGroups[2] as TextGroup
-        val g4 = analyzer.contentGroups[3] as TextGroup
-        val g5 = analyzer.contentGroups[4] as TextGroup
+        // Assert the number and type of ContentGroups produced.
+        assertThat(analyzer.contentGroups.size, `is`(4))
+        assertTrue(analyzer.contentGroups[0] is TextGroup)
+        assertTrue(analyzer.contentGroups[1] is TextGroup)
+        assertTrue(analyzer.contentGroups[2] is TextGroup)
+        assertTrue(analyzer.contentGroups[3] is Table)
 
-        assertThat(g1.size(), `is`(1))
-        assertThat(g1[0].count(), `is`(1))
-        assertThat(g1[0][0], `is`(t14))
-
-        assertThat(g2[0][0].size(), `is`(2))
-        assertThat(g2[0][0][0].size(), `is`(2))
-        assertThat(g2[0][0][1].size(), `is`(1))
-        assertThat(g2[0][0][0][0].count(), `is`(2))
-        assertThat(g2[0][0][0][1].count(), `is`(1))
-        assertThat(g2[0][0][1][0].count(), `is`(1))
-        assertThat(g2[0][0][0][0][0], `is`(t1))
-        assertThat(g2[0][0][0][0][1], `is`(t2))
-        assertThat(g2[0][0][0][1][0], `is`(t3))
-        assertThat(g2[0][0][1][0][0], `is`(t4))
-
-        assertThat(g3.size(), `is`(3))
-        assertThat(g3[0].count(), `is`(2))
-        assertThat(g3[1].count(), `is`(1))
-        assertThat(g3[2].count(), `is`(1))
-        assertThat(g3[0][0], `is`(t8))
-        assertThat(g3[0][1], `is`(t9))
-        assertThat(g3[1][0], `is`(t10))
-        assertThat(g3[2][0], `is`(t11))
-
-        assertThat(g4.size(), `is`(1))
-        assertThat(g4[0].count(), `is`(1))
-        assertThat(g4[0][0], `is`(t12))
-
-        assertThat(g5.size(), `is`(1))
-        assertThat(g5[0].count(), `is`(1))
-        assertThat(g5[0][0], `is`(t13))
+        // Assert that each ContentGroup has the correct number of elements within each.
+        assertThat((analyzer.contentGroups[0] as TextGroup).size(), `is`(2))
+        assertThat((analyzer.contentGroups[1] as TextGroup).size(), `is`(1))
+        assertThat((analyzer.contentGroups[2] as TextGroup).size(), `is`(2))
+        assertThat((analyzer.contentGroups[3] as Table).size(), `is`(1))
     }
 
     @Test

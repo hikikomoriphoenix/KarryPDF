@@ -1,6 +1,7 @@
 package marabillas.loremar.pdfparser
 
 import android.graphics.Typeface
+import android.support.v4.util.SparseArrayCompat
 import android.util.SparseArray
 import marabillas.loremar.pdfparser.contents.ContentStreamParser
 import marabillas.loremar.pdfparser.contents.PageContent
@@ -109,9 +110,13 @@ class PDFParser {
         fontsDic?.resolveReferences()
         var pageFonts = SparseArray<Typeface>()
         var cmaps = SparseArray<CMap>()
+        var characterWidths = SparseArrayCompat<FloatArray>()
+        var fontFirstChars = SparseArrayCompat<Int>()
         fontsDic?.let {
             pageFonts = getPageFonts(it)
             cmaps = getCMaps(it)
+            characterWidths = getCharacterWidths(it)
+            fontFirstChars = getFontFirstChars(it)
         }
 
         // Get XObjects
@@ -127,13 +132,13 @@ class PDFParser {
             contents.asSequence()
                 .filterNotNull()
                 .forEach { content ->
-                    val pageContent = parseContent(content, pageFonts, cmaps, xObjs)
+                    val pageContent = parseContent(content, pageFonts, cmaps, xObjs, characterWidths, fontFirstChars)
                     contentsList.addAll(pageContent)
                 }
             contentsList
         } else {
             TimeCounter.reset()
-            return parseContent(contents, pageFonts, cmaps, xObjs)
+            return parseContent(contents, pageFonts, cmaps, xObjs, characterWidths, fontFirstChars)
         }
 
     }
@@ -142,7 +147,9 @@ class PDFParser {
         content: PDFObject,
         pageFonts: SparseArray<Typeface>,
         cmaps: SparseArray<CMap>,
-        xObjects: HashMap<String, Stream>
+        xObjects: HashMap<String, Stream>,
+        characterWidths: SparseArrayCompat<FloatArray>,
+        firstChars: SparseArrayCompat<Int>
     ): ArrayList<PageContent> {
         TimeCounter.reset()
         val ref = content as Reference
@@ -164,13 +171,12 @@ class PDFParser {
             XObjectsResolver(pageObjs, xObjects).resolve()
             println("XObjectsResolver.resolve -> ${TimeCounter.getTimeElapsed()} ms")
 
-            return PageContentAdapter(pageObjs, pageFonts).getPageContents()
+            return PageContentAdapter(pageObjs, pageFonts, characterWidths, firstChars).getPageContents()
         }
         return ArrayList()
     }
 
     internal fun getPageFonts(fontsDic: Dictionary): SparseArray<Typeface> {
-        fontsDic.resolveReferences()
         val fKeys = fontsDic.getKeys()
         val idier = FontIdentifier()
         val fonts = SparseArray<Typeface>()
@@ -187,7 +193,6 @@ class PDFParser {
     }
 
     private fun getCMaps(fontsDic: Dictionary): SparseArray<CMap> {
-        fontsDic.resolveReferences()
         val fkeys = fontsDic.getKeys()
         val cmaps = SparseArray<CMap>()
         fkeys.forEach foreachKey@{ key ->
@@ -217,6 +222,38 @@ class PDFParser {
             }
         }
         return cmaps
+    }
+
+    private fun getCharacterWidths(fontsDic: Dictionary): SparseArrayCompat<FloatArray> {
+        val fKeys = fontsDic.getKeys()
+        val charWdths = SparseArrayCompat<FloatArray>()
+        fKeys.forEach { key ->
+            val font = fontsDic[key] as Dictionary
+            font.resolveReferences()
+            val widths = font["Widths"]
+            if (widths is PDFArray) {
+                val widthsArray = FloatArray(widths.count())
+                widths.forEachIndexed { i, width ->
+                    widthsArray[i] = (width as Numeric).value.toFloat()
+                }
+                charWdths.put(key.substring(1, key.length).toInt(), widthsArray)
+            }
+        }
+        return charWdths
+    }
+
+    private fun getFontFirstChars(fontsDic: Dictionary): SparseArrayCompat<Int> {
+        val fKeys = fontsDic.getKeys()
+        val firstChars = SparseArrayCompat<Int>()
+        fKeys.forEach { key ->
+            val font = fontsDic[key] as Dictionary
+            font.resolveReferences()
+            val firstChar = font["FirstChar"]
+            if (firstChar is Numeric) {
+                firstChars.put(key.substring(1, key.length).toInt(), firstChar.value.toInt())
+            }
+        }
+        return firstChars
     }
 
     private fun getXObjects(xObjectDic: Dictionary): HashMap<String, Stream> {

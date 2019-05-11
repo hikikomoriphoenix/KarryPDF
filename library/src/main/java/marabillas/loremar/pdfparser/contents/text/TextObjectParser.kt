@@ -125,6 +125,10 @@ internal class TextObjectParser {
             } else if (s[pos] == '/' || s.isEnclosingAt(pos)) {
                 operandsIndices[operandsCount] = pos
                 operandsCount++
+                if (s.isEnclosingAt(pos)) {
+                    pos = EnclosedObjectExtractor.indexOfClosingChar(s, pos)
+                    pos--
+                }
             }
             pos++
         }

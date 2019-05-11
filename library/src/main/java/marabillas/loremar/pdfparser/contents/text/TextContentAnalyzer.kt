@@ -86,6 +86,8 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
 
         // Estimate the width of the page by getting the largest width of a line of texts
         val w = getLargestWidth()
+        // TODO Get width of each line using given character widths. Else if character widths are not provided then use
+        // previous method for getting largest width.
 
         // If a line ends with '-', then append the next line to this line and remove the '-' character.
         concatenateDividedByHyphen()

@@ -2,7 +2,6 @@ package marabillas.loremar.pdfparser
 
 import android.graphics.Typeface
 import android.support.v4.util.SparseArrayCompat
-import android.util.SparseArray
 import marabillas.loremar.pdfparser.contents.ContentStreamParser
 import marabillas.loremar.pdfparser.contents.PageContent
 import marabillas.loremar.pdfparser.contents.PageContentAdapter
@@ -10,7 +9,10 @@ import marabillas.loremar.pdfparser.contents.XObjectsResolver
 import marabillas.loremar.pdfparser.exceptions.InvalidDocumentException
 import marabillas.loremar.pdfparser.exceptions.NoDocumentException
 import marabillas.loremar.pdfparser.exceptions.UnsupportedPDFElementException
-import marabillas.loremar.pdfparser.font.*
+import marabillas.loremar.pdfparser.font.Font
+import marabillas.loremar.pdfparser.font.FontDecoder
+import marabillas.loremar.pdfparser.font.FontMappings
+import marabillas.loremar.pdfparser.font.FontName
 import marabillas.loremar.pdfparser.objects.*
 import java.io.RandomAccessFile
 
@@ -109,15 +111,11 @@ class PDFParser {
         // Get all fonts and CMaps required for this page
         val fontsDic = resources["Font"] as Dictionary?
         fontsDic?.resolveReferences()
-        var pageFonts = SparseArray<Typeface>()
-        var cmaps = SparseArray<CMap>()
-        var characterWidths = SparseArrayCompat<FloatArray>()
-        var fontFirstChars = SparseArrayCompat<Int>()
-        fontsDic?.let {
-            pageFonts = getPageFonts(it)
-            cmaps = getCMaps(it)
-            characterWidths = getCharacterWidths(it)
-            fontFirstChars = getFontFirstChars(it)
+        val fonts = SparseArrayCompat<Font>()
+        val fKeys = fontsDic?.getKeys()
+        fKeys?.forEach { key ->
+            val font = fontsDic[key] as Dictionary
+            fonts.put(key.substring(1, key.length).toInt(), Font(font, referenceResolver))
         }
 
         // Get XObjects
@@ -133,24 +131,21 @@ class PDFParser {
             contents.asSequence()
                 .filterNotNull()
                 .forEach { content ->
-                    val pageContent = parseContent(content, pageFonts, cmaps, xObjs, characterWidths, fontFirstChars)
+                    val pageContent = parseContent(content, fonts, xObjs)
                     contentsList.addAll(pageContent)
                 }
             contentsList
         } else {
             TimeCounter.reset()
-            return parseContent(contents, pageFonts, cmaps, xObjs, characterWidths, fontFirstChars)
+            return parseContent(contents, fonts, xObjs)
         }
 
     }
 
     private fun parseContent(
         content: PDFObject,
-        pageFonts: SparseArray<Typeface>,
-        cmaps: SparseArray<CMap>,
-        xObjects: HashMap<String, Stream>,
-        characterWidths: SparseArrayCompat<FloatArray>,
-        firstChars: SparseArrayCompat<Int>
+        fonts: SparseArrayCompat<Font>,
+        xObjects: HashMap<String, Stream>
     ): ArrayList<PageContent> {
         TimeCounter.reset()
         val ref = content as Reference
@@ -165,19 +160,19 @@ class PDFParser {
             println("ContentStreamParser.parse -> ${TimeCounter.getTimeElapsed()} ms")
 
             TimeCounter.reset()
-            FontDecoder(pageObjs, cmaps).decodeEncoded()
+            FontDecoder(pageObjs, fonts).decodeEncoded()
             println("FontDecoder.decodeEncoded -> ${TimeCounter.getTimeElapsed()} ms")
 
             TimeCounter.reset()
             XObjectsResolver(pageObjs, xObjects).resolve()
             println("XObjectsResolver.resolve -> ${TimeCounter.getTimeElapsed()} ms")
 
-            return PageContentAdapter(pageObjs, pageFonts, characterWidths, firstChars).getPageContents()
+            return PageContentAdapter(pageObjs, fonts).getPageContents()
         }
         return ArrayList()
     }
 
-    internal fun getPageFonts(fontsDic: Dictionary): SparseArray<Typeface> {
+    /*internal fun getPageFonts(fontsDic: Dictionary): SparseArray<Typeface> {
         val fKeys = fontsDic.getKeys()
         val idier = FontIdentifier()
         val fonts = SparseArray<Typeface>()
@@ -255,7 +250,7 @@ class PDFParser {
             }
         }
         return firstChars
-    }
+    }*/
 
     private fun getXObjects(xObjectDic: Dictionary): HashMap<String, Stream> {
         val xKeys = xObjectDic.getKeys()

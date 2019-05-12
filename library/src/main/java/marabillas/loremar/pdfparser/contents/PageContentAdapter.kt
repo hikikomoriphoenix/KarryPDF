@@ -1,20 +1,17 @@
 package marabillas.loremar.pdfparser.contents
 
-import android.graphics.Typeface
 import android.support.v4.util.SparseArrayCompat
-import android.util.SparseArray
 import marabillas.loremar.pdfparser.TimeCounter
 import marabillas.loremar.pdfparser.contents.image.ImageContent
 import marabillas.loremar.pdfparser.contents.image.ImageObject
 import marabillas.loremar.pdfparser.contents.text.TextContentAdapter
 import marabillas.loremar.pdfparser.contents.text.TextContentAnalyzer
 import marabillas.loremar.pdfparser.contents.text.TextObject
+import marabillas.loremar.pdfparser.font.Font
 
 internal class PageContentAdapter(
     private val pageObjects: ArrayList<PageObject>,
-    private val pageFonts: SparseArray<Typeface>,
-    private val characterWidths: SparseArrayCompat<FloatArray>,
-    private val firstChars: SparseArrayCompat<Int>
+    private val fonts: SparseArrayCompat<Font>
 ) {
     private val textContentAnalyzer = TextContentAnalyzer()
     private val textContentAdapter = TextContentAdapter()
@@ -64,11 +61,11 @@ internal class PageContentAdapter(
                     println("Collecting successive TextObjects -> ${TimeCounter.getTimeElapsed()} ms")
                     TimeCounter.reset()
 
-                    val textContentGroups = textContentAnalyzer.analyze(textObjects, characterWidths, firstChars)
+                    val textContentGroups = textContentAnalyzer.analyze(textObjects, fonts)
                     println("TextContentAnalyzer.analyze -> ${TimeCounter.getTimeElapsed()} ms")
 
                     TimeCounter.reset()
-                    val textContents = textContentAdapter.getContents(textContentGroups, pageFonts)
+                    val textContents = textContentAdapter.getContents(textContentGroups, fonts)
                     println("TextContentAdapter.getContents -> ${TimeCounter.getTimeElapsed()} ms")
 
                     contents.addAll(textContents)

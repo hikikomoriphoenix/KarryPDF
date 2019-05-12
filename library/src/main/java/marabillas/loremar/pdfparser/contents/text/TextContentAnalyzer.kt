@@ -2,6 +2,7 @@ package marabillas.loremar.pdfparser.contents.text
 
 import android.support.v4.util.SparseArrayCompat
 import marabillas.loremar.pdfparser.contents.ContentGroup
+import marabillas.loremar.pdfparser.font.Font
 import marabillas.loremar.pdfparser.objects.Numeric
 import marabillas.loremar.pdfparser.objects.PDFArray
 import marabillas.loremar.pdfparser.objects.PDFString
@@ -21,8 +22,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
     private var currLine = ArrayList<TextElement>()
 
     private val prevLineWideSpaces = mutableListOf<WideSpace>()
-    private val characterWidths = SparseArrayCompat<FloatArray>()
-    private val firstChars = SparseArrayCompat<Int>()
+    private val fonts = SparseArrayCompat<Font>()
 
     init {
         textObjects.clear()
@@ -36,34 +36,23 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         currTextGroup = TextGroup()
         table = Table()
         currLine.clear()
-        characterWidths.clear()
-        firstChars.clear()
         prevLineWideSpaces.clear()
+        fonts.clear()
     }
 
     fun analyze(
         textObjs: MutableList<TextObject>,
-        characterWidths: SparseArrayCompat<FloatArray>,
-        firstChars: SparseArrayCompat<Int>
+        fonts: SparseArrayCompat<Font>
     ): ArrayList<ContentGroup> {
         resetAnalyzer()
 
         textObjects.addAll(textObjs)
 
-        if (characterWidths.size() > 0 && firstChars.size() > 0) {
-            for (i in 0 until characterWidths.size()) {
-                this.characterWidths.put(
-                    characterWidths.keyAt(i),
-                    characterWidths[characterWidths.keyAt(i)]
-                )
-            }
-
-            for (i in 0 until firstChars.size()) {
-                this.firstChars.put(
-                    firstChars.keyAt(i),
-                    firstChars[firstChars.keyAt(i)]
-                )
-            }
+        for (i in 0 until fonts.size()) {
+            this.fonts.put(
+                fonts.keyAt(i),
+                fonts[fonts.keyAt(i)]
+            )
         }
 
         // If tj values are arrays resulting from TJ operator, determine from the number values between strings
@@ -169,7 +158,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
     }
 
     internal fun detectTableComponents() {
-        if (characterWidths.size() > 0 && firstChars.size() > 0) {
+        if (fonts.size() > 0) {
             detectTables()
         }
         detectMultiLinearColumns()
@@ -319,11 +308,17 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                         rightmost = rightBound
                         val fKey = sb.clear().append(e.tf, 2, e.tf.indexOf(' ')).toInt()
                         val fSize = sb.clear().append(e.tf, e.tf.indexOf(' ') + 1, e.tf.length).toDouble().toFloat()
-                        val firstChar = firstChars[fKey] ?: 0
+                        val firstChar = fonts[fKey]?.firstChar ?: 0
+                        val missingWidth = fonts[fKey]?.missingWidth
                         spaceWidth = if (firstChar <= 32) {
-                            val spWdth = characterWidths[fKey]
-                            spWdth?.let {
-                                it[32 - firstChar] * fSize * textObj.scaleX
+                            val ws = fonts[fKey]?.widths
+                            ws?.let {
+                                val index = 32 - firstChar
+                                when {
+                                    index < it.size -> it[index] * fSize * textObj.scaleX
+                                    missingWidth != null -> missingWidth * fSize * textObj.scaleX
+                                    else -> Float.MAX_VALUE
+                                }
                             } ?: Float.MAX_VALUE
                         } else {
                             Float.MAX_VALUE
@@ -340,14 +335,19 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         val fKey = sb.toInt()
         sb.clear().append(textElement.tf, textElement.tf.indexOf(' ') + 1, textElement.tf.length)
         val fSize = sb.toDouble().toFloat()
-        val widths = characterWidths[fKey]
-        val firstChar = firstChars[fKey] ?: 0
+        val widths = fonts[fKey]?.widths
+        val firstChar = fonts[fKey]?.firstChar ?: 0
+        val missingWidth = fonts[fKey]?.missingWidth
         var elementWidth = 0f
         val string = textElement.tj as PDFString
-        if (widths != null) {
+        if (widths != null && missingWidth != null) {
             string.value.forEach {
                 val int = it.toInt()
-                val width = (widths[int - firstChar] / 1000) * fSize * scaleX
+                val width = if (int < widths.size) {
+                    (widths[int - firstChar] / 1000) * fSize * scaleX
+                } else {
+                    missingWidth
+                }
                 elementWidth += width
             }
             return elementWidth

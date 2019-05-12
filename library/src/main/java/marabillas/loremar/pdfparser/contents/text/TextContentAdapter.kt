@@ -1,12 +1,12 @@
 package marabillas.loremar.pdfparser.contents.text
 
-import android.graphics.Typeface
+import android.support.v4.util.SparseArrayCompat
 import android.text.SpannableString
 import android.text.SpannableStringBuilder
-import android.util.SparseArray
 import marabillas.loremar.pdfparser.contents.ContentGroup
 import marabillas.loremar.pdfparser.contents.PageContent
 import marabillas.loremar.pdfparser.font.CustomTypefaceSpan
+import marabillas.loremar.pdfparser.font.Font
 import marabillas.loremar.pdfparser.font.FontMappings
 import marabillas.loremar.pdfparser.font.FontName
 import marabillas.loremar.pdfparser.objects.PDFString
@@ -23,7 +23,7 @@ internal class TextContentAdapter {
         sb.clear()
     }
 
-    fun getContents(contentGroups: ArrayList<ContentGroup>, pageFonts: SparseArray<Typeface>): ArrayList<PageContent> {
+    fun getContents(contentGroups: ArrayList<ContentGroup>, fonts: SparseArrayCompat<Font>): ArrayList<PageContent> {
         resetAdapter()
         var contentGroup: ContentGroup
         for (i in 0 until contentGroups.size) {
@@ -34,13 +34,13 @@ internal class TextContentAdapter {
                 } else if (i > 0 && contentGroups[i - 1] is Table) {
                     spanBuilder = SpannableStringBuilder()
                 }
-                processTextGroup(contentGroup, pageFonts)
+                processTextGroup(contentGroup, fonts)
             } else if (contentGroup is Table) {
                 if (spanBuilder.isNotEmpty()) {
                     val textContent = TextContent(spanBuilder)
                     pageContents.add(textContent)
                 }
-                val table = processTable(contentGroup, pageFonts)
+                val table = processTable(contentGroup, fonts)
                 pageContents.add(table)
             }
         }
@@ -53,7 +53,7 @@ internal class TextContentAdapter {
         return pageContents
     }
 
-    private fun processTextGroup(textGroup: TextGroup, pageFonts: SparseArray<Typeface>) {
+    private fun processTextGroup(textGroup: TextGroup, fonts: SparseArrayCompat<Font>) {
         var line: ArrayList<TextElement>
         for (i in 0 until textGroup.size()) {
             line = textGroup[i]
@@ -65,7 +65,7 @@ internal class TextContentAdapter {
                 val fEnd = sb.indexOf(' ')
                 sb.delete(fEnd, sb.length)
                 sb.delete(0, 2)
-                val t = pageFonts[sb.toInt()] ?: FontMappings[FontName.DEFAULT]
+                val t = fonts[sb.toInt()]?.typeface ?: FontMappings[FontName.DEFAULT]
 
                 val span = CustomTypefaceSpan(t)
                 s.setSpan(span, 0, s.length, SpannableString.SPAN_INCLUSIVE_EXCLUSIVE)
@@ -75,14 +75,14 @@ internal class TextContentAdapter {
         }
     }
 
-    private fun processTable(table: Table, pageFonts: SparseArray<Typeface>): TableContent {
+    private fun processTable(table: Table, fonts: SparseArrayCompat<Font>): TableContent {
         val content = TableContent()
         for (i in 0 until table.size()) {
             val rowContent = TableContent.Row()
             for (j in 0 until table[i].size()) {
                 spanBuilder = SpannableStringBuilder()
                 for (k in 0 until table[i][j].size()) {
-                    processTextGroup(table[i][j][k], pageFonts)
+                    processTextGroup(table[i][j][k], fonts)
                 }
                 val cellContent = TableContent.Cell(spanBuilder)
                 rowContent.cells.add(cellContent)

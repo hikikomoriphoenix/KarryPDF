@@ -18,13 +18,14 @@ class PDFParser {
     private var fileReader: PDFFileReader? = null
     private var objects: HashMap<String, XRefEntry>? = null
     internal val pages: ArrayList<Reference> = ArrayList()
+    private val referenceResolver = ReferenceResolverImpl()
 
     fun loadDocument(file: RandomAccessFile): PDFParser {
         TimeCounter.reset()
 
         val fileReader = PDFFileReader(file)
         this.fileReader = fileReader
-        ObjectIdentifier.referenceResolver = ReferenceResolverImpl()
+        ObjectIdentifier.referenceResolver = referenceResolver
 
         objects = fileReader.getLastXRefData()
 
@@ -70,14 +71,14 @@ class PDFParser {
                 return content.toPDFObject(false) ?: reference
             }
         }
-    }
 
-    private fun resolveReferenceToStream(reference: Reference): Stream? {
-        val fileReader = fileReader ?: throw NoDocumentException()
-        val objects = this.objects ?: throw NoDocumentException()
-        val obj = objects["${reference.obj} ${reference.gen}"]
-        val pos = obj?.pos ?: return null
-        return fileReader.getStream(pos)
+        override fun resolveReferenceToStream(reference: Reference): Stream? {
+            val fileReader = fileReader ?: throw NoDocumentException()
+            val objects = objects ?: throw NoDocumentException()
+            val obj = objects["${reference.obj} ${reference.gen}"]
+            val pos = obj?.pos ?: return null
+            return fileReader.getStream(pos)
+        }
     }
 
     private fun getPageTreeLeafNodes(pageTree: Dictionary) {
@@ -153,7 +154,7 @@ class PDFParser {
     ): ArrayList<PageContent> {
         TimeCounter.reset()
         val ref = content as Reference
-        val stream = resolveReferenceToStream(ref)
+        val stream = referenceResolver.resolveReferenceToStream(ref)
         stream?.let {
             TimeCounter.reset()
             val data = it.decodeEncodedStream()
@@ -200,7 +201,7 @@ class PDFParser {
 
             val toUnicode = font["ToUnicode"]
             if (toUnicode is Reference) {
-                val stream = resolveReferenceToStream(toUnicode)
+                val stream = referenceResolver.resolveReferenceToStream(toUnicode)
                 val b = stream?.decodeEncodedStream()
                 b?.let {
                     val cmap = ToUnicodeCMap(String(b)).parse()
@@ -261,7 +262,7 @@ class PDFParser {
         val xObjMap = HashMap<String, Stream>()
         xKeys.forEach { xKey ->
             val xObjRef = xObjectDic[xKey] as Reference
-            val xObj = resolveReferenceToStream(xObjRef)
+            val xObj = referenceResolver.resolveReferenceToStream(xObjRef)
             xObj?.let {
                 xObjMap[xKey] = it
             }

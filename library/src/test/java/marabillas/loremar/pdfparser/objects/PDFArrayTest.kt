@@ -17,6 +17,10 @@ class PDFArrayTest {
     @Test
     fun testReferenceEntry() {
         ObjectIdentifier.referenceResolver = object : ReferenceResolver {
+            override fun resolveReferenceToStream(reference: Reference): Stream? {
+                TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+            }
+
             override fun resolveReference(reference: Reference): PDFObject? {
                 return reference
             }

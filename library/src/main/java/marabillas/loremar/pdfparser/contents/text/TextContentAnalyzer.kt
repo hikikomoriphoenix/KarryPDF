@@ -308,20 +308,12 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                         rightmost = rightBound
                         val fKey = sb.clear().append(e.tf, 2, e.tf.indexOf(' ')).toInt()
                         val fSize = sb.clear().append(e.tf, e.tf.indexOf(' ') + 1, e.tf.length).toDouble().toFloat()
-                        val firstChar = fonts[fKey]?.firstChar ?: 0
-                        val missingWidth = fonts[fKey]?.missingWidth
-                        spaceWidth = if (firstChar <= 32) {
-                            val ws = fonts[fKey]?.widths
-                            ws?.let {
-                                val index = 32 - firstChar
-                                when {
-                                    index < it.size -> it[index] * fSize * textObj.scaleX
-                                    missingWidth != null -> missingWidth * fSize * textObj.scaleX
-                                    else -> Float.MAX_VALUE
-                                }
-                            } ?: Float.MAX_VALUE
-                        } else {
-                            Float.MAX_VALUE
+                        val widths = fonts[fKey]?.widths
+                        val spWdth = widths?.get(32)
+                        val missingWidth = widths?.get(-1)
+                        spaceWidth = spWdth ?: missingWidth ?: Float.MAX_VALUE
+                        if (spaceWidth != Float.MAX_VALUE) {
+                            spaceWidth = (spaceWidth / 1000) * fSize * textObj.scaleX
                         }
                     }
                 }
@@ -331,28 +323,42 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
     }
 
     private fun getElementWidth(textElement: TextElement, scaleX: Float): Float {
-        sb.clear().append(textElement.tf, 2, textElement.tf.indexOf(' '))
-        val fKey = sb.toInt()
+        // Get font size
         sb.clear().append(textElement.tf, textElement.tf.indexOf(' ') + 1, textElement.tf.length)
         val fSize = sb.toDouble().toFloat()
+
+        // Get glyph widths and missing character width
+        sb.clear().append(textElement.tf, 2, textElement.tf.indexOf(' '))
+        val fKey = sb.toInt()
         val widths = fonts[fKey]?.widths
-        val firstChar = fonts[fKey]?.firstChar ?: 0
-        val missingWidth = fonts[fKey]?.missingWidth
+        val missingWidth = widths?.get(-1)
+
+        // Initialize total element width as 0. Will accumulate width for every character in string
         var elementWidth = 0f
+
         val string = textElement.tj as PDFString
-        if (widths != null && missingWidth != null) {
-            string.value.forEach {
-                val int = it.toInt()
-                val width = if (int < widths.size) {
-                    (widths[int - firstChar] / 1000) * fSize * scaleX
+        return if (widths != null && missingWidth != null) {
+            string.value.forEach { c ->
+                // Convert character to its integer value
+                val cInt = c.toInt()
+
+                // Get character's corresponding width and multiply to font size and horizontal scaling
+                val width = if (widths.containsKey(cInt)) {
+                    val cWidth = widths[cInt] as Float
+                    (cWidth / 1000) * fSize * scaleX
                 } else {
-                    missingWidth
+                    (missingWidth / 1000) * fSize * scaleX
                 }
+
+                // Accumulate width
                 elementWidth += width
             }
-            return elementWidth
+            // return
+            elementWidth
         } else {
-            return Float.MAX_VALUE
+            // Return a very large total width if can't obtain widths for characters. This will make sure wide space is
+            // not formed.
+            Float.MAX_VALUE
         }
     }
 

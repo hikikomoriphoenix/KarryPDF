@@ -8,7 +8,6 @@ import marabillas.loremar.pdfparser.objects.PDFArray
 import marabillas.loremar.pdfparser.objects.PDFString
 import marabillas.loremar.pdfparser.objects.toPDFString
 import marabillas.loremar.pdfparser.toDouble
-import marabillas.loremar.pdfparser.toInt
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -21,7 +20,6 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
     private var table = Table()
     private var currLine = ArrayList<TextElement>()
 
-    private val prevLineWideSpaces = mutableListOf<WideSpace>()
     private val fonts = SparseArrayCompat<Font>()
 
     init {
@@ -36,7 +34,6 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         currTextGroup = TextGroup()
         table = Table()
         currLine.clear()
-        prevLineWideSpaces.clear()
         fonts.clear()
     }
 
@@ -65,7 +62,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         // Tables are detected by looking for wide spaces placed on top of each other. These wide spaces serve as
         // dividers between table columns. Tables are also detected by looking for multi-linear TextObjects placed
         // horizontally adjacent to each other.
-        detectTableComponents()
+        TableDetector(textObjects, fonts).detectTableComponents()
 
         // Group texts in the same line or in adjacent lines with line-spacing less than font size.
         groupTexts()
@@ -95,7 +92,6 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
     internal fun handleTJArrays() {
         textObjects.forEach { texObj ->
                 val spW = getSpaceWidth(texObj)
-            println("space width = $spW")
                 handleSpacing(spW, texObj)
             }
     }
@@ -157,260 +153,6 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
             }
     }
 
-    internal fun detectTableComponents() {
-        if (fonts.size() > 0) {
-            detectTables()
-        }
-        detectMultiLinearColumns()
-    }
-
-    private fun detectTables() {
-        val currLineWideSpaces = mutableListOf<WideSpace>()
-        var belowColumn = 0
-        var aboveColumn = 0
-        var w = 0
-        textObjects.forEachIndexed { i, textObj ->
-            // Check if another text object exists following the current text object on the same line
-            if (i + 1 < textObjects.count() && textObj.td[1] == textObjects[i + 1].td[1]) {
-                val rbArr = getLocationAndSpaceWidthOfRightBoundary(textObj)
-                val diff = textObjects[i + 1].td[0] - rbArr[0]
-
-                // Check if the distance between the two TextObjects is wider than 3 space characters.
-                if (rbArr[1] != Float.MAX_VALUE && diff > (rbArr[1] * 3)) {
-                    val currWideSpace = WideSpace(
-                        rbArr[0],
-                        textObjects[i + 1].td[0],
-                        i,
-                        i + 1
-                    )
-                    currLineWideSpaces.add(currWideSpace)
-
-                    // Iterate through wide spaces of the previous line.
-                    while (w < prevLineWideSpaces.count()) {
-                        val aboveWideSpace = prevLineWideSpaces[w]
-
-                        // Check if current WideSpace and selected WideSpace from previous line forms a divider between
-                        // two columns in a table.
-                        if (isFormingColumnDivider(currWideSpace, aboveWideSpace, rbArr[1])) {
-                            aboveWideSpace.isDivider = true
-                            currWideSpace.isDivider = true
-
-                            // Set column number for text objects at the left of column boundary and whose column numbers
-                            // are not set.
-                            // Set column number for text objects in previous line.
-                            setColumnNumberForTextObjectsToLeft(aboveWideSpace.leftTextObj, aboveColumn)
-                            // Set column number for text objects in current line.
-                            setColumnNumberForTextObjectsToLeft(i, belowColumn)
-
-                            aboveColumn++
-                            belowColumn = aboveColumn
-
-                            // If column number is already set for text objects to the right and is less than  or equal to the
-                            // current column number, adjust their column numbers.
-                            var r = aboveWideSpace.rightTextObj
-                            if (textObjects[r].column != -1 && textObjects[r].column <= aboveColumn) {
-                                val inc = aboveColumn - textObjects[r].column + 1
-                                textObjects[r].column += inc
-                                r++
-                                while (r < textObjects.count()) {
-                                    if (textObjects[r].column == -1)
-                                        break
-                                    if (textObjects[r].td[1] != textObjects[r - 1].td[1])
-                                        break
-                                    else
-                                        textObjects[r].column += inc
-                                    r++
-                                }
-                            }
-                            break
-                        } else if (aboveWideSpace.left > currWideSpace.right) {
-                            // Allow the previous WideSpace to be checked in the next iteration.
-                            w--
-                            break
-                        } else if (aboveWideSpace.isDivider) {
-                            aboveColumn++
-                            w++
-                        } else {
-                            w++
-                        }
-                    }
-                }
-            } else { // If current TextObject is the last one in the line.
-                if (belowColumn > 0) {
-                    setColumnNumberForTextObjectsToLeft(i, belowColumn)
-                    // Set column number for remaining text objects from previous line whose column number is not set yet
-                    val aboveWideSpace = prevLineWideSpaces[w]
-                    setColumnNumberForTextObjectsToLeft(aboveWideSpace.leftTextObj, aboveColumn)
-                    var j = aboveWideSpace.rightTextObj
-                    while (j < textObjects.count()) {
-                        if (
-                            textObjects[j].column >= 0 ||
-                            textObjects[j].td[1] != textObjects[j - 1].td[1]
-                        ) break
-
-                        textObjects[j].column = aboveColumn
-                        j++
-                    }
-                }
-                belowColumn = 0
-                aboveColumn = 0
-                w = 0
-                prevLineWideSpaces.clear()
-                prevLineWideSpaces.addAll(currLineWideSpaces)
-                currLineWideSpaces.clear()
-            }
-        }
-    }
-
-    private fun setColumnNumberForTextObjectsToLeft(start: Int, column: Int) {
-        var i = start
-        while (i >= 0) {
-            if (
-                textObjects[i].column >= 0 ||
-                textObjects[i].td[1] != textObjects[i + 1].td[1]
-            ) break
-
-            textObjects[i].column = column
-            i--
-        }
-    }
-
-    private fun isFormingColumnDivider(below: WideSpace, above: WideSpace, spaceWidth: Float): Boolean {
-        // Check if spaces are positioned on top of one another.
-        if (below.left > above.right || below.right < above.left)
-            return false
-
-        // Get the left and right boundary for the space common to the two.
-        val left = if (below.left > above.left)
-            below.left else above.left
-        val right = if (below.right < above.right)
-            below.right else above.right
-
-        // Check if it is wide enough.
-        val hole = right - left
-        return hole > (spaceWidth * 3)
-    }
-
-    private fun getLocationAndSpaceWidthOfRightBoundary(textObj: TextObject): FloatArray {
-        var rightmost = textObj.first().td[0]
-        var spaceWidth = Float.MAX_VALUE
-        var currX = textObj.first().td[0]
-        textObj.forEachIndexed { i, e ->
-            if (e != textObj.first())
-                currX += e.td[0]
-            if (i + 1 == textObj.count() || textObj.elementAt(i + 1).td[1] != 0f) {
-                val elemWdth = getElementWidth(e, textObj.scaleX)
-                if (elemWdth == Float.MAX_VALUE) {
-                    spaceWidth = Float.MAX_VALUE
-                } else {
-                    val rightBound = currX + elemWdth
-                    if (rightBound > rightmost) {
-                        rightmost = rightBound
-                        val fKey = sb.clear().append(e.tf, 2, e.tf.indexOf(' ')).toInt()
-                        val fSize = sb.clear().append(e.tf, e.tf.indexOf(' ') + 1, e.tf.length).toDouble().toFloat()
-                        val widths = fonts[fKey]?.widths
-                        val spWdth = widths?.get(32)
-                        val missingWidth = widths?.get(-1)
-                        spaceWidth = spWdth ?: missingWidth ?: Float.MAX_VALUE
-                        if (spaceWidth != Float.MAX_VALUE) {
-                            spaceWidth = (spaceWidth / 1000) * fSize * textObj.scaleX
-                        }
-                    }
-                }
-            }
-        }
-        return floatArrayOf(rightmost, spaceWidth)
-    }
-
-    private fun getElementWidth(textElement: TextElement, scaleX: Float): Float {
-        // Get font size
-        sb.clear().append(textElement.tf, textElement.tf.indexOf(' ') + 1, textElement.tf.length)
-        val fSize = sb.toDouble().toFloat()
-
-        // Get glyph widths and missing character width
-        sb.clear().append(textElement.tf, 2, textElement.tf.indexOf(' '))
-        val fKey = sb.toInt()
-        val widths = fonts[fKey]?.widths
-        val missingWidth = widths?.get(-1)
-
-        // Initialize total element width as 0. Will accumulate width for every character in string
-        var elementWidth = 0f
-
-        val string = textElement.tj as PDFString
-        return if (widths != null && missingWidth != null) {
-            string.value.forEach { c ->
-                // Convert character to its integer value
-                val cInt = c.toInt()
-
-                // Get character's corresponding width and multiply to font size and horizontal scaling
-                val width = if (widths.containsKey(cInt)) {
-                    val cWidth = widths[cInt] as Float
-                    (cWidth / 1000) * fSize * scaleX
-                } else {
-                    (missingWidth / 1000) * fSize * scaleX
-                }
-
-                // Accumulate width
-                elementWidth += width
-            }
-            // return
-            elementWidth
-        } else {
-            // Return a very large total width if can't obtain widths for characters. This will make sure wide space is
-            // not formed.
-            Float.MAX_VALUE
-        }
-    }
-
-    private fun detectMultiLinearColumns() {
-        var i = 0
-        while (i < textObjects.count() && textObjects[i].column == -1) {
-            if (isTextObjectMultiLinear(textObjects[i])) {
-                val rowStart = findRowStart(i)
-                val rowEnd = findRowEnd(i)
-                if (i > rowStart || i < rowEnd) {
-                    var column = 0
-                    for (j in rowStart..rowEnd) {
-                        textObjects[j].column = column++
-                    }
-                }
-                i = rowEnd + 1
-            } else {
-                i++
-            }
-        }
-    }
-
-    private fun isTextObjectMultiLinear(textObj: TextObject): Boolean {
-        var prevY = textObj.first().td[1]
-        textObj.forEach {
-            if (it.td[1] != prevY)
-                return true
-            prevY = it.td[1]
-        }
-        return false
-    }
-
-    private fun findRowStart(current: Int): Int {
-        var i = current
-        while (i >= 0) {
-            if (i - 1 < 0 || textObjects[i].td[1] != textObjects[i - 1].td[1])
-                return i
-            i--
-        }
-        return 0
-    }
-
-    private fun findRowEnd(current: Int): Int {
-        var i = current
-        while (i < textObjects.count()) {
-            if (i + 1 > textObjects.lastIndex || textObjects[i].td[1] != textObjects[i + 1].td[1])
-                return i
-            i++
-        }
-        return textObjects.lastIndex
-    }
-
     internal fun groupTexts() {
         currTextGroup = TextGroup()
         contentGroups.add(currTextGroup)
@@ -424,28 +166,97 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
 
             when {
                 textObj.column >= 0 -> {
-                    currTextGroup = TextGroup()
-                    val cell = Table.Cell()
-                    cell.add(currTextGroup)
+                    when {
+                        // If first cell of table or if not in the same row, then add new row
+                        table.size() == 0 || textObj.td[1] != (prevTextObj as TextObject).td[1] -> {
+                            // Add new table if first cell of table
+                            if (table.size() == 0) {
+                                contentGroups.add(table)
+                            }
 
-                    // If first cell of table or if not in the same row, then add new row, else add cell to last row.
-                    if (table.size() == 0 || textObj.td[1] != (prevTextObj as TextObject).td[1]) {
-                        if (table.size() == 0) {
-                            contentGroups.add(table)
+                            // Add new row
+                            val row = Table.Row()
+                            table.add(row)
+
+                            val blankCells = textObj.column
+
+                            // Add empty cells
+                            repeat(blankCells) {
+                                val textGroup = TextGroup()
+                                textGroup.add(
+                                    arrayListOf(
+                                        TextElement(
+                                            tj = "( )".toPDFString(),
+                                            tf = "/F1000000 1000000"
+                                        )
+                                    )
+                                )
+                                val cell = Table.Cell()
+                                cell.add(textGroup)
+                                row.add(cell)
+                            }
+
+                            // Add new cell
+                            currTextGroup = TextGroup()
+                            val cell = Table.Cell()
+                            cell.add(currTextGroup)
+                            row.add(cell)
+
+                            textObj.forEach {
+                                var dty = -it.td[1]
+                                if (textObj.first() == it) dty = 0f
+                                sb.clear().append(it.tf, it.tf.indexOf(' ') + 1, it.tf.length)
+                                val fSize = sb.toDouble().toFloat() * textObj.scaleY
+                                sortGroup(it, dty, fSize)
+                            }
                         }
-                        val row = Table.Row()
-                        row.add(cell)
-                        table.add(row)
-                    } else {
-                        table[table.size() - 1].add(cell)
-                    }
+                        // If in the same column of previous TextObject
+                        textObj.column == prevTextObj.column -> {
+                            textObj.forEach {
+                                var dty = -it.td[1]
 
-                    textObj.forEach {
-                        var dty = -it.td[1]
-                        if (textObj.first() == it) dty = 0f
-                        sb.clear().append(it.tf, it.tf.indexOf(' ') + 1, it.tf.length)
-                        val fSize = sb.toDouble().toFloat() * textObj.scaleY
-                        sortGroup(it, dty, fSize)
+                                // This makes sure it is appended on the same line.
+                                if (textObj.first() == it)
+                                    dty = 0f
+
+                                sb.clear().append(it.tf, it.tf.indexOf(' ') + 1, it.tf.length)
+                                val fSize = sb.toDouble().toFloat() * textObj.scaleY
+                                sortGroup(it, dty, fSize)
+                            }
+                        }
+                        else -> {
+                            val colDiff = textObj.column - prevTextObj.column
+                            val blankCells = colDiff - 1
+
+                            // Add empty cells
+                            repeat(blankCells) {
+                                val textGroup = TextGroup()
+                                textGroup.add(
+                                    arrayListOf(
+                                        TextElement(
+                                            tj = "( )".toPDFString(),
+                                            tf = "/F1000000 1000000"
+                                        )
+                                    )
+                                )
+                                val cell = Table.Cell()
+                                cell.add(textGroup)
+                                table[table.size() - 1].add(cell)
+                            }
+
+                            // Add new cell
+                            currTextGroup = TextGroup()
+                            val cell = Table.Cell()
+                            cell.add(currTextGroup)
+                            table[table.size() - 1].add(cell)
+                            textObj.forEach {
+                                var dty = -it.td[1]
+                                if (textObj.first() == it) dty = 0f
+                                sb.clear().append(it.tf, it.tf.indexOf(' ') + 1, it.tf.length)
+                                val fSize = sb.toDouble().toFloat() * textObj.scaleY
+                                sortGroup(it, dty, fSize)
+                            }
+                        }
                     }
                 }
                 table.size() > 0 -> {
@@ -762,11 +573,3 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         }
     }
 }
-
-data class WideSpace(
-    val left: Float,
-    val right: Float,
-    val leftTextObj: Int,
-    val rightTextObj: Int,
-    var isDivider: Boolean = false
-)

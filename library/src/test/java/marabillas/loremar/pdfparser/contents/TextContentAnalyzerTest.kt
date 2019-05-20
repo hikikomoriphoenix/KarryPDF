@@ -1,5 +1,6 @@
 package marabillas.loremar.pdfparser.contents
 
+import android.support.v4.util.SparseArrayCompat
 import marabillas.loremar.pdfparser.contents.text.*
 import marabillas.loremar.pdfparser.objects.PDFString
 import marabillas.loremar.pdfparser.objects.toPDFArray
@@ -142,7 +143,7 @@ class TextContentAnalyzerTest {
                 { it.getX() })
         )
         val analyzer = TextContentAnalyzer(textObjects)
-        analyzer.detectTableComponents()
+        TableDetector(textObjects, SparseArrayCompat()).detectTableComponents()
         analyzer.groupTexts()
 
         // Assert the number and type of ContentGroups produced.

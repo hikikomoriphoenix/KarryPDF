@@ -42,6 +42,9 @@ internal class TextContentAdapter {
                 }
                 val table = processTable(contentGroup, fonts)
                 pageContents.add(table)
+
+                // New SpannableStringBuilder for next content
+                spanBuilder = SpannableStringBuilder()
             }
         }
 

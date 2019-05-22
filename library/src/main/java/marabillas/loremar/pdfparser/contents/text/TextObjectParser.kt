@@ -24,7 +24,8 @@ internal class TextObjectParser {
         textObj: TextObject,
         tfDefault: StringBuilder = tfDef,
         startIndex: Int,
-        ctm: FloatArray
+        ctm: FloatArray,
+        rgb: FloatArray
     ): Int {
         if (tfDefault.isNotBlank()) {
             tf.clear().append(tfDefault)
@@ -52,7 +53,7 @@ internal class TextObjectParser {
                         if (s.isUnEnclosingAt(tjEnd))
                             tjEnd = pos - 1
                         operand.clear().append(s, operandsIndices[0], tjEnd)
-                        addTextElement(textObj, operand.toPDFObject() ?: "()".toPDFString(), ctm)
+                        addTextElement(textObj, operand.toPDFObject() ?: "()".toPDFString(), ctm, rgb)
                     } else if (s[pos] == 'd') {
                         positionText(s)
                     } else if (s[pos] == 'm') {
@@ -135,14 +136,15 @@ internal class TextObjectParser {
         return pos
     }
 
-    private fun addTextElement(textObj: TextObject, tj: PDFObject, ctm: FloatArray) {
+    private fun addTextElement(textObj: TextObject, tj: PDFObject, ctm: FloatArray, rgb: FloatArray) {
         td[0] = td[0] * ctm[0] + ctm[4]
         td[1] = td[1] * ctm[3] + ctm[5]
         val content = TextElement(
             tf = tf.toString(),
             td = td.copyOf(),
             tj = tj,
-            ts = ts
+            ts = ts,
+            rgb = rgb
         )
         textObj.add(content)
         if (textObj.count() == 1) {

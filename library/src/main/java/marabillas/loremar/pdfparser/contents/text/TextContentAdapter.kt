@@ -1,8 +1,10 @@
 package marabillas.loremar.pdfparser.contents.text
 
+import android.graphics.Color
 import android.support.v4.util.SparseArrayCompat
 import android.text.SpannableString
 import android.text.SpannableStringBuilder
+import android.text.style.ForegroundColorSpan
 import marabillas.loremar.pdfparser.contents.ContentGroup
 import marabillas.loremar.pdfparser.contents.PageContent
 import marabillas.loremar.pdfparser.font.CustomTypefaceSpan
@@ -64,14 +66,21 @@ internal class TextContentAdapter {
                 spanBuilder.append('\n')
             for (j in 0 until line.size) {
                 val s = SpannableString((line[j].tj as PDFString).value)
-                sb.clear().append(line[j].tf)
-                val fEnd = sb.indexOf(' ')
-                sb.delete(fEnd, sb.length)
-                sb.delete(0, 2)
-                val t = fonts[sb.toInt()]?.typeface ?: FontMappings[FontName.DEFAULT]
 
+                // Style with typeface
+                sb.clear().append(line[j].tf, 2, line[j].tf.indexOf(' '))
+                val t = fonts[sb.toInt()]?.typeface ?: FontMappings[FontName.DEFAULT]
                 val span = CustomTypefaceSpan(t)
                 s.setSpan(span, 0, s.length, SpannableString.SPAN_INCLUSIVE_EXCLUSIVE)
+
+                // Style with color
+                if (line[j].rgb[0] != -1f) {
+                    val red = Math.round(line[j].rgb[0] * 255)
+                    val green = Math.round(line[j].rgb[1] * 255)
+                    val blue = Math.round(line[j].rgb[2] * 255)
+                    val colorSpan = ForegroundColorSpan(Color.rgb(red, green, blue))
+                    s.setSpan(colorSpan, 0, s.length, SpannableString.SPAN_INCLUSIVE_EXCLUSIVE)
+                }
 
                 spanBuilder.append(s)
             }

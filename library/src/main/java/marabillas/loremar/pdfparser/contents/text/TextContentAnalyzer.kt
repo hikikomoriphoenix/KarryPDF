@@ -81,8 +81,8 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         // If line is almost as long as the width of page, then append the next line in the TextGroup.
         formParagraphs(w)
 
-        // Convert adjacent elements with same tf into one element
-        mergeElementsWithSameFont()
+        // Convert adjacent elements with same tf and rgb into one element
+        mergeElementsWithSameFontAndColor()
 
         deleteBlankLines()
 
@@ -147,7 +147,8 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                         td = textElement.td,
                         tf = textElement.tf,
                         ts = textElement.ts,
-                        tj = sb.toString().toPDFString()
+                        tj = sb.toString().toPDFString(),
+                        rgb = textElement.rgb
                     )
                     textObj.update(transformed, index)
                 }
@@ -396,7 +397,8 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                         tf = line.last().tf,
                         tj = sb.toPDFString(),
                         td = line.last().td.copyOf(),
-                        ts = line.last().ts
+                        ts = line.last().ts,
+                        rgb = line.last().rgb
                     )
                     line.remove(line.last())
                     line.add(e)
@@ -457,7 +459,8 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                             tf = next.first().tf,
                             tj = sb.toPDFString(),
                             td = next.first().td.copyOf(),
-                            ts = next.first().ts
+                            ts = next.first().ts,
+                            rgb = next.first().rgb
                         )
                         next.remove(next.first())
                         next.add(0, e)
@@ -478,7 +481,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
             }
     }
 
-    internal fun mergeElementsWithSameFont() {
+    internal fun mergeElementsWithSameFontAndColor() {
         contentGroups.forEach {
             when (it) {
                 is TextGroup -> mergeElementsInTextGroup(it)
@@ -505,7 +508,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
             var j = 1
             sb.clear()
             while (j < line.size) {
-                if (line[j].tf == line[j - 1].tf) {
+                if (line[j].tf == line[j - 1].tf && line[j].rgb.contentEquals(line[j - 1].rgb)) {
                     if (sb.isEmpty()) {
                         first = j - 1
                         sb.append(
@@ -545,7 +548,8 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
             tf = line[start].tf,
             td = line[start].td.copyOf(),
             ts = line[start].ts,
-            tj = sb.toPDFString()
+            tj = sb.toPDFString(),
+            rgb = line[start].rgb
         )
         line.removeAt(start)
         line.add(start, newTextElement)

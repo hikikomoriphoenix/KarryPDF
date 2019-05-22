@@ -59,7 +59,8 @@ internal class FontDecoder(private val pageObjects: ArrayList<PageObject>, priva
                         td = e.td.copyOf(),
                         tj = newTj ?: e.tj,
                         tf = e.tf,
-                        ts = e.ts
+                        ts = e.ts,
+                        rgb = e.rgb
                     )
 
                     textObject.update(updated, i)

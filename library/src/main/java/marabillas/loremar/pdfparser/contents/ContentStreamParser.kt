@@ -18,7 +18,11 @@ internal class ContentStreamParser {
     private val BI = "BI"
     private val DO = "Do"
     private val CM = "cm"
-    private val operatorList = hashSetOf(TF, BT, QSTART, QEND, CM, DO) // TODO Add BI
+    private val RG = "RG"
+    private val RGX = "rg"
+    private val K = "K"
+    private val KX = "k"
+    private val operatorList = hashSetOf(TF, BT, QSTART, QEND, CM, DO, RG, RGX, K, KX) // TODO Add BI
     private val token = StringBuilder()
 
     private val ctmStack = Stack<FloatArray>()
@@ -33,11 +37,21 @@ internal class ContentStreamParser {
         val textObjectParser = TextObjectParser()
         val imageObjectParser = ImageObjectParser()
         val tf = StringBuilder()
+        var rgb = floatArrayOf(-1f, -1f, -1f)
         var i = 0
 
         while (i < sb.length) {
             i = sb.indexOfAny(operatorList, i)
             when {
+                sb.startsWith(RG, i) || sb.startsWith(RGX, i) -> {
+                    rgb = getRGB(i)
+                    i += 2
+                }
+                sb.startsWith(K, i) || sb.startsWith(KX, i) -> {
+                    val cmyk = getCMYK(i)
+                    rgb = CmykToRgbConverter.inst.convert(cmyk)
+                    i++
+                }
                 sb.startsWith(TF, i) -> {
                     var j = 3
                     while (true) {
@@ -53,7 +67,7 @@ internal class ContentStreamParser {
                 sb.startsWith(BT, i) -> {
                     val textObj = TextObject()
                     val cm = ctmStack.last()
-                    i = textObjectParser.parse(sb, textObj, tf, i + 2, cm)
+                    i = textObjectParser.parse(sb, textObj, tf, i + 2, cm, rgb)
                     textObj.scaleX = Math.abs(cm[0])
                     textObj.scaleY = Math.abs(cm[3])
                     pageObjects.add(textObj)
@@ -107,14 +121,29 @@ internal class ContentStreamParser {
     }
 
     private fun getCM(start: Int): FloatArray {
+        return getOperands(start, 6)
+    }
+
+    private fun getRGB(start: Int): FloatArray {
+        return getOperands(start, 3)
+    }
+
+    private fun getCMYK(start: Int): FloatArray {
+        return getOperands(start, 4)
+    }
+
+    private fun getOperands(start: Int, numOperands: Int): FloatArray {
+        // Set starting point to be the space after the last operand and before the operator.
         var i = start - 1
+        // Initialize indices. Include the index of space after the last operand. This allows extraction of last operand.
+        val opIndices = IntArray(numOperands + 1)
+        // When extracting operands, ending index is taken as index of next operand minus 1. Here, the index of operator
+        // is assumed as the index of next operand.
+        opIndices[numOperands] = start
 
-        val opIndices = IntArray(7)
-        // Mark the ending index for 6th operand.
-        opIndices[6] = start
-
+        // Get indices of each operand
         var expectOperand = true
-        var op = 5
+        var op = numOperands - 1
         while (op >= 0) {
             if (expectOperand) {
                 if (sb[i].isDigit()) {
@@ -127,16 +156,19 @@ internal class ContentStreamParser {
             }
             i--
         }
-        val cm = FloatArray(6)
-        for (j in 0 until 6) {
+
+        // Extract operands
+        val operands = FloatArray(numOperands)
+        for (j in 0 until numOperands) {
             token.clear().append(
                 sb,
                 opIndices[j],
                 opIndices[j + 1] - 1
             )
-            cm[j] = token.toDouble().toFloat()
+            operands[j] = token.toDouble().toFloat()
         }
 
-        return cm
+        return operands
+
     }
 }

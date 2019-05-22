@@ -43,35 +43,47 @@ internal class Font() {
             }
         }
 
-        // Get FirstChar
-        var firstChar = 0
-        val fc = dictionary["FirstChar"]
-        if (fc is Numeric) {
-            firstChar = fc.value.toInt()
-        }
-
-        // Get MissingWidth
-        var missingWidth: Float? = null
-        if (fontDescriptor is Dictionary) {
-            val mw = fontDescriptor["MissingWidth"]
-            if (mw is Numeric) {
-                missingWidth = mw.value.toFloat()
+        // If a Simple Font
+        if (subtype is Name && subtype.value != "Type0") {
+            // Get FirstChar
+            var firstChar = 0
+            val fc = dictionary["FirstChar"]
+            if (fc is Numeric) {
+                firstChar = fc.value.toInt()
             }
-        }
 
-        // Get widths
-        val ws = dictionary["Widths"]
-        if (ws is PDFArray && missingWidth != null) {
-            // Assign missing character width
-            widths.put(-1, missingWidth)
+            // Get MissingWidth
+            var missingWidth: Float? = null
+            if (fontDescriptor is Dictionary) {
+                val mw = fontDescriptor["MissingWidth"]
+                if (mw is Numeric) {
+                    missingWidth = mw.value.toFloat()
+                }
+            }
 
-            for (i in 0 until ws.count()) {
-                widths.put(firstChar + i, (ws[i] as Numeric).value.toFloat())
+            // Get widths
+            val ws = dictionary["Widths"]
+            if (ws is PDFArray && missingWidth != null) {
+                // Assign missing character width
+                widths.put(-1, missingWidth)
+
+                for (i in 0 until ws.count()) {
+                    widths.put(firstChar + i, (ws[i] as Numeric).value.toFloat())
+                }
+            } else {
+                if (fontDescriptor is Dictionary) {
+                    getWidthsFromFontProgram(fontDescriptor, referenceResolver)
+                }
             }
         } else {
-            if (fontDescriptor is Dictionary) {
-                getWidthsFromFontProgram(fontDescriptor, referenceResolver)
-            }
+            // Else a Composite Font
+            /*TODO(
+                "For Type0(Composite) fonts, get CIDFont from DescendantFonts entry and get predefined or embedded" +
+                        "cmap from Encoding entry. With CIDFont, get missingWidth from DW and widths array from W. W maps widths" +
+                        "with CIDs. CID value for a character code is obtained from cmap. For Type2(TrueType) CIDFont, use " +
+                        "CIDToGIDMap. If widths are not obtained from above, go to FontDescriptor and get widths from embedded font" +
+                        "program."
+            )*/
         }
     }
 

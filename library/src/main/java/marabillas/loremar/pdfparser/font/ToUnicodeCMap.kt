@@ -304,7 +304,7 @@ internal class ToUnicodeCMap(private var stream: String) : CMap {
 
     private fun convertCodeToCharAndAppend(codeSB: StringBuilder) {
         when {
-            codeSB.length == 2 -> {
+            codeSB.length % 4 != 0 -> {
                 decodedSB.append(
                     codeSB.hexToInt().toChar()
                 )

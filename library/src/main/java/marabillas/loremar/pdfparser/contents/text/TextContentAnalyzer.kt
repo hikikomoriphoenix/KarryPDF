@@ -91,9 +91,10 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
 
     internal fun handleTJArrays() {
         textObjects.forEach { texObj ->
-                val spW = getSpaceWidth(texObj)
-                handleSpacing(spW, texObj)
-            }
+            // TODO Use widths array from fonts to handle TJ Arrays
+            val spW = getSpaceWidth(texObj)
+            handleSpacing(spW, texObj)
+        }
     }
 
     private fun getSpaceWidth(textObj: TextObject): Float {

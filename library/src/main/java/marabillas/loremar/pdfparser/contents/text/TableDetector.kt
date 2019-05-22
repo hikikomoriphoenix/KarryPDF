@@ -348,11 +348,11 @@ internal class TableDetector(
     }
 
     private fun isTextObjectMultiLinear(textObj: TextObject): Boolean {
-        var prevY = textObj.first().td[1]
-        textObj.forEach {
-            if (it.td[1] != prevY)
-                return true
-            prevY = it.td[1]
+        textObj.forEach { textElement ->
+            if (textElement != textObj.first()) {
+                if (textElement.td[1] != 0f)
+                    return true
+            }
         }
         return false
     }

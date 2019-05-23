@@ -94,7 +94,11 @@ internal class Font() {
 
         when {
             fontFile is Reference -> {
-                TODO("Getting widths from fontFile not implemented")
+                val fontProgram = referenceResolver.resolveReferenceToStream(fontFile)
+                val data = fontProgram?.decodeEncodedStream()
+                if (data is ByteArray) {
+                    Type1Parser(data)
+                }
             }
             fontFile2 is Reference -> {
                 val fontProgram = referenceResolver.resolveReferenceToStream(fontFile2)

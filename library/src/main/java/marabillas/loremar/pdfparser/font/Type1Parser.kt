@@ -1,5 +1,6 @@
 package marabillas.loremar.pdfparser.font
 
+import android.support.v4.util.SparseArrayCompat
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -310,4 +311,294 @@ internal class Type1Parser(val data: ByteArray) {
 
         return 4 // Return default number of random bytes in charstring
     }
+
+    fun getCharacterWidths(): SparseArrayCompat<Float> {
+        // For StandardEncoding and other predefined encoding:
+        // Convert numbers from 0 to 255 to octal.
+        // Get character name from SparseArrayCompat.
+        // Get character widths using character names.
+
+        val characterWidths = SparseArrayCompat<Float>()
+
+        val encodingPos = getEncodingLocation() + 10
+        when {
+            isStandardEncoding(encodingPos) -> {
+                println("Using StandardEncoding")
+                for (i in 0..255) {
+                    val octal = decimalToOctal(i)
+                    val charName = Encoding.standard[octal]
+                    val command = charCommands[charName]
+                    val hsbw = command?.get(CharCommand.HSBW)
+                    val width = hsbw?.get(1)
+                    width?.let {
+                        characterWidths[i] = width.toFloat()
+                    }
+                }
+            }
+            isMacRomanEncoding(encodingPos) -> TODO("Needs to use MacRomanEncoding to get widths")
+            isMacExpertEncoding(encodingPos) -> TODO("Needs to use MacExpertEncoding to get widths")
+            isWinAnsiEncoding(encodingPos) -> TODO("Needs to use WinAnsiEncoding to get widths")
+            else -> TODO("Needs to use built-in Encoding to get Widths")
+        }
+
+        // Assign width for missing character
+        val command = charCommands[".notdef"]
+        val hsbw = command?.get(CharCommand.HSBW)
+        val width = hsbw?.get(1)
+        width?.let {
+            characterWidths[-1] = width.toFloat()
+        }
+
+        println("${characterWidths.size()} widths obtained from Type1 font")
+        return characterWidths
+    }
+
+    private fun decimalToOctal(num: Int): Int {
+        var octal = 0
+        var q = num
+        var r: Int
+        var factor = 1
+        while (true) {
+            r = q % 8
+            q /= 8
+            octal += r * factor
+            factor *= 10
+
+            if (q == 0) break
+        }
+        return octal
+    }
+
+    private fun getEncodingLocation(): Int {
+        var pos = 0
+        while (pos + 8 < data.size) {
+            if (
+                data[pos].toChar() == '/'
+                && data[pos + 1].toChar() == 'E'
+                && data[pos + 2].toChar() == 'n'
+                && data[pos + 3].toChar() == 'c'
+                && data[pos + 4].toChar() == 'o'
+                && data[pos + 5].toChar() == 'd'
+                && data[pos + 6].toChar() == 'i'
+                && data[pos + 7].toChar() == 'n'
+                && data[pos + 8].toChar() == 'g'
+            ) {
+                return pos
+            }
+            pos++
+        }
+        return pos
+    }
+
+    private fun isStandardEncoding(pos: Int): Boolean {
+        return (
+                data[pos].toChar() == 'S'
+                        && data[pos + 1].toChar() == 't'
+                        && data[pos + 2].toChar() == 'a'
+                        && data[pos + 3].toChar() == 'n'
+                        && data[pos + 4].toChar() == 'd'
+                        && data[pos + 5].toChar() == 'a'
+                        && data[pos + 6].toChar() == 'r'
+                        && data[pos + 7].toChar() == 'd'
+                )
+    }
+
+    private fun isMacRomanEncoding(pos: Int): Boolean {
+        return (
+                data[pos].toChar() == 'M'
+                        && data[pos + 1].toChar() == 'a'
+                        && data[pos + 2].toChar() == 'c'
+                        && data[pos + 3].toChar() == 'R'
+                        && data[pos + 4].toChar() == 'o'
+                        && data[pos + 5].toChar() == 'm'
+                        && data[pos + 6].toChar() == 'a'
+                        && data[pos + 7].toChar() == 'n'
+                )
+    }
+
+    private fun isMacExpertEncoding(pos: Int): Boolean {
+        return (
+                data[pos].toChar() == 'M'
+                        && data[pos + 1].toChar() == 'a'
+                        && data[pos + 2].toChar() == 'c'
+                        && data[pos + 3].toChar() == 'E'
+                        && data[pos + 4].toChar() == 'x'
+                        && data[pos + 5].toChar() == 'p'
+                        && data[pos + 6].toChar() == 'e'
+                        && data[pos + 7].toChar() == 'r'
+                        && data[pos + 8].toChar() == 't'
+                )
+    }
+
+    private fun isWinAnsiEncoding(pos: Int): Boolean {
+        return (
+                data[pos].toChar() == 'W'
+                        && data[pos + 1].toChar() == 'i'
+                        && data[pos + 2].toChar() == 'n'
+                        && data[pos + 3].toChar() == 'A'
+                        && data[pos + 4].toChar() == 'n'
+                        && data[pos + 5].toChar() == 's'
+                        && data[pos + 6].toChar() == 'i'
+                )
+    }
+
+    object Encoding {
+        val standard = SparseArrayCompat<String>()
+
+        init {
+            standard[101] = "A"
+            standard[341] = "AE"
+            standard[102] = "B"
+            standard[103] = "C"
+            standard[104] = "D"
+            standard[105] = "E"
+            standard[106] = "F"
+            standard[107] = "G"
+            standard[110] = "H"
+            standard[111] = "I"
+            standard[112] = "J"
+            standard[113] = "K"
+            standard[114] = "L"
+            standard[350] = "LSlash"
+            standard[115] = "M"
+            standard[116] = "N"
+            standard[117] = "O"
+            standard[352] = "OE"
+            standard[351] = "OSlash"
+            standard[120] = "P"
+            standard[121] = "Q"
+            standard[122] = "R"
+            standard[123] = "S"
+            standard[124] = "T"
+            standard[125] = "U"
+            standard[126] = "V"
+            standard[127] = "W"
+            standard[130] = "X"
+            standard[131] = "Y"
+            standard[132] = "Z"
+            standard[141] = "a"
+            standard[302] = "acute"
+            standard[361] = "ae"
+            standard[46] = "ampersand"
+            standard[136] = "asciicircum"
+            standard[176] = "asciitilde"
+            standard[52] = "asterisk"
+            standard[100] = "at"
+            standard[142] = "b"
+            standard[134] = "backslash"
+            standard[174] = "bar"
+            standard[173] = "braceleft"
+            standard[175] = "braceright"
+            standard[133] = "bracketleft"
+            standard[135] = "bracketright"
+            standard[306] = "breve"
+            standard[267] = "bullet"
+            standard[143] = "c"
+            standard[317] = "caron"
+            standard[313] = "cedilla"
+            standard[242] = "cent"
+            standard[303] = "circumflex"
+            standard[72] = "colon"
+            standard[54] = "comma"
+            standard[250] = "currency"
+            standard[144] = "d"
+            standard[262] = "dagger"
+            standard[263] = "daggerdbl"
+            standard[310] = "dieresis"
+            standard[44] = "dollar"
+            standard[307] = "dotaccent"
+            standard[365] = "dotlessi"
+            standard[145] = "e"
+            standard[70] = "eight"
+            standard[274] = "ellipsis"
+            standard[320] = "emdash"
+            standard[261] = "endash"
+            standard[75] = "equal"
+            standard[41] = "exclam"
+            standard[241] = "exclamdown"
+            standard[146] = "f"
+            standard[256] = "fi"
+            standard[65] = "five"
+            standard[257] = "fl"
+            standard[246] = "florin"
+            standard[64] = "four"
+            standard[244] = "fraction"
+            standard[147] = "g"
+            standard[373] = "germandbls"
+            standard[301] = "grave"
+            standard[76] = "greater"
+            standard[253] = "guillemotleft"
+            standard[273] = "guillemotright"
+            standard[254] = "guilsinglleft"
+            standard[255] = "guilsinglright"
+            standard[150] = "h"
+            standard[315] = "hungarumlaut"
+            standard[55] = "hyphen"
+            standard[151] = "i"
+            standard[152] = "j"
+            standard[153] = "k"
+            standard[154] = "l"
+            standard[74] = "less"
+            standard[370] = "lslash"
+            standard[155] = "m"
+            standard[305] = "macron"
+            standard[156] = "n"
+            standard[71] = "nine"
+            standard[43] = "numbersign"
+            standard[157] = "o"
+            standard[372] = "oe"
+            standard[316] = "ogonek"
+            standard[61] = "one"
+            standard[343] = "ordfeminine"
+            standard[353] = "ordmasculine"
+            standard[371] = "oslash"
+            standard[160] = "p"
+            standard[266] = "paragraph"
+            standard[50] = "parenleft"
+            standard[51] = "parenright"
+            standard[45] = "percent"
+            standard[56] = "period"
+            standard[264] = "periodcentered"
+            standard[275] = "perthousand"
+            standard[53] = "plus"
+            standard[161] = "q"
+            standard[77] = "question"
+            standard[277] = "questiondown"
+            standard[42] = "quotedbl"
+            standard[271] = "quotedblbase"
+            standard[252] = "quotedblleft"
+            standard[272] = "quotedblright"
+            standard[140] = "quoteleft"
+            standard[47] = "quoteright"
+            standard[270] = "quotesinglbase"
+            standard[251] = "quotesingle"
+            standard[162] = "r"
+            standard[312] = "ring"
+            standard[163] = "s"
+            standard[247] = "section"
+            standard[73] = "semicolon"
+            standard[67] = "seven"
+            standard[66] = "six"
+            standard[57] = "slash"
+            standard[40] = "space"
+            standard[243] = "sterling"
+            standard[164] = "t"
+            standard[63] = "three"
+            standard[304] = "tilde"
+            standard[62] = "two"
+            standard[165] = "u"
+            standard[137] = "underscore"
+            standard[166] = "v"
+            standard[167] = "w"
+            standard[170] = "x"
+            standard[171] = "y"
+            standard[245] = "yen"
+            standard[172] = "z"
+            standard[160] = "zero"
+        }
+    }
+}
+
+private operator fun <E> SparseArrayCompat<E>.set(key: Int, value: E) {
+    this.put(key, value)
 }

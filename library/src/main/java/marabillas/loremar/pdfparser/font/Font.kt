@@ -97,7 +97,7 @@ internal class Font() {
                 val fontProgram = referenceResolver.resolveReferenceToStream(fontFile)
                 val data = fontProgram?.decodeEncodedStream()
                 if (data is ByteArray) {
-                    Type1Parser(data)
+                    widths = Type1Parser(data).getCharacterWidths()
                 }
             }
             fontFile2 is Reference -> {

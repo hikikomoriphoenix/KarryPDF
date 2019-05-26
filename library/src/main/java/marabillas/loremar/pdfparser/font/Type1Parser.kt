@@ -312,7 +312,7 @@ internal class Type1Parser(val data: ByteArray) {
         return 4 // Return default number of random bytes in charstring
     }
 
-    fun getCharacterWidths(): SparseArrayCompat<Float> {
+    fun getCharacterWidths(diffArray: SparseArrayCompat<String>): SparseArrayCompat<Float> {
         // For StandardEncoding and other predefined encoding:
         // Convert numbers from 0 to 255 to octal.
         // Get character name from SparseArrayCompat.
@@ -325,8 +325,11 @@ internal class Type1Parser(val data: ByteArray) {
             isStandardEncoding(encodingPos) -> {
                 println("Using StandardEncoding")
                 for (i in 0..255) {
-                    val octal = decimalToOctal(i)
-                    val charName = Encoding.standard[octal]
+                    var charName = diffArray[i]
+                    if (charName == null) {
+                        val octal = decimalToOctal(i)
+                        charName = Encoding.standard[octal]
+                    }
                     val command = charCommands[charName]
                     val hsbw = command?.get(CharCommand.HSBW)
                     val width = hsbw?.get(1)

@@ -43,6 +43,16 @@ internal class Font() {
             }
         }
 
+        // Get Encoding
+        val encoding = dictionary["Encoding"]
+        if (encoding is Name) {
+            println("Font uses ${encoding.value}")
+        } else if (encoding is Dictionary) {
+            println("Font uses an Encoding dictionary")
+        } else if (encoding is Reference) {
+            println("Font is a Composite Font and may be using a CMap")
+        }
+
         // If a Simple Font
         if (subtype is Name && subtype.value != "Type0") {
             // Get FirstChar
@@ -72,7 +82,7 @@ internal class Font() {
                 }
             } else {
                 if (fontDescriptor is Dictionary) {
-                    getWidthsFromFontProgram(fontDescriptor, referenceResolver)
+                    getWidthsFromFontProgram(fontDescriptor, referenceResolver, encoding)
                 }
             }
         } else {
@@ -87,7 +97,11 @@ internal class Font() {
         }
     }
 
-    private fun getWidthsFromFontProgram(fontDescriptor: Dictionary, referenceResolver: ReferenceResolver) {
+    private fun getWidthsFromFontProgram(
+        fontDescriptor: Dictionary,
+        referenceResolver: ReferenceResolver,
+        encoding: PDFObject? = null
+    ) {
         val fontFile = fontDescriptor["FontFile"]
         val fontFile2 = fontDescriptor["FontFile2"]
         val fontFile3 = fontDescriptor["FontFile3"]
@@ -97,7 +111,11 @@ internal class Font() {
                 val fontProgram = referenceResolver.resolveReferenceToStream(fontFile)
                 val data = fontProgram?.decodeEncodedStream()
                 if (data is ByteArray) {
-                    widths = Type1Parser(data).getCharacterWidths()
+                    val diffArray = SparseArrayCompat<String>()
+                    if (encoding is Dictionary) {
+                        getDifferencesArray(encoding, diffArray)
+                    }
+                    widths = Type1Parser(data).getCharacterWidths(diffArray)
                 }
             }
             fontFile2 is Reference -> {
@@ -109,6 +127,27 @@ internal class Font() {
             }
             fontFile3 is Stream -> {
                 TODO("Getting widths from fontFile3 not implemented")
+            }
+        }
+    }
+
+    private fun getDifferencesArray(encoding: Dictionary, diffArray: SparseArrayCompat<String>) {
+        encoding.resolveReferences()
+        val differences = encoding["Differences"]
+        if (differences is PDFArray) {
+            var startCode = 0
+            var offset = 0
+            differences.forEach {
+                if (it is Numeric) {
+                    startCode = it.value.toInt()
+                    offset = 0
+                } else if (it is Name) {
+                    diffArray.put(
+                        startCode + offset,
+                        it.value
+                    )
+                    offset++
+                }
             }
         }
     }

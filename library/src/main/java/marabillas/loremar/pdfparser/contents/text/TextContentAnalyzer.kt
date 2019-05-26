@@ -8,8 +8,7 @@ import marabillas.loremar.pdfparser.objects.PDFArray
 import marabillas.loremar.pdfparser.objects.PDFString
 import marabillas.loremar.pdfparser.objects.toPDFString
 import marabillas.loremar.pdfparser.toDouble
-import java.util.*
-import kotlin.collections.ArrayList
+import marabillas.loremar.pdfparser.toInt
 
 internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableListOf()) {
     internal val contentGroups = ArrayList<ContentGroup>()
@@ -57,6 +56,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         // negative numbers and identify the negative number with most occurrences. Rule: If the absolute value of a
         // negative number is less than 15% of the space width, don't add space. If it is greater than 115%,
         // then add double space. Otherwise, add space. If number is positive don't add space.
+        // UPDATE: Existing space widths from each font in the fonts array will be used.
         handleTJArrays()
 
         // Tables are detected by looking for wide spaces placed on top of each other. These wide spaces serve as
@@ -91,9 +91,110 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
 
     internal fun handleTJArrays() {
         textObjects.forEach { texObj ->
-            // TODO Use widths array from fonts to handle TJ Arrays
-            val spW = getSpaceWidth(texObj)
-            handleSpacing(spW, texObj)
+            /*val spW = getSpaceWidth(texObj)
+            handleSpacing(spW, texObj)*/
+            handleSpacing(fontSpaceWidths())
+        }
+    }
+
+    private fun fontSpaceWidths(): SparseArrayCompat<Float> {
+        // Font key to space width mapping
+        val fsw = SparseArrayCompat<Float>()
+        // Width to count mapping for each font
+        val fws = SparseArrayCompat<HashMap<Float, Int>>()
+        // Get existing space widths from each font in fonts array
+        val esw = existingSpaceWidths()
+        fsw.putAll(esw)
+
+        textObjects.forEach { textObj ->
+            textObj.forEach forEachTextElem@{ textElem ->
+                // Get font key
+                sb.clear()
+                sb.append(textElem.tf, 2, textElem.tf.indexOf(' '))
+                val f = sb.toInt()
+
+                // Existing space widths from fonts array will be used
+                if (esw.containsKey(f)) return@forEachTextElem
+
+                // Evaluate each tj number to determine space width for current font. The space width would be the width
+                // with the most count.
+                val tj = textElem.tj
+                if (tj is PDFArray) {
+                    tj.forEach {
+                        // Process if object is a negative number. A negative number indicates that the next character
+                        // will be adjusted to the right, increasing its spacing.
+                        if (it is Numeric && it.value.toFloat() < 0) {
+                            // Positive value is used for space widths.
+                            val w = -it.value.toFloat()
+                            if (fws[f] != null) {
+                                // Get width's count. Increment it and update fws with new count.
+                                val count = fws[f]?.get(w) ?: 0
+                                fws[f]?.put(w, count + 1)
+
+                                // Evaluate for new space width
+                                val swCount = fws[f]?.get(fsw[f]) ?: 0
+                                if (count + 1 > swCount) {
+                                    fsw.put(f, w)
+                                }
+                            } else {
+                                // If width has no count value, initialize fws and fsw with new width.
+                                fws.put(f, hashMapOf())
+                                fws[f]?.put(w, 1)
+                                fsw.put(f, w)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return fsw
+    }
+
+    private fun existingSpaceWidths(): SparseArrayCompat<Float> {
+        val existingSpaceWidths = SparseArrayCompat<Float>()
+        for (i in 0 until fonts.size()) {
+            val font = fonts.valueAt(i)
+            val spaceWidth = font.widths[32]
+            if (spaceWidth is Float) {
+                existingSpaceWidths.put(fonts.keyAt(i), spaceWidth)
+            }
+        }
+        return existingSpaceWidths
+    }
+
+    private fun handleSpacing(spaceWidths: SparseArrayCompat<Float>) {
+        textObjects.forEach { textObj ->
+            textObj.forEachIndexed { index, textElement ->
+                // Get TextElement's font's space width
+                sb.clear()
+                sb.append(textElement.tf, 2, textElement.tf.indexOf(' '))
+                val spaceWidth = spaceWidths[sb.toInt()] ?: 0f
+
+                if (textElement.tj is PDFArray) {
+                    sb.clear().append('(')
+                    (textElement.tj).forEach {
+                        if (it is PDFString)
+                            sb.append(it.value) // If string, append
+                        else if (it is Numeric) {
+                            val num = -it.value.toFloat()
+                            if (num >= 1.15 * spaceWidth)
+                                sb.append(' ').append(' ') // If more than 115% of space width, add double space
+                            else if (num >= 0.15 * spaceWidth)
+                                sb.append(' ') // If between 15% or 115% of space width, add space
+                        }
+                    }
+                    sb.append(')')
+                    val transformed = TextElement(
+                        td = textElement.td,
+                        tf = textElement.tf,
+                        ts = textElement.ts,
+                        tj = sb.toString().toPDFString(),
+                        rgb = textElement.rgb
+                    )
+                    textObj.update(transformed, index)
+                }
+            }
         }
     }
 

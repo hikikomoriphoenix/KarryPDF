@@ -10,4 +10,6 @@ internal class TextElement internal constructor(
     val td: FloatArray = FloatArray(2),
     val ts: Float = 0f,
     val rgb: FloatArray = floatArrayOf(-1f, -1f, -1f)
-) : PageContent
+) : PageContent {
+    var width = 0f
+}

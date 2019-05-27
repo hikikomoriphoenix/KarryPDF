@@ -51,6 +51,11 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
             )
         }
 
+        val measureWidths = isMeasureWidths()
+        if (measureWidths) {
+            computeElementWidths()
+        }
+
         // If tj values are arrays resulting from TJ operator, determine from the number values between strings
         // whether to add space or not while concatenating strings. First to get glyph width for space, get all the
         // negative numbers and identify the negative number with most occurrences. Rule: If the absolute value of a
@@ -71,15 +76,13 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         checkForListTypeTextGroups()
 
         // Estimate the width of the page by getting the largest width of a line of texts
-        val w = getLargestWidth()
-        // TODO Get width of each line using given character widths. Else if character widths are not provided then use
-        // previous method for getting largest width.
+        val w = getLargestWidth(measureWidths)
 
         // If a line ends with '-', then append the next line to this line and remove the '-' character.
-        concatenateDividedByHyphen()
+        //concatenateDividedByHyphen() TODO Do this inside formParagraphs
 
         // If line is almost as long as the width of page, then append the next line in the TextGroup.
-        formParagraphs(w)
+        formParagraphs(w, measureWidths)
 
         // Convert adjacent elements with same tf and rgb into one element
         mergeElementsWithSameFontAndColor()
@@ -87,6 +90,64 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         deleteBlankLines()
 
         return contentGroups
+    }
+
+    private fun isMeasureWidths(): Boolean {
+        for (i in 0 until fonts.size()) {
+            if (fonts.valueAt(i)?.widths?.get(-1) == null) {
+                return false
+            }
+        }
+        return true
+    }
+
+    internal fun computeElementWidths() {
+        textObjects.forEach { textObj ->
+            textObj.forEach { textElem ->
+                val tj = textElem.tj
+
+                sb.clear()
+                sb.append(textElem.tf, 2, textElem.tf.indexOf(' '))
+                val f = sb.toInt()
+                val widths = fonts[f]?.widths
+
+                sb.clear()
+                sb.append(textElem.tf, textElem.tf.indexOf(' ') + 1, textElem.tf.length)
+                val fs = sb.toDouble().toFloat()
+
+                if (tj is PDFArray) {
+                    tj.forEach {
+                        if (it is PDFString) {
+                            if (widths != null) {
+                                textElem.width += computeStringWidth(it, widths, fs, textObj.scaleX)
+                            }
+                        } else if (it is Numeric) {
+                            val num = -(it.value.toFloat())
+                            val offset = (num / 1000) * fs * textObj.scaleX
+                            textElem.width += offset
+                        }
+                    }
+                } else if (tj is PDFString) {
+                    if (widths != null) {
+                        textElem.width += computeStringWidth(tj, widths, fs, textObj.scaleX)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun computeStringWidth(
+        string: PDFString,
+        widths: SparseArrayCompat<Float>,
+        fs: Float,
+        scaleX: Float
+    ): Float {
+        var width = 0f
+        string.value.forEach { c ->
+            val w = widths[c.toInt()] ?: widths[-1]
+            w?.let { width += ((w / 1000) * fs * scaleX) }
+        }
+        return width
     }
 
     internal fun handleTJArrays() {
@@ -192,6 +253,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                         tj = sb.toString().toPDFString(),
                         rgb = textElement.rgb
                     )
+                    transformed.width = textElement.width
                     textObj.update(transformed, index)
                 }
             }
@@ -251,6 +313,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                         tj = sb.toString().toPDFString(),
                         rgb = textElement.rgb
                     )
+                    transformed.width = textElement.width
                     textObj.update(transformed, index)
                 }
             }
@@ -461,7 +524,33 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         }
     }
 
-    internal fun getLargestWidth(): Int {
+    internal fun getLargestWidth(measureWidths: Boolean): Float {
+        var maxWidth = 0f
+
+        if (measureWidths) {
+            contentGroups
+                .asSequence()
+                .filter { it is TextGroup }
+                .forEach {
+                    val g = it as TextGroup
+                    for (i in 0 until g.size()) {
+                        var width = 0f
+                        val line = g[i]
+                        for (j in 0 until line.size) {
+                            width += line[j].width
+                        }
+                        if (width > maxWidth)
+                            maxWidth = width
+                    }
+                }
+        } else {
+            maxWidth = getLargestLength().toFloat()
+        }
+
+        return maxWidth
+    }
+
+    private fun getLargestLength(): Int {
         var maxWidth = 0
         contentGroups
             .asSequence()
@@ -501,6 +590,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                         ts = line.last().ts,
                         rgb = line.last().rgb
                     )
+                    e.width = line.last().width
                     line.remove(line.last())
                     line.add(e)
                     val next = textGroup[i + 1]
@@ -530,28 +620,39 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         }
     }
 
-    internal fun formParagraphs(width: Int) {
+    internal fun formParagraphs(longestWidth: Float, measureWidths: Boolean) {
         contentGroups
             .asSequence()
             .filter { it is TextGroup && !it.isAList }
             .forEach {
                 var i = 0
                 val g = it as TextGroup
-                var toCount = g[0]
+
+                /**
+                 * The width of this line will determine if the next line will be appended to this line. It is also
+                 * possible that this line might have also been appended to the previous line. However, this line is
+                 * suppose to appear as one line in the document and thus, its width should be measured separately
+                 * regardless of being appended or not.
+                 */
+                var toMeasure = g[0]
 
                 // Iterate until the second last of the list. The last line will be appended to it if necessary.
                 while (i + 1 < g.size()) {
                     val line = g[i]
 
-                    // Count the number of characters of the text in toCount variable.
-                    var charCount = 0
-                    toCount.forEach { e ->
-                        charCount += (e.tj as PDFString).value.length
+                    var width = 0f
+                    toMeasure.forEach { e ->
+                        if (measureWidths) {
+                            width += e.width
+
+                        } else {
+                            width += (e.tj as PDFString).value.length
+                        }
                     }
 
                     // If almost equal to estimated page width, append next line to current line and the number of lines
                     // in TextGroup is reduced by 1. Else, evaluate the next line.
-                    if (charCount.toFloat() >= (0.8 * (width.toFloat()))) {
+                    if (width >= (0.8 * (longestWidth))) {
                         val next = g[i + 1]
 
                         // Add space in between when appending.
@@ -563,6 +664,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                             ts = next.first().ts,
                             rgb = next.first().rgb
                         )
+                        e.width = next.first().width
                         next.remove(next.first())
                         next.add(0, e)
 
@@ -571,12 +673,12 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                         line.addAll(next)
                         g.remove(next)
 
-                        // Do not increment i but the text that was just appended will be assigned to toCount variable
+                        // Do not increment i but the text that was just appended will be assigned to toMeasure variable
                         // which will be evaluated for the next iteration.
-                        toCount = next
+                        toMeasure = next
                     } else {
                         i++
-                        toCount = g[i]
+                        toMeasure = g[i]
                     }
                 }
             }
@@ -652,6 +754,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
             tj = sb.toPDFString(),
             rgb = line[start].rgb
         )
+        newTextElement.width = line[start].width
         line.removeAt(start)
         line.add(start, newTextElement)
     }

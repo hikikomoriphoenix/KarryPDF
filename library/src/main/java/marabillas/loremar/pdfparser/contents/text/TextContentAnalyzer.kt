@@ -629,22 +629,28 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                 val g = it as TextGroup
 
                 /**
-                 * The width of this line will determine if the next line will be appended to this line. It is also
-                 * possible that this line might have also been appended to the previous line. However, this line is
-                 * suppose to appear as one line in the document and thus, its width should be measured separately
-                 * regardless of being appended or not.
+                 * A group of TextElements that is to be rendered as one line in PDF document. Its width will determine
+                 * if the next line will be appended. It itself may have also been appended to the previous line as this
+                 * and both the previous and next line may have formed a paragraph.
                  */
                 var toMeasure = g[0]
 
                 // Iterate until the second last of the list. The last line will be appended to it if necessary.
                 while (i + 1 < g.size()) {
+                    /**
+                     * The current line that may also include any succeeding lines appended to it. It represents a single
+                     * paragraph.
+                     */
                     val line = g[i]
+
+                    // If the next line is to be appended then 'i' will not be incremented, keeping the current line for
+                    // other succeeding lines to appended to it. If not, 'i' will be incremented and the next line will
+                    // form a new paragraph appending other lines to it.
 
                     var width = 0f
                     toMeasure.forEach { e ->
                         if (measureWidths) {
                             width += e.width
-
                         } else {
                             width += (e.tj as PDFString).value.length
                         }

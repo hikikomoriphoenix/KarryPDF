@@ -13,15 +13,19 @@ import org.junit.Test
 class TextContentAnalyzerTest {
     @Test
     fun testHandleTJArrays() {
-        val t1 = TextElement(tj = "(Hello World)".toPDFString())
+        val t1 = TextElement(tj = "(Hello World)".toPDFString(), tf = "/F1 10")
         val t2 =
-            TextElement(tj = "[(Good) 20 (Bye) -300 (World)]".toPDFArray())
+            TextElement(tj = "[(Good) 20 (Bye) -300 (World)]".toPDFArray(), tf = "/F1 10")
         val t3 = TextElement(
             tj = ("[(The) -300 (quick) -300 (brown) -300 (fox) -300 (jumps) -300 (over) -300 " +
-                    " (the) -300 (lazy) -300 (dog.)]").toPDFArray()
+                    " (the) -300 (lazy) -300 (dog.)]").toPDFArray(),
+            tf = "/F1 10"
         )
         val t4 =
-            TextElement(tj = "[(W) -50 (O) -50 (R) -50 (L) -50 (D) -350 (P) -50 (E) -50 (A) -50 (C) -50 (E)]".toPDFArray())
+            TextElement(
+                tj = "[(W) -50 (O) -50 (R) -50 (L) -50 (D) -350 (P) -50 (E) -50 (A) -50 (C) -50 (E)]".toPDFArray(),
+                tf = "/F1 10"
+            )
         val textObj = TextObject()
         textObj.add(t1)
         textObj.add(t2)
@@ -226,37 +230,8 @@ class TextContentAnalyzerTest {
             TextContentAnalyzer(arrayListOf(TextObject()))
         analyzer.contentGroups.add(g1)
         analyzer.contentGroups.add(g2)
-        val w = analyzer.getLargestWidth()
-        assertThat(w, `is`(10))
-    }
-
-    @Test
-    fun testConcatenateDividedByHyphen() {
-        val t1 = TextElement(tj = "(United we stand. Di-)".toPDFString())
-        val t2 = TextElement(tj = "(vided we fall. Uni-)".toPDFString())
-        val t3 = TextElement(tj = "(ted we stand.)".toPDFString())
-        val g1 = TextGroup()
-        g1.add(arrayListOf(t1))
-        g1.add(arrayListOf(t2))
-        g1.add(arrayListOf(t3))
-        val analyzer =
-            TextContentAnalyzer(arrayListOf(TextObject()))
-        analyzer.contentGroups.add(g1)
-        analyzer.concatenateDividedByHyphen()
-        assertThat(g1.size(), `is`(1))
-        assertThat(g1[0].count(), `is`(3))
-        val s = "${g1[0][0].tj as PDFString}${g1[0][1].tj as PDFString}${g1[0][2].tj as PDFString}"
-        assertThat(s, `is`("United we stand. Divided we fall. United we stand."))
-
-        val t4 = TextElement(tj = "(United we stand.)".toPDFString())
-        val t5 = TextElement(tj = "(Divided we fall.)".toPDFString())
-        val g2 = TextGroup()
-        g2.add(arrayListOf(t4))
-        g2.add(arrayListOf(t5))
-        analyzer.contentGroups.clear()
-        analyzer.contentGroups.add(g2)
-        analyzer.concatenateDividedByHyphen()
-        assertThat(g2.size(), `is`(2))
+        val w = analyzer.getLargestWidth(false)
+        assertThat(w, `is`(10f))
     }
 
     @Test
@@ -281,8 +256,8 @@ class TextContentAnalyzerTest {
         val analyzer =
             TextContentAnalyzer(arrayListOf(TextObject()))
         analyzer.contentGroups.add(g)
-        val w = analyzer.getLargestWidth()
-        analyzer.formParagraphs(w)
+        val w = analyzer.getLargestWidth(false)
+        analyzer.formParagraphs(w, false)
 
         assertThat(g.size(), `is`(3))
         assertThat((g[0][0].tj as PDFString).value, `is`("Good Morning."))

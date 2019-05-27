@@ -48,7 +48,7 @@ internal fun StringBuilder.toInt(): Int {
         }
 
         int += (num * factor)
-        factor += 10
+        factor *= 10
     }
     return int
 }

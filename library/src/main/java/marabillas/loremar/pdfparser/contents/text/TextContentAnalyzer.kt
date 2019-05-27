@@ -78,9 +78,6 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         // Estimate the width of the page by getting the largest width of a line of texts
         val w = getLargestWidth(measureWidths)
 
-        // If a line ends with '-', then append the next line to this line and remove the '-' character.
-        //concatenateDividedByHyphen() TODO Do this inside formParagraphs
-
         // If line is almost as long as the width of page, then append the next line in the TextGroup.
         formParagraphs(w, measureWidths)
 
@@ -570,56 +567,6 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         return maxWidth
     }
 
-    internal fun concatenateDividedByHyphen() {
-        fun findHyphenAndConcatenate(textGroup: TextGroup) {
-            if (textGroup.isAList)
-                return
-
-            var i = 0
-            while (i + 1 < textGroup.size()) {
-                val line = textGroup[i]
-                val last = line.last().tj as PDFString
-                if (last.value.endsWith(('-'))) {
-                    sb.clear().append(last.value, 0, last.value.lastIndex)
-                    sb.insert(0, '(')
-                    sb.append(')')
-                    val e = TextElement(
-                        tf = line.last().tf,
-                        tj = sb.toPDFString(),
-                        td = line.last().td.copyOf(),
-                        ts = line.last().ts,
-                        rgb = line.last().rgb
-                    )
-                    e.width = line.last().width
-                    line.remove(line.last())
-                    line.add(e)
-                    val next = textGroup[i + 1]
-                    line.addAll(next)
-                    textGroup.remove(next)
-                } else {
-                    i++
-                }
-            }
-        }
-        contentGroups.forEach {
-            when (it) {
-                is TextGroup -> findHyphenAndConcatenate(it)
-                is Table -> {
-                    for (i in 0 until it.size()) {
-                        val row = it[i]
-                        for (j in 0 until row.size()) {
-                            val cell = row[j]
-                            for (k in 0 until cell.size()) {
-                                val textGroup = cell[k]
-                                findHyphenAndConcatenate(textGroup)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     internal fun formParagraphs(longestWidth: Float, measureWidths: Boolean) {
         contentGroups
             .asSequence()
@@ -661,18 +608,36 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                     if (width >= (0.8 * (longestWidth))) {
                         val next = g[i + 1]
 
-                        // Add space in between when appending.
-                        sb.clear().append('(').append(' ').append((next.first().tj as PDFString).value).append(')')
-                        val e = TextElement(
-                            tf = next.first().tf,
-                            tj = sb.toPDFString(),
-                            td = next.first().td.copyOf(),
-                            ts = next.first().ts,
-                            rgb = next.first().rgb
-                        )
-                        e.width = next.first().width
-                        next.remove(next.first())
-                        next.add(0, e)
+                        val lastElementStr = (line.last().tj as PDFString).value
+                        if (lastElementStr.endsWith('-')) {
+                            // Remove the hyphen before appending
+                            sb.clear().append(lastElementStr, 0, lastElementStr.lastIndex)
+                            sb.insert(0, '(')
+                            sb.append(')')
+                            val e = TextElement(
+                                tf = line.last().tf,
+                                tj = sb.toPDFString(),
+                                td = line.last().td.copyOf(),
+                                ts = line.last().ts,
+                                rgb = line.last().rgb
+                            )
+                            e.width = line.last().width
+                            line.remove(line.last())
+                            line.add(e)
+                        } else {
+                            // Add space in between when appending.
+                            sb.clear().append('(').append(' ').append((next.first().tj as PDFString).value).append(')')
+                            val e = TextElement(
+                                tf = next.first().tf,
+                                tj = sb.toPDFString(),
+                                td = next.first().td.copyOf(),
+                                ts = next.first().ts,
+                                rgb = next.first().rgb
+                            )
+                            e.width = next.first().width
+                            next.remove(next.first())
+                            next.add(0, e)
+                        }
 
                         // Append next line to current line. The appended line will be removed from the TextGroup's list.
                         // The line following it in the list will be the next to append in case.

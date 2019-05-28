@@ -148,11 +148,11 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
     }
 
     internal fun handleTJArrays() {
-        textObjects.forEach { texObj ->
-            /*val spW = getSpaceWidth(texObj)
-            handleSpacing(spW, texObj)*/
-            handleSpacing(fontSpaceWidths())
-        }
+        /*textObjects.forEach { texObj ->
+            val spW = getSpaceWidth(texObj)
+            handleSpacing(spW, texObj)
+        }*/
+        handleSpacing(fontSpaceWidths())
     }
 
     private fun fontSpaceWidths(): SparseArrayCompat<Float> {

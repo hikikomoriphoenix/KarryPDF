@@ -99,7 +99,8 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
     }
 
     internal fun computeElementWidths() {
-        textObjects.forEach { textObj ->
+        for (i in 0 until textObjects.size) {
+            val textObj = textObjects[i]
             textObj.forEach { textElem ->
                 val tj = textElem.tj
 
@@ -164,7 +165,8 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         val esw = existingSpaceWidths()
         fsw.putAll(esw)
 
-        textObjects.forEach { textObj ->
+        for (i in 0 until textObjects.size) {
+            val textObj = textObjects[i]
             textObj.forEach forEachTextElem@{ textElem ->
                 // Get font key
                 sb.clear()
@@ -222,7 +224,9 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
     }
 
     private fun handleSpacing(spaceWidths: SparseArrayCompat<Float>) {
-        textObjects.forEach { textObj ->
+        for (i in 0 until textObjects.size) {
+            val textObj = textObjects[i]
+
             textObj.forEachIndexed { index, textElement ->
                 // Get TextElement's font's space width
                 sb.clear()
@@ -322,7 +326,9 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         table = Table()
         currLine = ArrayList()
 
-        textObjects.forEachIndexed { index, textObj ->
+        for (index in 0 until textObjects.size) {
+            val textObj = textObjects[index]
+
             var prevTextObj: TextObject? = null
             if (index > 0)
                 prevTextObj = textObjects[index - 1]
@@ -504,8 +510,8 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                     textGroup.isAList = false
             }
         }
-        contentGroups.forEach {
-            when (it) {
+        for (i in 0 until contentGroups.size) {
+            when (val it = contentGroups[i]) {
                 is TextGroup -> checkIfAllLinesEndWithPeriods(it)
                 is Table -> {
                     for (i in 0 until it.size()) {
@@ -656,8 +662,8 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
     }
 
     internal fun mergeElementsWithSameFontAndColor() {
-        contentGroups.forEach {
-            when (it) {
+        for (i in 0 until contentGroups.size) {
+            when (val it = contentGroups[i]) {
                 is TextGroup -> mergeElementsInTextGroup(it)
                 is Table -> {
                     for (i in 0 until it.size()) {
@@ -738,7 +744,8 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                 for (j in 0 until textGroup.size()) {
                     val line = textGroup[j]
                     sb.clear()
-                    line.forEach { e ->
+                    for (k in 0 until line.size) {
+                        val e = line[k]
                         sb.append((e.tj as PDFString).value)
                     }
                     if (sb.isBlank())

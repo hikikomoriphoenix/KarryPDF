@@ -87,13 +87,55 @@ internal class Font() {
             }
         } else {
             // Else a Composite Font
-            /*TODO(
-                "For Type0(Composite) fonts, get CIDFont from DescendantFonts entry and get predefined or embedded" +
-                        "cmap from Encoding entry. With CIDFont, get missingWidth from DW and widths array from W. W maps widths" +
-                        "with CIDs. CID value for a character code is obtained from cmap. For Type2(TrueType) CIDFont, use " +
-                        "CIDToGIDMap. If widths are not obtained from above, go to FontDescriptor and get widths from embedded font" +
-                        "program."
-            )*/
+
+            // Handle encoding
+            if (encoding is Name && !encoding.value.contains("Identity")) {
+                TODO("Needs to handle predefined CMaps. If ToUnicodeCMap exist, pass it to constructor.")
+            } else if (encoding is Reference) {
+                TODO("Needs to handle embedded CMaps. If ToUnicodeCMap exist, pass it to constructor.")
+            }
+
+            // Get widths and missing characters width
+            val descendant = dictionary["DescendantFonts"]
+            if (descendant is PDFArray) {
+                descendant.resolveReferences()
+                val cidFont = descendant[0]
+                if (cidFont is Dictionary) {
+                    cidFont.resolveReferences()
+
+                    // Get default width
+                    val dw = cidFont["DW"]
+                    if (dw is Numeric) {
+                        widths.put(-1, dw.value.toFloat())
+                    } else {
+                        widths.put(-1, 1000f)
+                    }
+
+                    // Get MissingWidth
+                    val cidFontDescriptor = cidFont["FontDescriptor"]
+                    if (cidFontDescriptor is Dictionary) {
+                        cidFontDescriptor.resolveReferences()
+                        val mw = cidFontDescriptor["MissingWidth"]
+                        if (mw is Numeric) {
+                            widths.put(-1, mw.value.toFloat())
+                        }
+                    }
+
+                    if (widths[-1] == 0f && cidFontDescriptor is Dictionary) {
+                        cidFontDescriptor.resolveReferences()
+                        getWidthsFromFontProgram(cidFontDescriptor, referenceResolver, encoding)
+                    } else {
+                        // Get widths
+                        val w = cidFont["W"]
+                        if (w is PDFArray) {
+                            getCIDFontWidths(w)
+                            println("obtained ${widths.size()} widths")
+                        }
+                    }
+
+                    println("missing width = ${widths[-1]}")
+                }
+            }
         }
     }
 
@@ -147,6 +189,51 @@ internal class Font() {
                         it.value
                     )
                     offset++
+                }
+            }
+        }
+    }
+
+    private fun getCIDFontWidths(w: PDFArray) {
+        var c = 0
+        var cFirst = 0
+        var cLast = 0
+        w.forEach {
+            if (it is Numeric) {
+                when (c) {
+                    0 -> {
+                        cFirst = it.value.toInt()
+                        c++
+                    }
+                    1 -> {
+                        cLast = it.value.toInt()
+                        c++
+                    }
+                    else -> {
+                        // Assign width to range
+                        for (cid in cFirst..cLast) {
+                            var unicode = cid
+                            if (cmap is CIDFontCMap) {
+                                unicode = (cmap as CIDFontCMap).cidToUnicode(cid)
+                            }
+                            widths.put(unicode, it.value.toFloat())
+                        }
+
+                        c = 0
+                    }
+                }
+            } else if (it is PDFArray) {
+                c = 0
+                var i = cFirst
+                it.forEach { cw ->
+                    var unicode = i
+                    if (cmap is CIDFontCMap) {
+                        unicode = (cmap as CIDFontCMap).cidToUnicode(i)
+                    }
+                    if (cw is Numeric) {
+                        widths.put(unicode, cw.value.toFloat())
+                    }
+                    i++
                 }
             }
         }

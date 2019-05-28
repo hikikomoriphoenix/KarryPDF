@@ -2,7 +2,6 @@ package marabillas.loremar.pdfparser.contents.text
 
 import android.support.v4.util.SparseArrayCompat
 import marabillas.loremar.pdfparser.font.Font
-import marabillas.loremar.pdfparser.objects.PDFString
 import marabillas.loremar.pdfparser.toDouble
 import marabillas.loremar.pdfparser.toInt
 
@@ -267,8 +266,8 @@ internal class TableDetector(
             if (e != textObj.first())
                 currX += e.td[0]
             if (i + 1 == textObj.count() || textObj.elementAt(i + 1).td[1] != 0f) {
-                val elemWdth = getElementWidth(e, textObj.scaleX)
-                if (elemWdth == Float.MAX_VALUE) {
+                val elemWdth = e.width
+                if (elemWdth == 0f) {
                     spaceWidth = Float.MAX_VALUE
                 } else {
                     val rightBound = currX + elemWdth
@@ -288,46 +287,6 @@ internal class TableDetector(
             }
         }
         return floatArrayOf(rightmost, spaceWidth)
-    }
-
-    private fun getElementWidth(textElement: TextElement, scaleX: Float): Float {
-        // Get font size
-        sb.clear().append(textElement.tf, textElement.tf.indexOf(' ') + 1, textElement.tf.length)
-        val fSize = sb.toDouble().toFloat()
-
-        // Get glyph widths and missing character width
-        sb.clear().append(textElement.tf, 2, textElement.tf.indexOf(' '))
-        val fKey = sb.toInt()
-        val widths = fonts[fKey]?.widths
-        val missingWidth = widths?.get(-1)
-
-        // Initialize total element width as 0. Will accumulate width for every character in string
-        var elementWidth = 0f
-
-        val string = textElement.tj as PDFString
-        return if (widths != null && missingWidth != null) {
-            string.value.forEach { c ->
-                // Convert character to its integer value
-                val cInt = c.toInt()
-
-                // Get character's corresponding width and multiply to font size and horizontal scaling
-                val width = if (widths.containsKey(cInt)) {
-                    val cWidth = widths[cInt] as Float
-                    (cWidth / 1000) * fSize * scaleX
-                } else {
-                    (missingWidth / 1000) * fSize * scaleX
-                }
-
-                // Accumulate width
-                elementWidth += width
-            }
-            // return
-            elementWidth
-        } else {
-            // Return a very large total width if can't obtain widths for characters. This will make sure wide space is
-            // not formed.
-            Float.MAX_VALUE
-        }
     }
 
     private fun detectMultiLinearColumns() {

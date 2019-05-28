@@ -174,7 +174,9 @@ internal class TableDetector(
                             //println("above.left > curr.right")
                             // If not forming divider and above wide space is to the right of current wide space.
                             // Allow the previous WideSpace to be checked in the next iteration.
-                            w--
+                            if (w - 1 >= 0) {
+                                w--
+                            }
                             break
                         } else if (aboveWideSpace.isDivider) {
                             //println("above.isdivider")

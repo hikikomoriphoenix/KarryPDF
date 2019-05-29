@@ -25,31 +25,38 @@ internal class ContentStreamParser {
     private val operatorList = hashSetOf(TF, BT, QSTART, QEND, CM, DO, RG, RGX, K, KX) // TODO Add BI
     private val token = StringBuilder()
 
-    private val ctmStack = Stack<FloatArray>()
     private val identityCm = floatArrayOf(1f, 0f, 0f, 1f, 0f, 0f)
+    private val noRgb = floatArrayOf(-1f, -1f, -1f, -1f)
+    private val gsStack = Stack<GraphicsState>()
+    private val gsHolders = mutableListOf<GraphicsState>()
 
     fun parse(streamData: String): ArrayList<PageObject> {
         sb.clear().append(streamData)
-        ctmStack.push(identityCm)
+
+        // Initialize graphics state stack
+        repeat(4) {
+            gsHolders.add(GraphicsState())
+        }
+        gsStack.push(gsHolders[0])
+
         println("ContentStreamParser.parse begins")
         //println("stream->$streamData")
         val pageObjects = ArrayList<PageObject>()
         val textObjectParser = TextObjectParser()
         val imageObjectParser = ImageObjectParser()
         val tf = StringBuilder()
-        var rgb = floatArrayOf(-1f, -1f, -1f)
         var i = 0
 
         while (i < sb.length) {
             i = sb.indexOfAny(operatorList, i)
             when {
                 sb.startsWith(RG, i) || sb.startsWith(RGX, i) -> {
-                    rgb = getRGB(i)
+                    gsStack.lastElement().rgb = getRGB(i)
                     i += 2
                 }
                 sb.startsWith(K, i) || sb.startsWith(KX, i) -> {
                     val cmyk = getCMYK(i)
-                    rgb = CmykToRgbConverter.inst.convert(cmyk)
+                    gsStack.lastElement().rgb = CmykToRgbConverter.inst.convert(cmyk)
                     i++
                 }
                 sb.startsWith(TF, i) -> {
@@ -66,7 +73,8 @@ internal class ContentStreamParser {
                 }
                 sb.startsWith(BT, i) -> {
                     val textObj = TextObject()
-                    val cm = ctmStack.last()
+                    val cm = gsStack.lastElement().cm
+                    val rgb = gsStack.lastElement().rgb
                     i = textObjectParser.parse(sb, textObj, tf, i + 2, cm, rgb)
                     textObj.scaleX = Math.abs(cm[0])
                     textObj.scaleY = Math.abs(cm[3])
@@ -76,19 +84,30 @@ internal class ContentStreamParser {
                 i == -1 -> i = sb.length
                 sb.startsWith(QSTART, i) -> {
                     //println("QSTART")
-                    ctmStack.push(identityCm)
+
+                    // If next index for stack is greater than gsHolders' size, add a new GraphicsState
+                    val index = gsStack.size
+                    if (index >= gsHolders.size) {
+                        gsHolders.add(GraphicsState())
+                    }
+
+                    // Reset variable in selected GraphicsState
+                    gsHolders[index].cm = identityCm
+                    gsHolders[index].rgb = noRgb
+                    gsHolders[index].tf = null
+
+                    gsStack.push(gsHolders[index])
                     i++
                 }
                 sb.startsWith(QEND, i) -> {
                     //println("QEND")
-                    ctmStack.pop()
+                    gsStack.pop()
                     i++
                 }
                 sb.startsWith(CM, i) -> {
                     val cm = getCM(i)
                     //println("cm -> ${cm[0]}, ${cm[1]}, ${cm[2]}, ${cm[3]}, ${cm[4]}, ${cm[5]}")
-                    ctmStack.pop()
-                    ctmStack.push(cm)
+                    gsStack.lastElement().cm = cm
                     i += 2
                 }
                 sb.startsWith(DO, i) -> {
@@ -96,10 +115,10 @@ internal class ContentStreamParser {
                     val nameIndex = sb.lastIndexOf('/', i)
                     token.clear().append(sb, nameIndex, i - 1)
 
-                    var x = ctmStack.last()[4]
-                    var y = ctmStack.last()[5]
-                    val sx = ctmStack.last()[0]
-                    val sy = ctmStack.last()[3]
+                    var x = gsStack.lastElement().cm[4]
+                    var y = gsStack.lastElement().cm[5]
+                    val sx = gsStack.lastElement().cm[0]
+                    val sy = gsStack.lastElement().cm[3]
                     if (sx < 0)
                         x = -x
                     if (sy < 0)
@@ -171,4 +190,10 @@ internal class ContentStreamParser {
         return operands
 
     }
+
+    inner class GraphicsState(
+        var cm: FloatArray = identityCm,
+        var rgb: FloatArray = floatArrayOf(-1f, -1f, -1f),
+        var tf: String? = null
+    )
 }

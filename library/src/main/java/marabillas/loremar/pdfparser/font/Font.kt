@@ -123,7 +123,14 @@ internal class Font() {
 
                     if (widths[-1] == 0f && cidFontDescriptor is Dictionary) {
                         cidFontDescriptor.resolveReferences()
-                        getWidthsFromFontProgram(cidFontDescriptor, referenceResolver, encoding)
+                        val cidSubType = cidFont["Subtype"]
+                        if (cidSubType is Name && cidSubType.value == "CIDFontType2") {
+                            println("Getting widths for CIDType2 font")
+                            getCIDType2Widths(cidFont, cidFontDescriptor, referenceResolver)
+                            println("obtained ${widths.size()} widths")
+                        } else {
+                            getWidthsFromFontProgram(cidFontDescriptor, referenceResolver, encoding)
+                        }
                     } else {
                         // Get widths
                         val w = cidFont["W"]
@@ -234,6 +241,58 @@ internal class Font() {
                         widths.put(unicode, cw.value.toFloat())
                     }
                     i++
+                }
+            }
+        }
+    }
+
+    private fun getCIDType2Widths(
+        cidFont: Dictionary,
+        cidFontDescriptor: Dictionary,
+        referenceResolver: ReferenceResolver
+    ) {
+        val fontFile = cidFontDescriptor["FontFile2"]
+        if (fontFile is Reference) {
+            val fontProgram = referenceResolver.resolveReferenceToStream(fontFile)
+            val data = fontProgram?.decodeEncodedStream()
+            if (data is ByteArray) {
+                val glyphWidths = TTFParser(data).getGlyphWidths()
+
+                if (glyphWidths.isNotEmpty()) {
+                    widths.put(-1, glyphWidths[0].toFloat())
+                } else {
+                    return
+                }
+
+                val cidToGidMap = cidFont["CIDToGIDMap"]
+                if (cidToGidMap is Reference) {
+                    val cid2gidMapping = referenceResolver.resolveReferenceToStream(cidToGidMap)
+                    val mappingData = cid2gidMapping?.decodeEncodedStream()
+                    if (mappingData is ByteArray) {
+                        for (i in 0 until mappingData.size step 2) {
+                            var glyphIndex = 0
+                            glyphIndex = glyphIndex or (mappingData[i].toInt() and 0xff)
+                            glyphIndex = glyphIndex shl 8
+                            glyphIndex = glyphIndex or (mappingData[i + 1].toInt() and 0xff)
+
+                            if (glyphIndex in 0 until glyphWidths.size) {
+                                val width = glyphWidths[glyphIndex]
+                                var unicode = i
+                                if (cmap is CIDFontCMap) {
+                                    unicode = (cmap as CIDFontCMap).cidToUnicode(i)
+                                }
+                                widths.put(unicode, width.toFloat())
+                            }
+                        }
+                    }
+                } else {
+                    for (i in 0 until glyphWidths.size) {
+                        var unicode = i
+                        if (cmap is CIDFontCMap) {
+                            unicode = (cmap as CIDFontCMap).cidToUnicode(i)
+                        }
+                        widths.put(unicode, glyphWidths[i].toFloat())
+                    }
                 }
             }
         }

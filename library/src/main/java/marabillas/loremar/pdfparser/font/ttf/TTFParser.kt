@@ -231,6 +231,15 @@ internal class TTFParser(val data: ByteArray) {
         }
     }
 
+    fun getGlyphWidths(): IntArray {
+        val numOfLongHorMetrics = getNumOfLongHorMetrics()
+        return if (numOfLongHorMetrics > 0) {
+            getAdvancedWidths(numOfLongHorMetrics)
+        } else {
+            getGlyphBoundingBoxWidths()
+        }
+    }
+
     companion object {
         val tags = setOf(
             charArrayOf('c', 'm', 'a', 'p'),

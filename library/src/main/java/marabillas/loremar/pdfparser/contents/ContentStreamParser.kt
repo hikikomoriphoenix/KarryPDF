@@ -11,18 +11,6 @@ import kotlin.collections.ArrayList
 
 internal class ContentStreamParser {
     private val sb = StringBuilder()
-    private val TF = "TF"
-    private val BT = "BT"
-    private val QSTART = "q"
-    private val QEND = "Q"
-    private val BI = "BI"
-    private val DO = "Do"
-    private val CM = "cm"
-    private val RG = "RG"
-    private val RGX = "rg"
-    private val K = "K"
-    private val KX = "k"
-    private val operatorList = hashSetOf(TF, BT, QSTART, QEND, CM, DO, RG, RGX, K, KX) // TODO Add BI
     private val token = StringBuilder()
 
     private val identityCm = floatArrayOf(1f, 0f, 0f, 1f, 0f, 0f)
@@ -48,18 +36,23 @@ internal class ContentStreamParser {
         var i = 0
 
         while (i < sb.length) {
-            i = sb.indexOfAny(operatorList, i)
+            i = nextOperator(i)
+            if (i >= sb.length) break
+
             when {
-                sb.startsWith(RG, i) || sb.startsWith(RGX, i) -> {
+                // RG or rg
+                (i + 1 < sb.length) && ((sb[i] == 'R' && sb[i + 1] == 'G') || (sb[i] == 'r' && sb[i + 1] == 'g')) -> {
                     gsStack.lastElement().rgb = getRGB(i)
                     i += 2
                 }
-                sb.startsWith(K, i) || sb.startsWith(KX, i) -> {
+                // K or k
+                sb[i] == 'K' || sb[i] == 'k' -> {
                     val cmyk = getCMYK(i)
                     gsStack.lastElement().rgb = CmykToRgbConverter.inst.convert(cmyk)
                     i++
                 }
-                sb.startsWith(TF, i) -> {
+                // TF
+                i + 1 < sb.length && sb[i] == 'T' && sb[i + 1] == 'F' -> {
                     var j = 3
                     while (true) {
                         if (sb[i - j] == 'F') {
@@ -71,7 +64,8 @@ internal class ContentStreamParser {
                     tf.clear().append(token)
                     i += 2
                 }
-                sb.startsWith(BT, i) -> {
+                // BT
+                i + 1 < sb.length && sb[i] == 'B' && sb[i + 1] == 'T' -> {
                     val textObj = TextObject()
                     val cm = gsStack.lastElement().cm
                     val rgb = gsStack.lastElement().rgb
@@ -81,8 +75,8 @@ internal class ContentStreamParser {
                     pageObjects.add(textObj)
                     //println("textObj -> ${textObj.getX()}, ${textObj.getY()}")
                 }
-                i == -1 -> i = sb.length
-                sb.startsWith(QSTART, i) -> {
+                // q
+                sb[i] == 'q' -> {
                     //println("QSTART")
 
                     // If next index for stack is greater than gsHolders' size, add a new GraphicsState
@@ -99,18 +93,21 @@ internal class ContentStreamParser {
                     gsStack.push(gsHolders[index])
                     i++
                 }
-                sb.startsWith(QEND, i) -> {
+                // Q
+                sb[i] == 'Q' -> {
                     //println("QEND")
                     gsStack.pop()
                     i++
                 }
-                sb.startsWith(CM, i) -> {
+                // cm
+                i + 1 < sb.length && sb[i] == 'c' && sb[i + 1] == 'm' -> {
                     val cm = getCM(i)
                     //println("cm -> ${cm[0]}, ${cm[1]}, ${cm[2]}, ${cm[3]}, ${cm[4]}, ${cm[5]}")
                     gsStack.lastElement().cm = cm
                     i += 2
                 }
-                sb.startsWith(DO, i) -> {
+                // Do
+                i + 1 < sb.length && sb[i] == 'D' && sb[i + 1] == 'o' -> {
                     //println("Do XObject")
                     val nameIndex = sb.lastIndexOf('/', i)
                     token.clear().append(sb, nameIndex, i - 1)
@@ -129,7 +126,8 @@ internal class ContentStreamParser {
                     i += 2
                     //println("xObj -> ${pageObjects.last().getX()}, ${pageObjects.last().getY()}")
                 }
-                sb.startsWith(BI, i) -> {
+                // BI
+                i + 1 < sb.length && sb[i] == 'B' && sb[i + 1] == 'I' -> {
                     // TODO parse inline image object
                     throw UnsupportedPDFElementException("Extraction of inline image objects is not yet supported.")
                 }
@@ -137,6 +135,29 @@ internal class ContentStreamParser {
         }
 
         return pageObjects
+    }
+
+    private fun nextOperator(startIndex: Int): Int {
+        var i = startIndex
+        while (i < sb.length) {
+            if (
+                (i + 1 < sb.length && sb[i] == 'T' && sb[i + 1] == 'F')
+                || (sb[i] == 'B' && sb[i + 1] == 'T')
+                || sb[i] == 'q'
+                || sb[i] == 'Q'
+                || (i + 1 < sb.length && sb[i] == 'c' && sb[i + 1] == 'm')
+                || (i + 1 < sb.length && sb[i] == 'D' && sb[i + 1] == 'o')
+                || (i + 1 < sb.length && sb[i] == 'R' && sb[i + 1] == 'G')
+                || (i + 1 < sb.length && sb[i] == 'r' && sb[i + 1] == 'g')
+                || sb[i] == 'K'
+                || sb[i] == 'k'
+            // TODO Add BI
+            )
+                return i
+
+            i++
+        }
+        return i
     }
 
     private fun getCM(start: Int): FloatArray {

@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">PDFParserApp</string>
+    <string name="back">BACK</string>
+    <string name="next">NEXT</string>
 </resources>

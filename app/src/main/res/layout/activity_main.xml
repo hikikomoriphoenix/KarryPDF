@@ -8,7 +8,9 @@
 
     <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="match_parent" android:scrollbars="vertical" android:id="@+id/scrollView2">
+            android:layout_height="0dp" android:scrollbars="vertical" android:id="@+id/scrollView2"
+            app:layout_constraintBottom_toTopOf="@+id/controls"
+            app:layout_constraintTop_toTopOf="parent">
         <LinearLayout
                 android:orientation="vertical"
                 android:layout_width="match_parent"

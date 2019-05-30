@@ -195,4 +195,8 @@ class PDFParser {
     fun setPreferredTypeface(fontName: FontName, typeface: Typeface) {
         FontMappings[fontName] = typeface
     }
+
+    fun getTotalPages(): Int {
+        return pages.size
+    }
 }

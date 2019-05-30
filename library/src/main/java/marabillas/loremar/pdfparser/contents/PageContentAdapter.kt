@@ -31,18 +31,6 @@ internal class PageContentAdapter(
         while (i < pageObjects.size) {
             when (val next = pageObjects[i]) {
                 is TextObject -> {
-                    /* val array = pageObjects
-                         .subList(i, pageObjects.size)
-                         .takeWhile { it is TextObject }
-                         .map { it as TextObject }
-                         .toTypedArray()
-                         .copyOf()
-                     val textObjs = array.toCollection(ArrayList())
-                     skip = textObjs.size
-                     val textContentGroups = textContentAnalyzer.analyze(textObjs)
-                     val textContents = textContentAdapter.getContents(textContentGroups, pageFonts)
-                     contents.addAll(textContents)*/
-
                     TimeCounter.reset()
                     textObjects.clear()
                     textObjects.add(next)

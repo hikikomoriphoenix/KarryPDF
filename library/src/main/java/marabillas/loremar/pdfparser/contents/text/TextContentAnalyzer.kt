@@ -261,65 +261,6 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         }
     }
 
-    private fun getSpaceWidth(textObj: TextObject): Float {
-        var top = 0f
-        val negs = HashMap<Float, Int>()
-        textObj
-            .asSequence()
-            .filter { textElement ->
-                // Get all arrays
-                textElement.tj is PDFArray
-            }
-            .forEach { tjArray ->
-                (tjArray.tj as PDFArray)
-                    .filter {
-                        // Get all negative numbers in array
-                        it is Numeric && it.value.toFloat() < 0
-                    }
-                    .forEach { neg ->
-                        // Increment a negative number's count. If this number has the biggest count(bigger than the
-                        // current top number's count), then save it as the top number.
-                        val num = -(neg as Numeric).value.toFloat()
-                        val count = negs[num] ?: 0
-                        negs[num] = count + 1
-                        if (negs[num] ?: 0 > negs[top] ?: 0) {
-                            top = num
-                        }
-                    }
-            }
-        // The number save as top is considered as the width of space.
-        return top
-    }
-
-    private fun handleSpacing(width: Float, textObj: TextObject) {
-        textObj.forEachIndexed { index, textElement ->
-                if (textElement.tj is PDFArray) {
-                    sb.clear().append('(')
-                    (textElement.tj).forEach {
-                            if (it is PDFString)
-                                sb.append(it.value) // If string, append
-                            else if (it is Numeric) {
-                                val num = -it.value.toFloat()
-                                if (num >= 1.15 * width)
-                                    sb.append(' ').append(' ') // If more than 115% of space width, add double space
-                                else if (num >= 0.15 * width)
-                                    sb.append(' ') // If between 15% or 115% of space width, add space
-                            }
-                        }
-                    sb.append(')')
-                    val transformed = TextElement(
-                        td = textElement.td,
-                        tf = textElement.tf,
-                        ts = textElement.ts,
-                        tj = sb.toString().toPDFString(),
-                        rgb = textElement.rgb
-                    )
-                    transformed.width = textElement.width
-                    textObj.update(transformed, index)
-                }
-            }
-    }
-
     internal fun groupTexts() {
         currTextGroup = TextGroup()
         contentGroups.add(currTextGroup)

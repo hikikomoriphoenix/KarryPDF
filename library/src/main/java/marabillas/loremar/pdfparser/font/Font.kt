@@ -82,7 +82,7 @@ internal class Font() {
                 }
             } else {
                 if (fontDescriptor is Dictionary) {
-                    getWidthsFromFontProgram(fontDescriptor, referenceResolver, encoding)
+                    getWidthsFromFontProgram(fontDescriptor, referenceResolver, encoding, subtype)
                 }
             }
         } else {
@@ -125,11 +125,12 @@ internal class Font() {
                         cidFontDescriptor.resolveReferences()
                         val cidSubType = cidFont["Subtype"]
                         if (cidSubType is Name && cidSubType.value == "CIDFontType2") {
-                            println("Getting widths for CIDType2 font")
+                            println("Getting widths for CIDFontType2")
                             getCIDType2Widths(cidFont, cidFontDescriptor, referenceResolver)
                             println("obtained ${widths.size()} widths")
-                        } else {
-                            getWidthsFromFontProgram(cidFontDescriptor, referenceResolver, encoding)
+                        } else if (cidSubType is Name) {
+                            // Subtype is CIDFontType0. Use FontFile3 with subtype either CIDFontType0C or OpenType
+                            getWidthsFromFontProgram(cidFontDescriptor, referenceResolver, encoding, cidSubType)
                         }
                     } else {
                         // Get widths
@@ -149,14 +150,15 @@ internal class Font() {
     private fun getWidthsFromFontProgram(
         fontDescriptor: Dictionary,
         referenceResolver: ReferenceResolver,
-        encoding: PDFObject? = null
+        encoding: PDFObject? = null,
+        fontType: Name
     ) {
         val fontFile = fontDescriptor["FontFile"]
         val fontFile2 = fontDescriptor["FontFile2"]
         val fontFile3 = fontDescriptor["FontFile3"]
 
         when {
-            fontFile is Reference -> {
+            (fontType.value == "Type1" || fontType.value == "MMType1") && fontFile is Reference -> {
                 val fontProgram = referenceResolver.resolveReferenceToStream(fontFile)
                 val data = fontProgram?.decodeEncodedStream()
                 if (data is ByteArray) {
@@ -167,7 +169,7 @@ internal class Font() {
                     widths = Type1Parser(data).getCharacterWidths(diffArray)
                 }
             }
-            fontFile2 is Reference -> {
+            (fontType.value == "TrueType" || fontType.value == "CIDFontType2") && fontFile2 is Reference -> {
                 val fontProgram = referenceResolver.resolveReferenceToStream(fontFile2)
                 val data = fontProgram?.decodeEncodedStream()
                 if (data is ByteArray) {
@@ -295,6 +297,8 @@ internal class Font() {
                     }
                 }
             }
+        } else {
+            TODO("Needs to get glyph widths from outside the document using predefined cmap indicated in CIDSystemInfo")
         }
     }
 }

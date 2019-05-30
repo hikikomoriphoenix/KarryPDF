@@ -1,5 +1,6 @@
 package marabillas.loremar.pdfparser.contents.text
 
+import marabillas.loremar.pdfparser.contents.CmykToRgbConverter
 import marabillas.loremar.pdfparser.isEnclosingAt
 import marabillas.loremar.pdfparser.isUnEnclosingAt
 import marabillas.loremar.pdfparser.isWhiteSpaceAt
@@ -18,6 +19,8 @@ internal class TextObjectParser {
     private var tfDef = StringBuilder()
     private var ts = 0f
     private var tl = 0f
+    private var rgb = floatArrayOf(-1f, -1f, -1f)
+    private var cmyk = floatArrayOf(-1f, -1f, -1f, -1f)
 
     fun parse(
         s: StringBuilder,
@@ -30,6 +33,8 @@ internal class TextObjectParser {
         if (tfDefault.isNotBlank()) {
             tf.clear().append(tfDefault)
         }
+
+        this.rgb = rgb
 
         pos = startIndex
         var operandsCount = 0
@@ -53,7 +58,7 @@ internal class TextObjectParser {
                         if (s.isUnEnclosingAt(tjEnd))
                             tjEnd = pos - 1
                         operand.clear().append(s, operandsIndices[0], tjEnd)
-                        addTextElement(textObj, operand.toPDFObject() ?: "()".toPDFString(), ctm, rgb)
+                        addTextElement(textObj, operand.toPDFObject() ?: "()".toPDFString(), ctm)
                     } else if (s[pos] == 'd') {
                         positionText(s)
                     } else if (s[pos] == 'm') {
@@ -112,6 +117,14 @@ internal class TextObjectParser {
                     operandsCount = 0
                 } else if (s[pos] == '\'') {
                     operandsCount = 0
+                } else if ((s[pos] == 'R' && s[pos + 1] == 'G') || (s[pos] == 'r' && s[pos + 1] == 'g')) {
+                    operandsIndices[operandsCount] = pos
+                    getRGB(s)
+                    operandsCount = 0
+                } else if (s[pos] == 'K' || (s[pos] == 'k')) {
+                    operandsIndices[operandsCount] = pos
+                    getCMYK(s)
+                    operandsCount = 0
                 } else {
                     operandsCount = 0
                     if (s.isEnclosingAt(pos)) {
@@ -136,7 +149,7 @@ internal class TextObjectParser {
         return pos
     }
 
-    private fun addTextElement(textObj: TextObject, tj: PDFObject, ctm: FloatArray, rgb: FloatArray) {
+    private fun addTextElement(textObj: TextObject, tj: PDFObject, ctm: FloatArray) {
         td[0] = td[0] * ctm[0] + ctm[4]
         td[1] = td[1] * ctm[3] + ctm[5]
         val content = TextElement(
@@ -164,5 +177,27 @@ internal class TextObjectParser {
             .append(s, operandsIndices[1], pos - 2)
             .toDouble()
             .toFloat()
+    }
+
+    private fun getRGB(s: StringBuilder) {
+        for (i in 0..2) {
+            rgb[i] = operand
+                .clear()
+                .append(s, operandsIndices[i], operandsIndices[i + 1] - 1)
+                .toDouble()
+                .toFloat()
+        }
+    }
+
+    private fun getCMYK(s: StringBuilder) {
+        for (i in 0..3) {
+            cmyk[i] = operand
+                .clear()
+                .append(s, operandsIndices[i], operandsIndices[i + 1] - 1)
+                .toDouble()
+                .toFloat()
+        }
+
+        rgb = CmykToRgbConverter.inst.convert(cmyk)
     }
 }

@@ -54,11 +54,7 @@ internal class TextObjectParser {
                 } else if (s[pos] == 'T') {
                     pos++
                     if (s[pos] == 'j' || s[pos] == 'J') {
-                        var tjEnd = pos - 2
-                        if (s.isUnEnclosingAt(tjEnd))
-                            tjEnd = pos - 1
-                        operand.clear().append(s, operandsIndices[0], tjEnd)
-                        addTextElement(textObj, operand.toPDFObject() ?: "()".toPDFString(), ctm)
+                        showText(pos, s, textObj, ctm)
                     } else if (s[pos] == 'd') {
                         positionText(s)
                     } else if (s[pos] == 'm') {
@@ -114,8 +110,19 @@ internal class TextObjectParser {
                     pos += 2
                     return pos
                 } else if (s[pos] == '\"') {
+                    var tjEnd = pos - 2
+                    if (s.isUnEnclosingAt(tjEnd))
+                        tjEnd = pos - 1
+                    operand.clear().append(s, operandsIndices[2], tjEnd)
+                    // TODO Support Tw(Word Spacing) and Tc(Character Spacing)
+                    addTextElement(textObj, operand.toPDFObject() ?: "()".toPDFString(), ctm)
                     operandsCount = 0
                 } else if (s[pos] == '\'') {
+                    // Perform T*
+                    td[0] = 0f
+                    td[1] = -tl
+
+                    showText(pos, s, textObj, ctm)
                     operandsCount = 0
                 } else if ((s[pos] == 'R' && s[pos + 1] == 'G') || (s[pos] == 'r' && s[pos + 1] == 'g')) {
                     operandsIndices[operandsCount] = pos
@@ -147,6 +154,14 @@ internal class TextObjectParser {
             pos++
         }
         return pos
+    }
+
+    private fun showText(pos: Int, s: StringBuilder, textObj: TextObject, ctm: FloatArray) {
+        var tjEnd = pos - 2
+        if (s.isUnEnclosingAt(tjEnd))
+            tjEnd = pos - 1
+        operand.clear().append(s, operandsIndices[0], tjEnd)
+        addTextElement(textObj, operand.toPDFObject() ?: "()".toPDFString(), ctm)
     }
 
     private fun addTextElement(textObj: TextObject, tj: PDFObject, ctm: FloatArray) {

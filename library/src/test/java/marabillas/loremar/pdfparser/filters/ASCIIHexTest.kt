@@ -6,13 +6,6 @@ import org.junit.Test
 
 class ASCIIHexTest {
     @Test
-    fun printHexMap() {
-        for ((key, value) in ASCIIHex.hexMap.toSortedMap()) {
-            println("$key = $value")
-        }
-    }
-
-    @Test
     fun testDecode() {
         var hexString = "48656c6c6f20576f726c64"
         val expectedString = "Hello World"

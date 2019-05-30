@@ -1,6 +1,5 @@
 package marabillas.loremar.pdfparser.filters
 
-import marabillas.loremar.pdfparser.CaseInsensitiveMap
 import java.math.BigInteger
 
 /**
@@ -8,21 +7,19 @@ import java.math.BigInteger
  */
 internal class ASCIIHex : Decoder {
     override fun decode(encoded: ByteArray): ByteArray {
-        // TODO Change to a more GC-friendly implementation getting rid of substring use
+        if (encoded.size % 2 != 0) throw IllegalArgumentException("Hex string to decode is not divisible by 2")
 
-        val s = String(encoded, Charsets.US_ASCII)
-        if (s.length % 2 != 0) throw IllegalArgumentException()
-
-        val bytes = ByteArray(s.length / 2)
+        val bytes = ByteArray(encoded.size / 2)
         var i = 0
-        while (i < s.length - 1) {
-            if (s[i] == ' ') {
-                ++i
+        while (i + 1 < encoded.size) {
+            if (encoded[i].toChar() == ' ' || encoded[i].toChar() == '\n' || encoded[i].toChar() == '\r') {
+                i++
                 continue
             }
 
-            val pair = s.substring(i++, i++ + 1)
-            bytes[(i - 2) / 2] = hexMap[pair]!!
+            val c1 = encoded[i++].toChar().toLowerCase()
+            val c2 = encoded[i++].toChar().toLowerCase()
+            bytes[(i - 2) / 2] = hexToByteMap[c1]?.get(c2) ?: 0.toByte()
         }
 
         return bytes
@@ -37,41 +34,30 @@ internal class ASCIIHex : Decoder {
     }
 
     companion object {
-        /**
-         * A map that binds pairs of hexadecimals to their decimal values. Keys are  case-insensitive.
-         */
-        var hexMap = CaseInsensitiveMap<Byte>()
-            private set
+        val hexToByteMap = HashMap<Char, HashMap<Char, Byte>>()
 
         init {
-            val keys = arrayOfNulls<String>(256)
-            var index = 0
-
-            for (i in '0'..'9') {
-                index = iter2ndDigit(i, keys, index)
+            var i = 0
+            for (c1 in '0'..'9') {
+                val secondaryMap = HashMap<Char, Byte>()
+                for (c2 in '0'..'9') {
+                    secondaryMap[c2] = i++.toByte()
+                }
+                for (c2 in 'a'..'f') {
+                    secondaryMap[c2] = i++.toByte()
+                }
+                hexToByteMap[c1] = secondaryMap
             }
-
-            for (i in 'A'..'F') {
-                index = iter2ndDigit(i, keys, index)
+            for (c1 in 'a'..'f') {
+                val secondaryMap = HashMap<Char, Byte>()
+                for (c2 in '0'..'9') {
+                    secondaryMap[c2] = i++.toByte()
+                }
+                for (c2 in 'a'..'f') {
+                    secondaryMap[c2] = i++.toByte()
+                }
+                hexToByteMap[c1] = secondaryMap
             }
-
-            val values = ByteArray(256) { it.toByte() }
-            keys.mapIndexed { i, s ->
-                hexMap.put(s.toString(), values[i])
-            }
-        }
-
-        private fun iter2ndDigit(i: Char, keys: Array<String?>, start: Int): Int {
-            var m = start
-            for (j in '0'..'9') {
-                keys[m++] = "$i$j"
-            }
-            for (j in 'A'..'F') {
-                keys[m++] = "$i$j"
-            }
-            return m
         }
     }
-
-
 }

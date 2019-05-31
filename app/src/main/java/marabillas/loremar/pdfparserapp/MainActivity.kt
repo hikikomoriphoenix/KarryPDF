@@ -20,7 +20,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        val file = RandomAccessFile("${filesDir.path}/sample2.pdf", "r")
+        val file = RandomAccessFile("${filesDir.path}/seeing-theory.pdf", "r")
         val parser = PDFParser().loadDocument(file)
 
         // Get views
@@ -41,10 +41,27 @@ class MainActivity : AppCompatActivity() {
         next.setOnClickListener {
             pageNavigation?.next(this::indicatePageNumber)
         }
+        val numPages = pageNavigation?.numPages ?: 0
+        pageIndicator?.setOnClickListener {
+            UserInputDialog(
+                this,
+                "Go to Page: (0 - $numPages)",
+                { input -> pageNavigation?.goToPage(Integer.parseInt(input) - 1, this::indicatePageNumber) },
+                this::validateGoToPageInput
+            )
+        }
     }
 
     private fun indicatePageNumber(num: Int, total: Int) {
         val pStr = "${num + 1} / $total"
         pageIndicator?.text = pStr
+    }
+
+    private fun validateGoToPageInput(input: String): Boolean {
+        return try {
+            Integer.parseInt(input) in 1..(pageNavigation?.numPages ?: 1)
+        } catch (e: NumberFormatException) {
+            false
+        }
     }
 }

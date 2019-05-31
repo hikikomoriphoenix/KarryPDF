@@ -28,7 +28,9 @@ class PageNavigation(private val activity: AppCompatActivity, private val pageVi
 
     fun goToPage(num: Int, onPageChangeAction: (pageNumber: Int, pageTotal: Int) -> Unit) {
         pageNumber = num
+        TimeCounter.reset()
         val contents = document?.getPageContents(pageNumber)
+        println("App getting page contents duration -> ${TimeCounter.getTimeElapsed()} ms")
         pageView.removeAllViews()
         contents?.forEach { content ->
             when (content) {

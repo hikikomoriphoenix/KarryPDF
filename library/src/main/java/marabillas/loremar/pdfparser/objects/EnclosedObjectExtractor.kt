@@ -32,7 +32,6 @@ internal class EnclosedObjectExtractor(private val stringWithEnclosed: String, p
 
         fun indexOfClosingChar(string: StringBuilder, start: Int): Int {
             var unb = 0
-            var closeIndex = start - 1
             var prev = string[start]
 
             val open = string[start]
@@ -44,34 +43,38 @@ internal class EnclosedObjectExtractor(private val stringWithEnclosed: String, p
             var i = start
             while (i < string.length) {
                 val c = string[i]
-                when (c) {
-                    open -> {
+                when {
+                    c == open -> {
                         if (dictionary) {
                             if (prev != '\\' && string[i + 1] == '<') {
                                 unb++
                                 i++
-                                closeIndex++
                             }
                         } else if (prev != '\\') {
                             unb++
                         }
+                        prev = c
                     }
-                    close -> {
+                    c == close -> {
                         if (dictionary) {
                             if (prev != '\\' && string[i + 1] == '>') {
                                 unb--
                                 i++
-                                closeIndex++
                             }
                         } else if (prev != '\\') {
                             unb--
                         }
+                        prev = c
+                    }
+                    open != '(' && isEnclosing(c) -> {
+                        if (!(dictionary && prev == '<')) {
+                            i = indexOfClosingChar(string, i)
+                            prev = string[i]
+                        }
                     }
                 }
-                prev = c
-                closeIndex++
                 if (unb == 0) {
-                    return closeIndex
+                    return i
                 }
                 i++
             }
@@ -87,6 +90,10 @@ internal class EnclosedObjectExtractor(private val stringWithEnclosed: String, p
                 '{' -> '}'
                 else -> null
             }
+        }
+
+        private fun isEnclosing(c: Char): Boolean {
+            return (c == '(' || c == '[' || c == '<' || c == '{')
         }
     }
 }

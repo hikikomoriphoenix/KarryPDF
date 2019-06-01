@@ -212,7 +212,7 @@ internal class ToUnicodeCMap(private var stream: String) : CMap {
         while (ptr < encodedSB.length) {
             // Determine if next code is within code space range. If not, proceed to next code.
             if (!isNextValid()) {
-                decodedSB.append(" ")
+                decodedSB.append("□")
                 ptr += 2
                 continue
             }
@@ -275,11 +275,11 @@ internal class ToUnicodeCMap(private var stream: String) : CMap {
                     convertCodeToCharAndAppend(dstCodeSB)
                     continue
                 } else {
-                    decodedSB.append(" ")
+                    decodedSB.append("□")
                     ptr += 2
                 }
             } catch (e: NoSuchElementException) {
-                decodedSB.append(" ")
+                decodedSB.append("□")
                 ptr += 2
             }
         }

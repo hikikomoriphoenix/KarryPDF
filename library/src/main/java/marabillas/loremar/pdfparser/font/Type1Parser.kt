@@ -70,12 +70,15 @@ internal class Type1Parser(val data: ByteArray) {
                 break
 
             if (data[pos].toChar() == '/') {
+                // Extract charname
                 pos++
                 stringBuilder.clear()
                 while (data[pos].toChar() != ' ') {
                     stringBuilder.append(data[pos].toChar())
                     pos++
                 }
+
+                // Extract length of charstring
                 pos++
                 var length = 0
                 while (data[pos].toChar() != ' ') {
@@ -87,9 +90,14 @@ internal class Type1Parser(val data: ByteArray) {
                     length = length * 10 + num
                     pos++
                 }
+
+                // Extract charstring and decrypt
                 while (data[pos].toChar() != '/') {
-                    if (data[pos].toChar() == 'R' && data[pos + 1].toChar() == 'D') {
-                        // Skip RD and a space
+                    if (
+                        (data[pos].toChar() == 'R' && data[pos + 1].toChar() == 'D')
+                        || (data[pos].toChar() == '-' && data[pos + 1].toChar() == '|')
+                    ) {
+                        // Skip RD or -| and a space
                         pos += 3
                         decryptCharString(data, pos, length)
                         pos += length

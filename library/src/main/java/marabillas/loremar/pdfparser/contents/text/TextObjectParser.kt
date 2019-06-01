@@ -165,8 +165,14 @@ internal class TextObjectParser {
     }
 
     private fun addTextElement(textObj: TextObject, tj: PDFObject, ctm: FloatArray) {
-        td[0] = td[0] * ctm[0] + ctm[4]
-        td[1] = td[1] * ctm[3] + ctm[5]
+        // If first element, apply CTM and initialize TextObject's x and y
+        if (textObj.count() == 0) {
+            td[0] = td[0] * ctm[0] + ctm[4]
+            td[1] = td[1] * ctm[3] + ctm[5]
+            textObj.td[0] = td[0]
+            textObj.td[1] = td[1]
+        }
+
         val content = TextElement(
             tf = tf.toString(),
             td = td.copyOf(),
@@ -175,10 +181,6 @@ internal class TextObjectParser {
             rgb = rgb
         )
         textObj.add(content)
-        if (textObj.count() == 1) {
-            textObj.td[0] = td[0]
-            textObj.td[1] = td[1]
-        }
     }
 
     private fun positionText(s: StringBuilder) {

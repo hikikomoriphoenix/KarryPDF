@@ -296,6 +296,7 @@ internal class Type1Parser(val data: ByteArray) {
                                 "evaluate to a number"
                     )
                     lenIV = lenIV * 10 + num
+                    pos++
                 }
                 return lenIV
             } else if (

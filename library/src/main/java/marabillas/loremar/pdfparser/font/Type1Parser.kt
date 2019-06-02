@@ -1,6 +1,11 @@
 package marabillas.loremar.pdfparser.font
 
 import android.support.v4.util.SparseArrayCompat
+import marabillas.loremar.pdfparser.font.encoding.MacExpertEncoding
+import marabillas.loremar.pdfparser.font.encoding.MacRomanEncoding
+import marabillas.loremar.pdfparser.font.encoding.StandardEncoding
+import marabillas.loremar.pdfparser.font.encoding.WinAnsiEncoding
+import marabillas.loremar.pdfparser.set
 import marabillas.loremar.pdfparser.toInt
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
@@ -619,48 +624,16 @@ internal class Type1Parser(val data: ByteArray) {
         characterWidths: SparseArrayCompat<Float>,
         diffArray: SparseArrayCompat<String>
     ) {
-        var i = start
-        while (i + 2 < data.size) {
-            if (data[i].toChar() == 'p' && data[i + 1].toChar() == 'u' && data[i + 2].toChar() == 't') {
-                // Locate character name beginning
-                var p = i
-                while (data[p].toChar() != '/')
-                    p--
-
-                // Extract and save character name
-                var c = 1
-                stringBuilder.clear()
-                while (data[p + c].toChar() != ' ')
-                    stringBuilder.append(data[p + c++])
-                val charName = stringBuilder.toString()
-
-                // Locate character code beginning
-                p -= 2 // Skip space
-                while (data[p].toChar() != ' ')
-                    p--
-
-                // Extract and save character code
-                c = 1
-                stringBuilder.clear()
-                while (data[p + c].toChar() != ' ')
-                    stringBuilder.append(data[p + c++])
-                val charCode = stringBuilder.toInt()
-
-                // Get width and add to characterWidths with charCode as key
-                val command = charCommands[charName]
-                val hsbw = command?.get(CharCommand.HSBW)
-                val width = hsbw?.get(1)
-                width?.let {
-                    characterWidths[charCode] = width.toFloat()
-                }
-
-                // Move to end of 'put' operator
-                i += 2
-            } else if (data[i].toChar() == 'd' && data[i + 1].toChar() == 'e' && data[i + 2].toChar() == 'f') {
-                break
-            }
-            i++
+        val getCharacterWidth = { charCode: Int, charName: String ->
+            val command = charCommands[charName]
+            val hsbw = command?.get(CharCommand.HSBW)
+            val width = hsbw?.get(1)
+            width?.let {
+                characterWidths[charCode] = width.toFloat()
+            } ?: Unit
         }
+
+        parseAndProcessEncoding(start, getCharacterWidth)
 
         // Override with diffArray
         for (k in 0 until diffArray.size()) {
@@ -673,8 +646,85 @@ internal class Type1Parser(val data: ByteArray) {
             }
         }
     }
-}
 
-private operator fun <E> SparseArrayCompat<E>.set(key: Int, value: E) {
-    this.put(key, value)
+    private fun parseAndProcessEncoding(start: Int, action: (charCode: Int, charName: String) -> Unit) {
+        var i = start
+        while (i + 2 < data.size) {
+            if (data[i].toChar() == 'p' && data[i + 1].toChar() == 'u' && data[i + 2].toChar() == 't') {
+                // Locate character name beginning
+                var p = i
+                while (data[p].toChar() != '/')
+                    p--
+
+                // Extract and save character name
+                var c = 1
+                stringBuilder.clear()
+                while (data[p + c].toChar() != ' ')
+                    stringBuilder.append(data[p + c++].toChar())
+                val charName = stringBuilder.toString()
+
+                // Locate character code beginning
+                p -= 2 // Skip space
+                while (data[p].toChar() != ' ')
+                    p--
+
+                // Extract and save character code
+                c = 1
+                stringBuilder.clear()
+                while (data[p + c].toChar() != ' ')
+                    stringBuilder.append(data[p + c++].toChar())
+                if (stringBuilder[0].isLetter()) {
+                    // Skip .notdef
+                    i += 2
+                    continue
+                }
+                val charCode = stringBuilder.toInt()
+
+                // Process encoding
+                action(charCode, charName)
+
+                // Move to end of 'put' operator
+                i += 2
+            } else if (
+                data[i].toChar() == ' '
+                && data[i + 1].toChar() == 'd'
+                && data[i + 2].toChar() == 'e'
+                && data[i + 3].toChar() == 'f'
+            ) {
+                break
+            }
+            i++
+        }
+    }
+
+    fun getBuiltInEncoding(encodingArray: SparseArrayCompat<String>) {
+        println("Getting built-in encoding from Type1 font")
+        val encodingPos = getEncodingLocation() + 10
+        when {
+            isMacRomanEncoding(encodingPos) -> {
+                println("Type1 Encoding = MacRomanEncoding")
+                MacRomanEncoding.putAllTo(encodingArray)
+            }
+            isWinAnsiEncoding(encodingPos) -> {
+                println("Type1 Encoding = WinAnsiEncoding")
+                WinAnsiEncoding.putAllTo(encodingArray)
+            }
+            isMacExpertEncoding(encodingPos) -> {
+                println("Type1 Encoding = MacExpertEncoding")
+                MacExpertEncoding.putAllTo(encodingArray)
+            }
+            isStandardEncoding(encodingPos) -> {
+                println("Type1 Encoding = StandardEncoding")
+                StandardEncoding.putAllTo(encodingArray)
+            }
+            else -> {
+                val getEncoding = { charCode: Int, charName: String ->
+                    encodingArray[charCode] = charName
+                }
+                val initial = encodingArray.size()
+                parseAndProcessEncoding(encodingPos, getEncoding)
+                println("Obtained ${encodingArray.size() - initial} character names from Encoding array")
+            }
+        }
+    }
 }

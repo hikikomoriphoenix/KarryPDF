@@ -2,9 +2,11 @@ package marabillas.loremar.pdfparser.font
 
 import android.graphics.Typeface
 import android.support.v4.util.SparseArrayCompat
+import marabillas.loremar.pdfparser.font.cmap.AGLCMap
 import marabillas.loremar.pdfparser.font.cmap.CIDFontCMap
 import marabillas.loremar.pdfparser.font.cmap.CMap
 import marabillas.loremar.pdfparser.font.cmap.ToUnicodeCMap
+import marabillas.loremar.pdfparser.font.encoding.*
 import marabillas.loremar.pdfparser.font.ttf.TTFParser
 import marabillas.loremar.pdfparser.objects.*
 
@@ -58,6 +60,96 @@ internal class Font() {
 
         // If a Simple Font
         if (subtype is Name && subtype.value != "Type0") {
+            if (cmap !is ToUnicodeCMap) {
+                val encodingArray = SparseArrayCompat<String>()
+                var symbolic = false
+
+                // Check if font is symbolic
+                if (fontDescriptor is Dictionary) {
+                    val flags = (fontDescriptor["Flags"] as Numeric).value.toInt()
+                    // Check if third lower bit is set as 1 in flags(equals to 4 if only this flag is set). If it is,
+                    // then font is symbolic.
+                    if ((flags and 4) != 0) {
+                        symbolic = true
+                        println("Symbolic flag is set true")
+                        if (baseFont is Name && baseFont.value.contains("Zapf", true)
+                            && baseFont.value.contains("Dingbats", true)
+                        ) {
+                            ZapfDingbatsEncoding.putAllTo(encodingArray)
+                        } else if (baseFont is Name && baseFont.value.contains("Symbol", true)) {
+                            SymbolEncoding.putAllTo(encodingArray)
+                        }
+                    }
+                }
+
+                cmap = when (encoding) {
+                    is Name -> {
+                        when (encoding.value) {
+                            "MacRomanEncoding" -> MacRomanEncoding.putAllTo(encodingArray)
+                            "WinAnsiEncoding" -> WinAnsiEncoding.putAllTo(encodingArray)
+                            "MacExpertEncoding" -> MacExpertEncoding.putAllTo(encodingArray)
+                            "StandardEncoding" -> StandardEncoding.putAllTo(encodingArray)
+                        }
+
+                        // If symbolic, get encoding from embedded font program to get symbolic characters
+                        if (symbolic && fontDescriptor is Dictionary) {
+                            getEncodingFromBuiltInProgram(
+                                fontDescriptor,
+                                referenceResolver,
+                                encodingArray,
+                                subtype
+                            )
+                        }
+
+                        AGLCMap(encodingArray)
+                    }
+                    is Dictionary -> {
+                        val baseEncoding = encoding["BaseEncoding"]
+                        if (baseEncoding is Name) {
+                            when (baseEncoding.value) {
+                                "MacRomanEncoding" -> MacRomanEncoding.putAllTo(encodingArray)
+                                "WinAnsiEncoding" -> WinAnsiEncoding.putAllTo(encodingArray)
+                                "MacExpertEncoding" -> MacExpertEncoding.putAllTo(encodingArray)
+                                "StandardEncoding" -> StandardEncoding.putAllTo(encodingArray)
+                            }
+
+                            // If symbolic, get encoding from embedded font program to get symbolic characters
+                            if (symbolic && fontDescriptor is Dictionary) {
+                                getEncodingFromBuiltInProgram(
+                                    fontDescriptor,
+                                    referenceResolver,
+                                    encodingArray,
+                                    subtype
+                                )
+                            }
+                        } else {
+                            // Get encoding from embedded font program.
+                            if (fontDescriptor is Dictionary) {
+                                getEncodingFromBuiltInProgram(
+                                    fontDescriptor,
+                                    referenceResolver,
+                                    encodingArray,
+                                    subtype
+                                )
+                            } else if (!symbolic) {
+                                StandardEncoding.putAllTo(encodingArray)
+                            }
+                        }
+                        getDifferencesArray(encoding, encodingArray)
+                        AGLCMap(encodingArray)
+                    }
+                    else -> {
+                        // Get character names from embedded font program. Get unicode from AGL
+                        if (fontDescriptor is Dictionary) {
+                            getEncodingFromBuiltInProgram(fontDescriptor, referenceResolver, encodingArray, subtype)
+                        } else if (!symbolic) {
+                            StandardEncoding.putAllTo(encodingArray)
+                        }
+                        AGLCMap(encodingArray)
+                    }
+                }
+            }
+
             // Get FirstChar
             var firstChar = 0
             val fc = dictionary["FirstChar"]
@@ -303,5 +395,37 @@ internal class Font() {
         } else {
             TODO("Needs to get glyph widths from outside the document using predefined cmap indicated in CIDSystemInfo")
         }
+    }
+
+    private fun getEncodingFromBuiltInProgram(
+        fontDescriptor: Dictionary,
+        referenceResolver: ReferenceResolver,
+        encodingArray: SparseArrayCompat<String>,
+        fontType: Name
+    ) {
+        val fontFile = fontDescriptor["FontFile"]
+        val fontFile2 = fontDescriptor["FontFile2"]
+        val fontFile3 = fontDescriptor["FontFile3"]
+
+        when {
+            (fontType.value == "Type1" || fontType.value == "MMType1") && fontFile is Reference -> {
+                val fontProgram = referenceResolver.resolveReferenceToStream(fontFile)
+                val data = fontProgram?.decodeEncodedStream()
+                if (data is ByteArray) {
+                    Type1Parser(data).getBuiltInEncoding(encodingArray)
+                }
+            }
+            (fontType.value == "TrueType" || fontType.value == "CIDFontType2") && fontFile2 is Reference -> {
+                val fontProgram = referenceResolver.resolveReferenceToStream(fontFile2)
+                val data = fontProgram?.decodeEncodedStream()
+                if (data is ByteArray) {
+                    TODO("Get encoding for embedded TrueType fonts")
+                }
+            }
+            fontFile3 is Stream -> {
+                TODO("Get encoding from FontFile3")
+            }
+        }
+
     }
 }

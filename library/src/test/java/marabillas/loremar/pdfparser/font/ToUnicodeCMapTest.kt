@@ -1,5 +1,6 @@
 package marabillas.loremar.pdfparser.font
 
+import marabillas.loremar.pdfparser.font.cmap.ToUnicodeCMap
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.io.File

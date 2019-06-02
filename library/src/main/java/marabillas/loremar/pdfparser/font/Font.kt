@@ -2,6 +2,9 @@ package marabillas.loremar.pdfparser.font
 
 import android.graphics.Typeface
 import android.support.v4.util.SparseArrayCompat
+import marabillas.loremar.pdfparser.font.cmap.CIDFontCMap
+import marabillas.loremar.pdfparser.font.cmap.CMap
+import marabillas.loremar.pdfparser.font.cmap.ToUnicodeCMap
 import marabillas.loremar.pdfparser.font.ttf.TTFParser
 import marabillas.loremar.pdfparser.objects.*
 

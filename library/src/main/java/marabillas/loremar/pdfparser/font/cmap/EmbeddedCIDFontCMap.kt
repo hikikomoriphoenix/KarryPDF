@@ -1,8 +1,7 @@
-package marabillas.loremar.pdfparser.font.predefinedcmaps
+package marabillas.loremar.pdfparser.font.cmap
 
-import marabillas.loremar.pdfparser.font.CIDFontCMap
-
-internal class PredefinedCMap : CIDFontCMap {
+internal class EmbeddedCIDFontCMap : CIDFontCMap,
+    EmbeddedCMap {
     override fun cidToUnicode(cid: Int): Int {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
@@ -10,5 +9,4 @@ internal class PredefinedCMap : CIDFontCMap {
     override fun decodeString(encoded: String): String {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
-    // TODO Put all predefined CMap files in this package. To read a file in the same package call javaclass.getResource()
 }

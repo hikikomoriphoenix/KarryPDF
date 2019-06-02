@@ -1,4 +1,4 @@
-package marabillas.loremar.pdfparser.font
+package marabillas.loremar.pdfparser.font.cmap
 
 import android.support.v4.util.SparseArrayCompat
 import marabillas.loremar.pdfparser.hexFromInt
@@ -7,7 +7,7 @@ import marabillas.loremar.pdfparser.hexToInt
 /**
  * @param stream The stream contents of this ToUnicodeCMap
  */
-internal class ToUnicodeCMap(private var stream: String) : CMap {
+internal class ToUnicodeCMap(private var stream: String) : EmbeddedCMap {
     /**
      * List of code spaces. A code that is outside the code space range does not have mapping.
      */

@@ -1,6 +1,7 @@
 package marabillas.loremar.pdfparser.font.cmap
 
 import android.support.v4.util.SparseArrayCompat
+import marabillas.loremar.pdfparser.font.cmap.CMap.Companion.MISSING_CHAR
 import marabillas.loremar.pdfparser.hexFromInt
 import marabillas.loremar.pdfparser.hexToInt
 
@@ -212,7 +213,7 @@ internal class ToUnicodeCMap(private var stream: String) : EmbeddedCMap {
         while (ptr < encodedSB.length) {
             // Determine if next code is within code space range. If not, proceed to next code.
             if (!isNextValid()) {
-                decodedSB.append("□")
+                decodedSB.append(MISSING_CHAR)
                 ptr += 2
                 continue
             }
@@ -275,11 +276,11 @@ internal class ToUnicodeCMap(private var stream: String) : EmbeddedCMap {
                     convertCodeToCharAndAppend(dstCodeSB)
                     continue
                 } else {
-                    decodedSB.append("□")
+                    decodedSB.append(MISSING_CHAR)
                     ptr += 2
                 }
             } catch (e: NoSuchElementException) {
-                decodedSB.append("□")
+                decodedSB.append(MISSING_CHAR)
                 ptr += 2
             }
         }

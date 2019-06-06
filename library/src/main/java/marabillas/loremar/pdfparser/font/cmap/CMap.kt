@@ -4,7 +4,7 @@ import marabillas.loremar.pdfparser.convertContentsToHex
 
 internal interface CMap {
     companion object {
-        val sb = StringBuilder()
+        const val MISSING_CHAR = '□'
     }
 
     fun decodeString(encoded: String): String

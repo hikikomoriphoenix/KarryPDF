@@ -45,7 +45,7 @@ class MainActivity : AppCompatActivity() {
         pageIndicator?.setOnClickListener {
             UserInputDialog(
                 this,
-                "Go to Page: (0 - $numPages)",
+                "Go to Page: (1 - $numPages)",
                 { input -> pageNavigation?.goToPage(Integer.parseInt(input) - 1, this::indicatePageNumber) },
                 this::validateGoToPageInput
             )

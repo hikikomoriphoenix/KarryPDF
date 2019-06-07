@@ -69,6 +69,11 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         // horizontally adjacent to each other.
         TableDetector(textObjects, fonts).detectTableComponents()
 
+        // TODO Add indents. Compare x values of first TextObjects of each line. Give an order value on each. Leftmost
+        // will have lower order and rightmost will have higher order. Pass this value to the first TextElements. After
+        // forming paragraphs, Add indents with increasing amount from lower order to higher order. Each indent is
+        // equivalent to two spaces.
+
         // Group texts in the same line or in adjacent lines with line-spacing less than font size.
         groupTexts()
 

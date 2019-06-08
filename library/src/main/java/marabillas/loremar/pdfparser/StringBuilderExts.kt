@@ -165,6 +165,65 @@ internal fun StringBuilder.isWhiteSpaceAt(i: Int): Boolean {
     return (this[i] == ' ' || this[i] == '\n' || this[i] == '\r')
 }
 
+internal fun StringBuilder.resolveEscapedSequences() {
+    var i = 0
+    while (i < this.length) {
+        if (this[i] == '\\' && (i + 1 < this.length)) {
+            when (this[i + 1]) {
+                'n' -> {
+                    this.delete(i, i + 2)
+                    this.insert(i, '\n')
+                }
+                'r' -> {
+                    this.delete(i, i + 2)
+                    this.insert(i, '\r')
+                }
+                't' -> {
+                    this.delete(i, i + 2)
+                    this.insert(i, '\t')
+                }
+                'b' -> {
+                    this.delete(i, i + 2)
+                    this.insert(i, '\b')
+                }
+                'f' -> {
+                    this.delete(i, i + 2)
+                    this.insert(i, '\u000C')
+                }
+                '(' -> {
+                    this.delete(i, i + 2)
+                    this.insert(i, '(')
+                }
+                ')' -> {
+                    this.delete(i, i + 2)
+                    this.insert(i, ')')
+                }
+                '\\' -> {
+                    this.delete(i, i + 2)
+                    this.insert(i, '\\')
+                }
+                else -> {
+                    if (i + 3 < this.length) {
+                        val digits = CharArray(3)
+                        var dCounts = 0
+                        for (j in 1..3) {
+                            if (this[i + j].isDigit()) {
+                                digits[j - 1] = this[i + j]
+                                dCounts++
+                            } else break
+                        }
+                        if (dCounts > 0) {
+                            val int = Integer.parseInt(String(digits, 0, dCounts), 8)
+                            this.delete(i, i + dCounts + 1)
+                            this.insert(i, int.toChar())
+                        }
+                    }
+                }
+            }
+        }
+        i++
+    }
+}
 
 private val HEX = arrayOf('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F')
 

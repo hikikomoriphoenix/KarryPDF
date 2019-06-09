@@ -1,14 +1,10 @@
 package marabillas.loremar.pdfparser.contents.text
 
+import marabillas.loremar.pdfparser.*
 import marabillas.loremar.pdfparser.contents.CmykToRgbConverter
-import marabillas.loremar.pdfparser.isEnclosingAt
-import marabillas.loremar.pdfparser.isUnEnclosingAt
-import marabillas.loremar.pdfparser.isWhiteSpaceAt
-import marabillas.loremar.pdfparser.objects.EnclosedObjectExtractor
 import marabillas.loremar.pdfparser.objects.PDFObject
 import marabillas.loremar.pdfparser.objects.toPDFObject
 import marabillas.loremar.pdfparser.objects.toPDFString
-import marabillas.loremar.pdfparser.toDouble
 
 internal class TextObjectParser {
     private val operandsIndices = IntArray(6)
@@ -48,7 +44,7 @@ internal class TextObjectParser {
                     operandsCount++
 
                     if (s.isEnclosingAt(pos)) {
-                        pos = EnclosedObjectExtractor.indexOfClosingChar(s, pos)
+                        pos = s.indexOfClosingChar(pos)
                         pos--
                     }
                 } else if (s[pos] == 'T') {
@@ -135,7 +131,7 @@ internal class TextObjectParser {
                 } else {
                     operandsCount = 0
                     if (s.isEnclosingAt(pos)) {
-                        pos = EnclosedObjectExtractor.indexOfClosingChar(s, pos)
+                        pos = s.indexOfClosingChar(pos)
                         pos--
                     }
                 }
@@ -147,7 +143,7 @@ internal class TextObjectParser {
                 operandsIndices[operandsCount] = pos
                 operandsCount++
                 if (s.isEnclosingAt(pos)) {
-                    pos = EnclosedObjectExtractor.indexOfClosingChar(s, pos)
+                    pos = s.indexOfClosingChar(pos)
                     pos--
                 }
             }

@@ -106,9 +106,11 @@ internal fun StringBuilder.isUnEnclosingAt(i: Int): Boolean {
 }
 
 internal fun StringBuilder.indexOfClosingChar(start: Int): Int {
+    if (!this.isEnclosingAt(start))
+        return start
+
     var unb = 0
-    var closeIndex = start - 1
-    var prev = ""
+    var prev: Char? = null
 
     val open = this[start]
     val close = when (open) {
@@ -125,40 +127,43 @@ internal fun StringBuilder.indexOfClosingChar(start: Int): Int {
     var i = start
     while (i < this.length) {
         val c = this[i]
-        when (c) {
-            open -> {
+        when {
+            c == open -> {
                 if (dictionary) {
-                    if (prev != "\\" && this[i + 1] == '<') {
+                    if (prev != '\\' && this[i + 1] == '<') {
                         unb++
                         i++
-                        closeIndex++
                     }
-                } else if (prev != "\\") {
+                } else if (prev != '\\') {
                     unb++
                 }
+                prev = c
             }
-            close -> {
+            c == close -> {
                 if (dictionary) {
-                    if (prev != "\\" && this[i + 1] == '>') {
+                    if (prev != '\\' && this[i + 1] == '>') {
                         unb--
                         i++
-                        closeIndex++
                     }
-                } else if (prev != "\\") {
+                } else if (prev != '\\') {
                     unb--
+                }
+                prev = c
+            }
+            (open != '(') && (this.isEnclosingAt(i)) -> {
+                if (!(dictionary && prev == '<')) {
+                    i = this.indexOfClosingChar(i)
+                    prev = this[i]
                 }
             }
         }
-        prev = c.toString()
-        closeIndex++
         if (unb == 0) {
-            println()
-            return closeIndex
+            return i
         }
         i++
     }
 
-    return i
+    return start
 }
 
 internal fun StringBuilder.isWhiteSpaceAt(i: Int): Boolean {

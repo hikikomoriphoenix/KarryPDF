@@ -116,7 +116,7 @@ internal fun StringBuilder.toPDFArray(secondary: StringBuilder, resolveReference
                 }
                 // Locate next delimiter.
                 while (i <= this.length) {
-                    if (this.isWhiteSpaceAt(i) || this.isEnclosingAt(i) || this[i] == '/' || i == this.length) {
+                    if (i == this.length || this.isWhiteSpaceAt(i) || this.isEnclosingAt(i) || this[i] == '/') {
                         break
                     } else {
                         i++

@@ -687,8 +687,13 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         while (i < contentGroups.size) {
             val textGroup = contentGroups[i]
             if (textGroup is TextGroup) {
-                for (j in 0 until textGroup.size()) {
+                // Iterate through each line.
+                var j = 0
+                while (j < textGroup.size()) {
                     val line = textGroup[j]
+
+                    // Concatenate all TextElements in the line. If the resulting text is empty or entirely made of
+                    // white spaces, remove the line.
                     sb.clear()
                     for (k in 0 until line.size) {
                         val e = line[k]
@@ -696,8 +701,10 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                     }
                     if (sb.isBlank())
                         textGroup.remove(line)
+                    j++
                 }
 
+                // If TextGroup no longer has any lines, then remove the TextGroup itself.
                 if (textGroup.size() == 0)
                     contentGroups.remove(textGroup)
             }

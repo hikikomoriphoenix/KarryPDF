@@ -4,24 +4,25 @@ internal fun octalToDecimal(octal: Int): Int {
     var num = octal
     var result = 0
 
+    // Count digits
+    var n = (Math.log10(octal.toDouble()) + 1).toInt()
+
     while (true) {
-        var factor = 1
+        // Divisor allows handling of first digit
+        val divisor = Math.pow(10.0, n.toDouble() - 1).toInt()
 
         // Get first digit
-        var first = num
-        while (first >= 10) {
-            first /= 10
-            factor *= 10
-        }
+        val first = num / divisor
 
         // Add first digit to decimal result
         result += first
 
         // Remove first digit
-        num -= (first * factor)
+        num -= (first * divisor)
+        n--
 
         // If no more first digit to add next, then done.
-        if (num == 0) break
+        if (n == 0) break
 
         // If not done, multiply decimal result by 8
         result *= 8

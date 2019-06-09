@@ -286,6 +286,7 @@ internal class ToUnicodeCMap(private var stream: String) : EmbeddedCMap {
         }
 
         // Convert to literal string for PDF
+        encodeParentheses(decodedSB)
         decodedSB.insert(0, '(').append(')')
         return decodedSB.toString()
     }

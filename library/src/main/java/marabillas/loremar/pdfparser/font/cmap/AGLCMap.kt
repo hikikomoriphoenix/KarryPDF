@@ -30,7 +30,7 @@ internal class AGLCMap(private val codeToNameArray: SparseArrayCompat<String>) :
         }
 
         // Convert to literal string for PDF
-        escapeParentheses(decodedSB)
+        encodeParentheses(decodedSB)
         decodedSB.insert(0, '(').append(')')
         return decodedSB.toString()
     }

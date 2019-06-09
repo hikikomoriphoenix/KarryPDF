@@ -19,4 +19,20 @@ internal interface CMap {
             encodedSB.deleteCharAt(0).deleteCharAt(encodedSB.lastIndex)
         }
     }
+
+    fun encodeParentheses(decodedSB: StringBuilder) {
+        var i = 0
+        while (i < decodedSB.length) {
+            if (decodedSB[i] == '(') {
+                decodedSB.deleteCharAt(i)
+                decodedSB.insert(i, "\\050")
+                i += 3
+            } else if (decodedSB[i] == ')') {
+                decodedSB.deleteCharAt(i)
+                decodedSB.insert(i, "\\051")
+                i += 3
+            }
+            i++
+        }
+    }
 }

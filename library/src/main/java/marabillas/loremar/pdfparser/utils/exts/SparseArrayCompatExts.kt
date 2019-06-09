@@ -1,6 +1,7 @@
 package marabillas.loremar.pdfparser.utils.exts
 
 import android.support.v4.util.SparseArrayCompat
+import marabillas.loremar.pdfparser.utils.octalToDecimal
 
 internal operator fun <E> SparseArrayCompat<E>.set(key: Int, value: E) {
     this.put(key, value)
@@ -24,32 +25,7 @@ internal fun <E> SparseArrayCompat<E>.octalToDecimalKeys() {
     // For each octal key, add an entry with the value mapped to that key but with decimal result as key. Remove the entry
     // with the given octal key. In other words, replace the octal key with a decimal key.
     for (i in 0 until keys.size) {
-        var octal = keys[i]
-        var result = 0
-
-        while (true) {
-            var factor = 1
-
-            // Get first digit
-            var first = octal
-            while (first >= 10) {
-                first /= 10
-                factor *= 10
-            }
-
-            // Add first digit to decimal result
-            result += first
-
-            // Remove first digit
-            octal -= (first * factor)
-
-            // If no more first digit to add next, then done.
-            if (octal == 0) break
-
-            // If not done, multiply decimal result by 8
-            result *= 8
-        }
-
+        val result = octalToDecimal(keys[i])
         this.put(result, this[keys[i]])
         this.remove(keys[i])
     }

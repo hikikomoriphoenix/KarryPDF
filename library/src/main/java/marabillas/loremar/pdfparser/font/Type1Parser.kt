@@ -5,6 +5,7 @@ import marabillas.loremar.pdfparser.font.encoding.MacExpertEncoding
 import marabillas.loremar.pdfparser.font.encoding.MacRomanEncoding
 import marabillas.loremar.pdfparser.font.encoding.StandardEncoding
 import marabillas.loremar.pdfparser.font.encoding.WinAnsiEncoding
+import marabillas.loremar.pdfparser.utils.decimalToOctal
 import marabillas.loremar.pdfparser.utils.exts.set
 import marabillas.loremar.pdfparser.utils.exts.toInt
 import java.io.ByteArrayOutputStream
@@ -372,22 +373,6 @@ internal class Type1Parser(val data: ByteArray) {
 
         println("${characterWidths.size()} widths obtained from Type1 font")
         return characterWidths
-    }
-
-    private fun decimalToOctal(num: Int): Int {
-        var octal = 0
-        var q = num
-        var r: Int
-        var factor = 1
-        while (true) {
-            r = q % 8
-            q /= 8
-            octal += r * factor
-            factor *= 10
-
-            if (q == 0) break
-        }
-        return octal
     }
 
     private fun getEncodingLocation(): Int {

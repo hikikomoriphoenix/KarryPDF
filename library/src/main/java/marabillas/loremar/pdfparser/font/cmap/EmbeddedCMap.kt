@@ -1,6 +1,6 @@
 package marabillas.loremar.pdfparser.font.cmap
 
-import marabillas.loremar.pdfparser.hexToInt
+import marabillas.loremar.pdfparser.utils.exts.hexToInt
 
 internal interface EmbeddedCMap : CMap {
     companion object {

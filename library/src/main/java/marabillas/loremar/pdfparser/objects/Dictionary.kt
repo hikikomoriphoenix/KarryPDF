@@ -1,8 +1,8 @@
 package marabillas.loremar.pdfparser.objects
 
-import marabillas.loremar.pdfparser.indexOfClosingChar
-import marabillas.loremar.pdfparser.isEnclosingAt
-import marabillas.loremar.pdfparser.isWhiteSpaceAt
+import marabillas.loremar.pdfparser.utils.exts.indexOfClosingChar
+import marabillas.loremar.pdfparser.utils.exts.isEnclosingAt
+import marabillas.loremar.pdfparser.utils.exts.isWhiteSpaceAt
 
 internal class Dictionary(private val entries: HashMap<String, PDFObject?>) : PDFObject {
     operator fun get(entry: String): PDFObject? {

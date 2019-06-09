@@ -2,8 +2,8 @@ package marabillas.loremar.pdfparser.font.cmap
 
 import android.support.v4.util.SparseArrayCompat
 import marabillas.loremar.pdfparser.font.cmap.CMap.Companion.MISSING_CHAR
-import marabillas.loremar.pdfparser.hexFromInt
-import marabillas.loremar.pdfparser.hexToInt
+import marabillas.loremar.pdfparser.utils.exts.hexFromInt
+import marabillas.loremar.pdfparser.utils.exts.hexToInt
 
 /**
  * @param stream The stream contents of this ToUnicodeCMap

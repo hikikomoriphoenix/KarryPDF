@@ -5,7 +5,7 @@ import marabillas.loremar.pdfparser.objects.Dictionary
 import marabillas.loremar.pdfparser.objects.Name
 import marabillas.loremar.pdfparser.objects.PDFArray
 import marabillas.loremar.pdfparser.objects.toDictionary
-import marabillas.loremar.pdfparser.trimContainedChars
+import marabillas.loremar.pdfparser.utils.exts.trimContainedChars
 import java.nio.CharBuffer
 
 internal class ImageObjectParser {

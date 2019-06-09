@@ -1,4 +1,4 @@
-package marabillas.loremar.pdfparser
+package marabillas.loremar.pdfparser.utils.exts
 
 internal fun StringBuilder.trimContainedChars() {
     while (this.startsWith(' ') || this.startsWith('\n') || this.startsWith('\r')) {

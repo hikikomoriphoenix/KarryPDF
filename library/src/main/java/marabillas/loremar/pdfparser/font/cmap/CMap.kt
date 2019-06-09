@@ -1,7 +1,7 @@
 package marabillas.loremar.pdfparser.font.cmap
 
-import marabillas.loremar.pdfparser.convertContentsToHex
-import marabillas.loremar.pdfparser.resolveEscapedSequences
+import marabillas.loremar.pdfparser.utils.exts.convertContentsToHex
+import marabillas.loremar.pdfparser.utils.exts.resolveEscapedSequences
 
 internal interface CMap {
     companion object {

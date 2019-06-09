@@ -1,6 +1,9 @@
 package marabillas.loremar.pdfparser
 
 import junit.framework.Assert.assertTrue
+import marabillas.loremar.pdfparser.utils.exts.hexFromInt
+import marabillas.loremar.pdfparser.utils.exts.hexToInt
+import marabillas.loremar.pdfparser.utils.exts.isEnclosedWith
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test

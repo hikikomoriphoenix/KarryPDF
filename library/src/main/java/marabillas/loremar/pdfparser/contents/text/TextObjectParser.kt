@@ -1,10 +1,14 @@
 package marabillas.loremar.pdfparser.contents.text
 
-import marabillas.loremar.pdfparser.*
 import marabillas.loremar.pdfparser.contents.CmykToRgbConverter
 import marabillas.loremar.pdfparser.objects.PDFObject
 import marabillas.loremar.pdfparser.objects.toPDFObject
 import marabillas.loremar.pdfparser.objects.toPDFString
+import marabillas.loremar.pdfparser.utils.exts.*
+import marabillas.loremar.pdfparser.utils.exts.indexOfClosingChar
+import marabillas.loremar.pdfparser.utils.exts.isEnclosingAt
+import marabillas.loremar.pdfparser.utils.exts.isUnEnclosingAt
+import marabillas.loremar.pdfparser.utils.exts.toDouble
 
 internal class TextObjectParser {
     private val operandsIndices = IntArray(6)

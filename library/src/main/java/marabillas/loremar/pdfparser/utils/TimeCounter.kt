@@ -1,4 +1,4 @@
-package marabillas.loremar.pdfparser
+package marabillas.loremar.pdfparser.utils
 
 import java.util.concurrent.TimeUnit
 
@@ -22,10 +22,10 @@ internal class TimeCounter {
     }
 
     fun reset() {
-        TimeCounter.reset()
+        Companion.reset()
     }
 
     fun getTimeElapsed(): Long {
-        return TimeCounter.getTimeElapsed()
+        return Companion.getTimeElapsed()
     }
 }

@@ -5,7 +5,7 @@ import marabillas.loremar.pdfparser.contents.text.TextObject
 import marabillas.loremar.pdfparser.contents.text.TextObjectParser
 import marabillas.loremar.pdfparser.exceptions.UnsupportedPDFElementException
 import marabillas.loremar.pdfparser.objects.toName
-import marabillas.loremar.pdfparser.toDouble
+import marabillas.loremar.pdfparser.utils.exts.toDouble
 import java.util.*
 import kotlin.collections.ArrayList
 

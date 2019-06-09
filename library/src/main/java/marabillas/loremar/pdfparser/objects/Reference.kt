@@ -1,6 +1,6 @@
 package marabillas.loremar.pdfparser.objects
 
-import marabillas.loremar.pdfparser.toInt
+import marabillas.loremar.pdfparser.utils.exts.toInt
 
 
 internal class Reference(val obj: Int, val gen: Int) : PDFObject {

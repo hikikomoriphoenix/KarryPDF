@@ -2,8 +2,8 @@ package marabillas.loremar.pdfparser.contents.text
 
 import android.support.v4.util.SparseArrayCompat
 import marabillas.loremar.pdfparser.font.Font
-import marabillas.loremar.pdfparser.toDouble
-import marabillas.loremar.pdfparser.toInt
+import marabillas.loremar.pdfparser.utils.exts.toDouble
+import marabillas.loremar.pdfparser.utils.exts.toInt
 
 internal class TableDetector(
     private val textObjects: MutableList<TextObject>,

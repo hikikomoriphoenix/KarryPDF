@@ -5,7 +5,7 @@ import marabillas.loremar.pdfparser.contents.PageObject
 import marabillas.loremar.pdfparser.contents.text.TextElement
 import marabillas.loremar.pdfparser.contents.text.TextObject
 import marabillas.loremar.pdfparser.objects.*
-import marabillas.loremar.pdfparser.toInt
+import marabillas.loremar.pdfparser.utils.exts.toInt
 
 internal class FontDecoder(private val pageObjects: ArrayList<PageObject>, private val fonts: SparseArrayCompat<Font>) {
     private val mainSB = StringBuilder()

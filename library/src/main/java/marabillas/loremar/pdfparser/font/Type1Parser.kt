@@ -5,8 +5,8 @@ import marabillas.loremar.pdfparser.font.encoding.MacExpertEncoding
 import marabillas.loremar.pdfparser.font.encoding.MacRomanEncoding
 import marabillas.loremar.pdfparser.font.encoding.StandardEncoding
 import marabillas.loremar.pdfparser.font.encoding.WinAnsiEncoding
-import marabillas.loremar.pdfparser.set
-import marabillas.loremar.pdfparser.toInt
+import marabillas.loremar.pdfparser.utils.exts.set
+import marabillas.loremar.pdfparser.utils.exts.toInt
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder

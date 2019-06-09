@@ -1,9 +1,9 @@
 package marabillas.loremar.pdfparser.objects
 
-import marabillas.loremar.pdfparser.containedEqualsWith
+import marabillas.loremar.pdfparser.utils.exts.containedEqualsWith
 import marabillas.loremar.pdfparser.exceptions.NoReferenceResolverException
-import marabillas.loremar.pdfparser.isEnclosedWith
-import marabillas.loremar.pdfparser.trimContainedChars
+import marabillas.loremar.pdfparser.utils.exts.isEnclosedWith
+import marabillas.loremar.pdfparser.utils.exts.trimContainedChars
 
 internal class PDFObjectAdapter {
     companion object {

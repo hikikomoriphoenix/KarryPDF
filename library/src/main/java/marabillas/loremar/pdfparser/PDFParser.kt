@@ -14,6 +14,7 @@ import marabillas.loremar.pdfparser.font.FontDecoder
 import marabillas.loremar.pdfparser.font.FontMappings
 import marabillas.loremar.pdfparser.font.FontName
 import marabillas.loremar.pdfparser.objects.*
+import marabillas.loremar.pdfparser.utils.TimeCounter
 import java.io.RandomAccessFile
 
 class PDFParser {

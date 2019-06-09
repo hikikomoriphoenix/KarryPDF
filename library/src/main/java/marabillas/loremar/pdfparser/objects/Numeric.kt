@@ -1,6 +1,6 @@
 package marabillas.loremar.pdfparser.objects
 
-import marabillas.loremar.pdfparser.toDouble
+import marabillas.loremar.pdfparser.utils.exts.toDouble
 
 internal class Numeric : PDFObject {
     val value: Double

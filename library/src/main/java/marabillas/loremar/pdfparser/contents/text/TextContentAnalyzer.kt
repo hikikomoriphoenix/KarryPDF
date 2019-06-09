@@ -7,8 +7,8 @@ import marabillas.loremar.pdfparser.objects.Numeric
 import marabillas.loremar.pdfparser.objects.PDFArray
 import marabillas.loremar.pdfparser.objects.PDFString
 import marabillas.loremar.pdfparser.objects.toPDFString
-import marabillas.loremar.pdfparser.toDouble
-import marabillas.loremar.pdfparser.toInt
+import marabillas.loremar.pdfparser.utils.exts.toDouble
+import marabillas.loremar.pdfparser.utils.exts.toInt
 
 internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableListOf()) {
     internal val contentGroups = ArrayList<ContentGroup>()

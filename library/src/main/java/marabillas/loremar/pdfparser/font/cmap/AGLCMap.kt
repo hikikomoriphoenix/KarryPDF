@@ -2,7 +2,7 @@ package marabillas.loremar.pdfparser.font.cmap
 
 import android.support.v4.util.SparseArrayCompat
 import marabillas.loremar.pdfparser.font.cmap.CMap.Companion.MISSING_CHAR
-import marabillas.loremar.pdfparser.hexToInt
+import marabillas.loremar.pdfparser.utils.exts.hexToInt
 import java.io.IOException
 import java.io.InputStream
 
@@ -30,6 +30,7 @@ internal class AGLCMap(private val codeToNameArray: SparseArrayCompat<String>) :
         }
 
         // Convert to literal string for PDF
+        escapeParentheses(decodedSB)
         decodedSB.insert(0, '(').append(')')
         return decodedSB.toString()
     }

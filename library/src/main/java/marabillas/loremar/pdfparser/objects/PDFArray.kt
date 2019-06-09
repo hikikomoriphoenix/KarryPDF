@@ -1,6 +1,10 @@
 package marabillas.loremar.pdfparser.objects
 
-import marabillas.loremar.pdfparser.*
+import marabillas.loremar.pdfparser.utils.exts.*
+import marabillas.loremar.pdfparser.utils.exts.indexOfClosingChar
+import marabillas.loremar.pdfparser.utils.exts.isEnclosingAt
+import marabillas.loremar.pdfparser.utils.exts.trimContainedChars
+import marabillas.loremar.pdfparser.utils.exts.trimEndOfContainedChars
 
 internal class PDFArray(val array: ArrayList<PDFObject?>) : PDFObject, Iterable<PDFObject?> {
     operator fun get(i: Int): PDFObject? {

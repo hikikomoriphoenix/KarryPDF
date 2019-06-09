@@ -12,7 +12,7 @@ import marabillas.loremar.pdfparser.font.Font
 import marabillas.loremar.pdfparser.font.FontMappings
 import marabillas.loremar.pdfparser.font.FontName
 import marabillas.loremar.pdfparser.objects.PDFString
-import marabillas.loremar.pdfparser.toInt
+import marabillas.loremar.pdfparser.utils.exts.toInt
 
 internal class TextContentAdapter {
     private var spanBuilder = SpannableStringBuilder()

@@ -1,7 +1,7 @@
 package marabillas.loremar.pdfparser.contents
 
 import android.support.v4.util.SparseArrayCompat
-import marabillas.loremar.pdfparser.TimeCounter
+import marabillas.loremar.pdfparser.utils.TimeCounter
 import marabillas.loremar.pdfparser.contents.image.ImageContent
 import marabillas.loremar.pdfparser.contents.image.ImageObject
 import marabillas.loremar.pdfparser.contents.text.TextContentAdapter

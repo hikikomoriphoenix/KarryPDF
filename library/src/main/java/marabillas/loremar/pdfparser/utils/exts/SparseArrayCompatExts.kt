@@ -1,4 +1,4 @@
-package marabillas.loremar.pdfparser
+package marabillas.loremar.pdfparser.utils.exts
 
 import android.support.v4.util.SparseArrayCompat
 

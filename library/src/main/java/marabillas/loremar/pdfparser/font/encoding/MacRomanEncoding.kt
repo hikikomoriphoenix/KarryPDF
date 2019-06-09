@@ -1,9 +1,9 @@
 package marabillas.loremar.pdfparser.font.encoding
 
 import android.support.v4.util.SparseArrayCompat
-import marabillas.loremar.pdfparser.copyOf
-import marabillas.loremar.pdfparser.octalToDecimalKeys
-import marabillas.loremar.pdfparser.set
+import marabillas.loremar.pdfparser.utils.exts.copyOf
+import marabillas.loremar.pdfparser.utils.exts.octalToDecimalKeys
+import marabillas.loremar.pdfparser.utils.exts.set
 
 internal class MacRomanEncoding {
     companion object : EncodingSource {

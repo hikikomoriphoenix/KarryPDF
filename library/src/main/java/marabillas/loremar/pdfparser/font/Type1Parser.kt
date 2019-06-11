@@ -1,11 +1,11 @@
 package marabillas.loremar.pdfparser.font
 
 import android.support.v4.util.SparseArrayCompat
+import marabillas.loremar.pdfparser.font.cmap.CMap
 import marabillas.loremar.pdfparser.font.encoding.MacExpertEncoding
 import marabillas.loremar.pdfparser.font.encoding.MacRomanEncoding
 import marabillas.loremar.pdfparser.font.encoding.StandardEncoding
 import marabillas.loremar.pdfparser.font.encoding.WinAnsiEncoding
-import marabillas.loremar.pdfparser.utils.decimalToOctal
 import marabillas.loremar.pdfparser.utils.exts.set
 import marabillas.loremar.pdfparser.utils.exts.toInt
 import java.io.ByteArrayOutputStream
@@ -328,38 +328,20 @@ internal class Type1Parser(val data: ByteArray) {
         return 4 // Return default number of random bytes in charstring
     }
 
-    fun getCharacterWidths(diffArray: SparseArrayCompat<String>): SparseArrayCompat<Float> {
-        // For StandardEncoding and other predefined encoding:
-        // Convert numbers from 0 to 255 to octal.
-        // Get character name from SparseArrayCompat.
-        // Get character widths using character names.
-
+    fun getCharacterWidths(encodingArray: SparseArrayCompat<String>, cmap: CMap?): SparseArrayCompat<Float> {
         val characterWidths = SparseArrayCompat<Float>()
 
-        val encodingPos = getEncodingLocation() + 10
-        when {
-            isStandardEncoding(encodingPos) -> {
-                println("Using StandardEncoding as base encoding")
-                for (i in 0..255) {
-                    var charName = diffArray[i]
-                    if (charName == null) {
-                        val octal = decimalToOctal(i)
-                        charName = Encoding.standard[octal]
-                    }
-                    val command = charCommands[charName]
-                    val hsbw = command?.get(CharCommand.HSBW)
-                    val width = hsbw?.get(1)
-                    width?.let {
-                        characterWidths[i] = width.toFloat()
-                    }
-                }
-            }
-            isMacRomanEncoding(encodingPos) -> TODO("Needs to use MacRomanEncoding to get widths")
-            isMacExpertEncoding(encodingPos) -> TODO("Needs to use MacExpertEncoding to get widths")
-            isWinAnsiEncoding(encodingPos) -> TODO("Needs to use WinAnsiEncoding to get widths")
-            else -> {
-                println("Using built-in encoding as base encoding")
-                useBuiltInEncodingToGetWidths(encodingPos, characterWidths, diffArray)
+        for (i in 0 until encodingArray.size()) {
+            val charCode = encodingArray.keyAt(i)
+            val unicode = cmap?.charCodeToUnicode(charCode)
+
+            val charName = encodingArray.valueAt(i)
+            val command = charCommands[charName]
+            val hsbw = command?.get(CharCommand.HSBW)
+            val width = hsbw?.get(1)
+
+            if (unicode is Int && width is Int) {
+                characterWidths[unicode] = width.toFloat()
             }
         }
 
@@ -446,190 +428,6 @@ internal class Type1Parser(val data: ByteArray) {
                         && data[pos + 5].toChar() == 's'
                         && data[pos + 6].toChar() == 'i'
                 )
-    }
-
-    object Encoding {
-        val standard = SparseArrayCompat<String>()
-
-        init {
-            standard[101] = "A"
-            standard[341] = "AE"
-            standard[102] = "B"
-            standard[103] = "C"
-            standard[104] = "D"
-            standard[105] = "E"
-            standard[106] = "F"
-            standard[107] = "G"
-            standard[110] = "H"
-            standard[111] = "I"
-            standard[112] = "J"
-            standard[113] = "K"
-            standard[114] = "L"
-            standard[350] = "LSlash"
-            standard[115] = "M"
-            standard[116] = "N"
-            standard[117] = "O"
-            standard[352] = "OE"
-            standard[351] = "OSlash"
-            standard[120] = "P"
-            standard[121] = "Q"
-            standard[122] = "R"
-            standard[123] = "S"
-            standard[124] = "T"
-            standard[125] = "U"
-            standard[126] = "V"
-            standard[127] = "W"
-            standard[130] = "X"
-            standard[131] = "Y"
-            standard[132] = "Z"
-            standard[141] = "a"
-            standard[302] = "acute"
-            standard[361] = "ae"
-            standard[46] = "ampersand"
-            standard[136] = "asciicircum"
-            standard[176] = "asciitilde"
-            standard[52] = "asterisk"
-            standard[100] = "at"
-            standard[142] = "b"
-            standard[134] = "backslash"
-            standard[174] = "bar"
-            standard[173] = "braceleft"
-            standard[175] = "braceright"
-            standard[133] = "bracketleft"
-            standard[135] = "bracketright"
-            standard[306] = "breve"
-            standard[267] = "bullet"
-            standard[143] = "c"
-            standard[317] = "caron"
-            standard[313] = "cedilla"
-            standard[242] = "cent"
-            standard[303] = "circumflex"
-            standard[72] = "colon"
-            standard[54] = "comma"
-            standard[250] = "currency"
-            standard[144] = "d"
-            standard[262] = "dagger"
-            standard[263] = "daggerdbl"
-            standard[310] = "dieresis"
-            standard[44] = "dollar"
-            standard[307] = "dotaccent"
-            standard[365] = "dotlessi"
-            standard[145] = "e"
-            standard[70] = "eight"
-            standard[274] = "ellipsis"
-            standard[320] = "emdash"
-            standard[261] = "endash"
-            standard[75] = "equal"
-            standard[41] = "exclam"
-            standard[241] = "exclamdown"
-            standard[146] = "f"
-            standard[256] = "fi"
-            standard[65] = "five"
-            standard[257] = "fl"
-            standard[246] = "florin"
-            standard[64] = "four"
-            standard[244] = "fraction"
-            standard[147] = "g"
-            standard[373] = "germandbls"
-            standard[301] = "grave"
-            standard[76] = "greater"
-            standard[253] = "guillemotleft"
-            standard[273] = "guillemotright"
-            standard[254] = "guilsinglleft"
-            standard[255] = "guilsinglright"
-            standard[150] = "h"
-            standard[315] = "hungarumlaut"
-            standard[55] = "hyphen"
-            standard[151] = "i"
-            standard[152] = "j"
-            standard[153] = "k"
-            standard[154] = "l"
-            standard[74] = "less"
-            standard[370] = "lslash"
-            standard[155] = "m"
-            standard[305] = "macron"
-            standard[156] = "n"
-            standard[71] = "nine"
-            standard[43] = "numbersign"
-            standard[157] = "o"
-            standard[372] = "oe"
-            standard[316] = "ogonek"
-            standard[61] = "one"
-            standard[343] = "ordfeminine"
-            standard[353] = "ordmasculine"
-            standard[371] = "oslash"
-            standard[160] = "p"
-            standard[266] = "paragraph"
-            standard[50] = "parenleft"
-            standard[51] = "parenright"
-            standard[45] = "percent"
-            standard[56] = "period"
-            standard[264] = "periodcentered"
-            standard[275] = "perthousand"
-            standard[53] = "plus"
-            standard[161] = "q"
-            standard[77] = "question"
-            standard[277] = "questiondown"
-            standard[42] = "quotedbl"
-            standard[271] = "quotedblbase"
-            standard[252] = "quotedblleft"
-            standard[272] = "quotedblright"
-            standard[140] = "quoteleft"
-            standard[47] = "quoteright"
-            standard[270] = "quotesinglbase"
-            standard[251] = "quotesingle"
-            standard[162] = "r"
-            standard[312] = "ring"
-            standard[163] = "s"
-            standard[247] = "section"
-            standard[73] = "semicolon"
-            standard[67] = "seven"
-            standard[66] = "six"
-            standard[57] = "slash"
-            standard[40] = "space"
-            standard[243] = "sterling"
-            standard[164] = "t"
-            standard[63] = "three"
-            standard[304] = "tilde"
-            standard[62] = "two"
-            standard[165] = "u"
-            standard[137] = "underscore"
-            standard[166] = "v"
-            standard[167] = "w"
-            standard[170] = "x"
-            standard[171] = "y"
-            standard[245] = "yen"
-            standard[172] = "z"
-            standard[160] = "zero"
-        }
-    }
-
-    private fun useBuiltInEncodingToGetWidths(
-        start: Int,
-        characterWidths: SparseArrayCompat<Float>,
-        diffArray: SparseArrayCompat<String>
-    ) {
-        val getCharacterWidth = { charCode: Int, charName: String ->
-            val command = charCommands[charName]
-            val hsbw = command?.get(CharCommand.HSBW)
-            val width = hsbw?.get(1)
-            width?.let {
-                characterWidths[charCode] = width.toFloat()
-            } ?: Unit
-        }
-
-        parseAndProcessEncoding(start, getCharacterWidth)
-
-        // Override with diffArray
-        for (k in 0 until diffArray.size()) {
-            val charName = diffArray.valueAt(k)
-            val command = charCommands[charName]
-            val hsbw = command?.get(CharCommand.HSBW)
-            val width = hsbw?.get(1)
-            width?.let {
-                characterWidths[k] = width.toFloat()
-            }
-        }
     }
 
     private fun parseAndProcessEncoding(start: Int, action: (charCode: Int, charName: String) -> Unit) {

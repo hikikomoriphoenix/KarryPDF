@@ -90,15 +90,15 @@ internal class Font() {
         encoding: PDFObject?,
         referenceResolver: ReferenceResolver
     ) {
+        val encodingArray = SparseArrayCompat<String>()
+        val symbolic = checkSymbolicSimpleFont(fontDescriptor, baseFont, encodingArray)
+        getSimpleFontEncoding(encoding, encodingArray, fontDescriptor, subtype, referenceResolver, symbolic)
+
         if (cmap !is ToUnicodeCMap) {
-            val encodingArray = SparseArrayCompat<String>()
-
-            val symbolic = checkSymbolicSimpleFont(fontDescriptor, baseFont, encodingArray)
-
-            cmap = getSimpleFontEncoding(encoding, encodingArray, fontDescriptor, subtype, referenceResolver, symbolic)
+            cmap = AGLCMap(encodingArray)
         }
 
-        getSimpleFontWidths(dictionary, fontDescriptor, referenceResolver, encoding, subtype)
+        getSimpleFontWidths(dictionary, fontDescriptor, referenceResolver, encodingArray, subtype)
     }
 
     private fun checkSymbolicSimpleFont(
@@ -133,14 +133,13 @@ internal class Font() {
         subtype: Name,
         referenceResolver: ReferenceResolver,
         symbolic: Boolean
-    ): CMap {
-        return when (encoding) {
+    ) {
+        when (encoding) {
             is Name -> {
                 handleSimpleFontPredefinedEncoding(encoding, encodingArray)
                 // If symbolic, get encoding from embedded font program to get symbolic characters
                 if (symbolic && fontDescriptor is Dictionary)
                     getEncodingFromBuiltInProgram(fontDescriptor, referenceResolver, encodingArray, subtype)
-                AGLCMap(encodingArray)
             }
             is Dictionary -> {
                 val baseEncoding = encoding["BaseEncoding"]
@@ -158,7 +157,6 @@ internal class Font() {
                         StandardEncoding.putAllTo(encodingArray)
                 }
                 getDifferencesArray(encoding, encodingArray)
-                AGLCMap(encodingArray)
             }
             else -> {
                 // Get character names from embedded font program. Get unicode from AGL
@@ -166,7 +164,6 @@ internal class Font() {
                     getEncodingFromBuiltInProgram(fontDescriptor, referenceResolver, encodingArray, subtype)
                 else if (!symbolic)
                     StandardEncoding.putAllTo(encodingArray)
-                AGLCMap(encodingArray)
             }
         }
     }
@@ -184,7 +181,8 @@ internal class Font() {
         dictionary: Dictionary,
         fontDescriptor: PDFObject?,
         referenceResolver: ReferenceResolver,
-        encoding: PDFObject?, subtype: Name
+        encodingArray: SparseArrayCompat<String>,
+        subtype: Name
     ) {
         // Get FirstChar
         var firstChar = 0
@@ -213,7 +211,7 @@ internal class Font() {
             }
         } else {
             if (fontDescriptor is Dictionary) {
-                getWidthsFromFontProgram(fontDescriptor, referenceResolver, encoding, subtype)
+                getWidthsFromFontProgram(fontDescriptor, referenceResolver, encodingArray, subtype)
             }
         }
     }
@@ -261,7 +259,7 @@ internal class Font() {
                         println("obtained ${widths.size()} widths")
                     } else if (cidSubType is Name) {
                         // Subtype is CIDFontType0. Use FontFile3 with subtype either CIDFontType0C or OpenType
-                        getWidthsFromFontProgram(cidFontDescriptor, referenceResolver, encoding, cidSubType)
+                        getWidthsFromFontProgram(cidFontDescriptor, referenceResolver, null, cidSubType)
                     }
                 } else {
                     // Get widths
@@ -280,7 +278,7 @@ internal class Font() {
     private fun getWidthsFromFontProgram(
         fontDescriptor: Dictionary,
         referenceResolver: ReferenceResolver,
-        encoding: PDFObject? = null,
+        encodingArray: SparseArrayCompat<String>?,
         fontType: Name
     ) {
         val fontFile = fontDescriptor["FontFile"]
@@ -291,12 +289,8 @@ internal class Font() {
             (fontType.value == "Type1" || fontType.value == "MMType1") && fontFile is Reference -> {
                 val fontProgram = referenceResolver.resolveReferenceToStream(fontFile)
                 val data = fontProgram?.decodeEncodedStream()
-                if (data is ByteArray) {
-                    val diffArray = SparseArrayCompat<String>()
-                    if (encoding is Dictionary) {
-                        getDifferencesArray(encoding, diffArray)
-                    }
-                    widths = Type1Parser(data).getCharacterWidths(diffArray)
+                if (data is ByteArray && encodingArray != null) {
+                    widths = Type1Parser(data).getCharacterWidths(encodingArray, cmap)
                 }
             }
             (fontType.value == "TrueType" || fontType.value == "CIDFontType2") && fontFile2 is Reference -> {

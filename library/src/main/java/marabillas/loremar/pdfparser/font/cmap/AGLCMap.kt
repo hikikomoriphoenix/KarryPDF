@@ -35,6 +35,10 @@ internal class AGLCMap(private val codeToNameArray: SparseArrayCompat<String>) :
         return decodedSB.toString()
     }
 
+    override fun charCodeToUnicode(code: Int): Int? {
+        return unicodes[codeToNameArray[code]]
+    }
+
     companion object {
         private val unicodes = HashMap<String, Int>()
         private val stringBuilder = StringBuilder()

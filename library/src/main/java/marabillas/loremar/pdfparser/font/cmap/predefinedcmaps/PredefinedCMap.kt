@@ -3,6 +3,10 @@ package marabillas.loremar.pdfparser.font.cmap.predefinedcmaps
 import marabillas.loremar.pdfparser.font.cmap.CIDFontCMap
 
 internal class PredefinedCMap : CIDFontCMap {
+    override fun charCodeToUnicode(code: Int): Int? {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
     override fun cidToUnicode(cid: Int): Int {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }

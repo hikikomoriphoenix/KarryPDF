@@ -330,4 +330,8 @@ internal class ToUnicodeCMap(private var stream: String) : EmbeddedCMap {
                 break
         }
     }
+
+    override fun charCodeToUnicode(code: Int): Int? {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
 }

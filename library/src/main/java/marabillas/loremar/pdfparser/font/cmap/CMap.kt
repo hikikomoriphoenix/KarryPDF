@@ -35,4 +35,6 @@ internal interface CMap {
             i++
         }
     }
+
+    fun charCodeToUnicode(code: Int): Int?
 }

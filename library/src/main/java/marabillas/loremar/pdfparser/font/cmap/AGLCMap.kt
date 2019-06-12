@@ -101,5 +101,9 @@ internal class AGLCMap(private val codeToNameArray: SparseArrayCompat<String>) :
             if (read == -1) return null
             return read.toChar()
         }
+
+        fun charNameToUnicode(charName: String): Int? {
+            return unicodes[charName]
+        }
     }
 }

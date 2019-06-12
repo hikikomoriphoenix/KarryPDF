@@ -1,6 +1,8 @@
 package marabillas.loremar.pdfparser.font.ttf
 
 import android.support.v4.util.SparseArrayCompat
+import marabillas.loremar.pdfparser.font.cmap.AGLCMap
+import marabillas.loremar.pdfparser.font.encoding.MacOSRomanEncoding
 
 internal class TTFParser(val data: ByteArray) {
     val stringBuilder = StringBuilder()
@@ -13,6 +15,8 @@ internal class TTFParser(val data: ByteArray) {
     var entrySelector: Int = 0
         private set
     var rangeShift: Int = 0
+        private set
+    var platformID: Int? = null
         private set
 
     val tables = HashMap<String, Table>()
@@ -102,12 +106,18 @@ internal class TTFParser(val data: ByteArray) {
             if (numOfLongHorMetrics > 0) {
                 val glyphWidths = getAdvancedWidths(numOfLongHorMetrics)
                 val widths = ttfCMap.getCharacterWidths(glyphWidths)
+                if (platformID == 1) {
+                    handleMacOsCMapWidths(widths)
+                }
                 println("${widths.size()} widths obtained")
                 return widths
             } else {
                 val glyphWidths = getGlyphBoundingBoxWidths()
                 if (glyphWidths.count() > 0) {
                     val widths = ttfCMap.getCharacterWidths(glyphWidths)
+                    if (platformID == 1) {
+                        handleMacOsCMapWidths(widths)
+                    }
                     println("${widths.size()} widths obtained")
                     return widths
                 }
@@ -117,6 +127,24 @@ internal class TTFParser(val data: ByteArray) {
         }
 
         return SparseArrayCompat()
+    }
+
+    private fun handleMacOsCMapWidths(widths: SparseArrayCompat<Float>) {
+        val keys = IntArray(widths.size())
+        for (i in 0 until widths.size()) {
+            keys[i] = widths.keyAt(i)
+        }
+
+        for (i in 0 until keys.size) {
+            if (keys[i] == -1) continue
+
+            val charName = MacOSRomanEncoding[keys[i]]
+            val unicode = charName?.let { AGLCMap.charNameToUnicode(it) }
+            if (unicode != null) {
+                widths.put(unicode, widths[keys[i]])
+            }
+            widths.remove(keys[i])
+        }
     }
 
     private fun getNumOfLongHorMetrics(): Int {
@@ -215,6 +243,7 @@ internal class TTFParser(val data: ByteArray) {
 
             println("platformID=$selectedPlatformID, platformSpecificID=$selectedPlatformSpecificID")
             println("TTF CMap format = $selectedFormat")
+            platformID = selectedPlatformID
             return selectedTTFCMap
         }
         return null
@@ -227,7 +256,9 @@ internal class TTFParser(val data: ByteArray) {
             platformID == 3 && platformSpecificID == 10 -> 2
             platformID == 3 && platformSpecificID == 1 -> 3
             platformID == 3 && platformSpecificID == 0 -> 4
-            else -> 5
+            platformID == 0 -> 5
+            platformID == 1 -> 6
+            else -> 7
         }
     }
 

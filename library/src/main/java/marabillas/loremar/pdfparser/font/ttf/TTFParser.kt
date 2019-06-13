@@ -3,6 +3,8 @@ package marabillas.loremar.pdfparser.font.ttf
 import android.support.v4.util.SparseArrayCompat
 import marabillas.loremar.pdfparser.font.cmap.AGLCMap
 import marabillas.loremar.pdfparser.font.encoding.MacOSRomanEncoding
+import marabillas.loremar.pdfparser.font.encoding.StandardEncoding
+import marabillas.loremar.pdfparser.utils.wholeNumToFractional
 
 internal class TTFParser(val data: ByteArray) {
     val stringBuilder = StringBuilder()
@@ -235,7 +237,7 @@ internal class TTFParser(val data: ByteArray) {
         if (pos is Long) {
             val numOfSubTables = getUInt16At(data, pos.toInt() + 2)
 
-            var selectedTablePriority = 6
+            var selectedTablePriority = 8
             var selectedTTFCMap: TTFCMap? = null
             var selectedPlatformID: Int? = null
             var selectedPlatformSpecificID: Int? = null
@@ -296,6 +298,66 @@ internal class TTFParser(val data: ByteArray) {
         }
     }
 
+    fun getBuiltInEncoding(encodingArray: SparseArrayCompat<String>) {
+        println("Getting TyueType font built-in encoding")
+        val pos = tables["post"]?.offset
+        val ttfCMap = getCMap()
+        if (pos is Long && ttfCMap is TTFCMap) {
+            val mapper = TTFGlyphNamesMapper()
+            val glyphNamesArray = SparseArrayCompat<String>()
+            val format = getFixedAt(data, pos.toInt())
+            println("post format=$format")
+            when (format) {
+                1f -> mapper.post1(glyphNamesArray)
+                2f -> mapper.post2(glyphNamesArray, data, pos.toInt() + 32)
+                2.5f -> mapper.post25(glyphNamesArray, data, pos.toInt() + 32)
+                3f -> {
+                    StandardEncoding.putAllTo(encodingArray)
+                    return
+                }
+                4f -> {
+                    val maxpPos = tables["maxp"]?.offset
+                    if (maxpPos != null) {
+                        val numGlyphs = getUInt16At(data, maxpPos.toInt() + 4)
+                        mapper.post4(glyphNamesArray, data, pos.toInt() + 32, numGlyphs)
+                    } else {
+                        StandardEncoding.putAllTo(encodingArray)
+                        return
+                    }
+                }
+            }
+
+            // Populate encoding array using cmap to get the glyph index of a given character code and using the resulting
+            // array from post to get the glyph name of the corresponding glyph index. The given character code will be
+            // the key for an entry in encoding array and the resulting glyph name will be its corresponding value.
+            val cMapArray = SparseArrayCompat<Int>()
+            ttfCMap.getAll(cMapArray)
+            for (i in 0 until cMapArray.size()) {
+                val charCode = cMapArray.keyAt(i)
+                val glyphIndex = cMapArray.valueAt(i)
+                encodingArray.put(charCode, glyphNamesArray[glyphIndex])
+            }
+
+            // If cmap subtable was specified for Macintosh platform, the character code used to get the glyph index must
+            // be converted to unicode using Mac OS Roman encoding. Update encoding array with the unicode as the new key.
+            if (platformID == 1) {
+                val keys = IntArray(encodingArray.size())
+                for (i in 0 until encodingArray.size()) {
+                    keys[i] = encodingArray.keyAt(i)
+                }
+
+                for (i in 0 until keys.size) {
+                    val charName = MacOSRomanEncoding[keys[i]]
+                    val unicode = charName?.let { AGLCMap.charNameToUnicode(it) }
+                    if (unicode != null) {
+                        encodingArray.put(unicode, encodingArray[keys[i]])
+                    }
+                    encodingArray.remove(keys[i])
+                }
+            }
+        }
+    }
+
     companion object {
         val tags = setOf(
             charArrayOf('c', 'm', 'a', 'p'),
@@ -333,6 +395,13 @@ internal class TTFParser(val data: ByteArray) {
             num = num shl 8
             num = num or (data[start + 3].toInt() and 0xff).toLong()
             return num
+        }
+
+        fun getFixedAt(data: ByteArray, start: Int): Float {
+            val integralDigits = getUInt16At(data, start)
+            val fractionalDigits = getUInt16At(data, start + 2)
+            val fractionalValue = wholeNumToFractional(fractionalDigits)
+            return integralDigits.toFloat() + fractionalValue
         }
     }
 

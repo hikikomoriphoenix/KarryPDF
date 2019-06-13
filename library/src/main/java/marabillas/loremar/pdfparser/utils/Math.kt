@@ -46,3 +46,15 @@ internal fun decimalToOctal(decimal: Int): Int {
     }
     return octal
 }
+
+internal fun wholeNumToFractional(num: Int): Float {
+    if (num == 0) return 0f
+
+    // Count digits
+    val n = (Math.log10(num.toDouble()) + 1).toInt()
+
+    // Get the divisor required to convert the number to the nth place
+    val divisor = Math.pow(10.0, n.toDouble()).toFloat()
+
+    return num.toFloat() / divisor
+}

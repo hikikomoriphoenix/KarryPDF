@@ -448,7 +448,7 @@ internal class Font() {
                 val fontProgram = referenceResolver.resolveReferenceToStream(fontFile2)
                 val data = fontProgram?.decodeEncodedStream()
                 if (data is ByteArray) {
-                    TODO("Get encoding for embedded TrueType fonts")
+                    TTFParser(data).getBuiltInEncoding(encodingArray)
                 }
             }
             fontFile3 is Stream -> {

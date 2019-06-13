@@ -3,6 +3,7 @@ package marabillas.loremar.pdfparser.font.cmap
 import android.support.v4.util.SparseArrayCompat
 import marabillas.loremar.pdfparser.font.cmap.CMap.Companion.MISSING_CHAR
 import marabillas.loremar.pdfparser.utils.exts.hexToInt
+import marabillas.loremar.pdfparser.utils.exts.set
 import java.io.IOException
 import java.io.InputStream
 
@@ -41,6 +42,7 @@ internal class AGLCMap(private val codeToNameArray: SparseArrayCompat<String>) :
 
     companion object {
         private val unicodes = HashMap<String, Int>()
+        private val glyphNames = SparseArrayCompat<String>()
         private val stringBuilder = StringBuilder()
 
         init {
@@ -88,7 +90,9 @@ internal class AGLCMap(private val codeToNameArray: SparseArrayCompat<String>) :
                         }
                         c = read(stream) ?: break
                     }
-                    unicodes[charName] = stringBuilder.hexToInt()
+                    val unicode = stringBuilder.hexToInt()
+                    unicodes[charName] = unicode
+                    glyphNames[unicode] = charName
                 }
                 stream.close()
             } else {
@@ -104,6 +108,10 @@ internal class AGLCMap(private val codeToNameArray: SparseArrayCompat<String>) :
 
         fun charNameToUnicode(charName: String): Int? {
             return unicodes[charName]
+        }
+
+        fun unicodeToCharName(unicode: Int): String? {
+            return glyphNames[unicode]
         }
     }
 }

@@ -20,6 +20,8 @@ internal class TTFParser(val data: ByteArray) {
         private set
 
     val tables = HashMap<String, Table>()
+    var ttfCMap: TTFCMap? = null
+        private set
 
     init {
         //val pos = parseOffsetSubTable()
@@ -101,11 +103,11 @@ internal class TTFParser(val data: ByteArray) {
         println("Getting character widths from a TrueType font")
 
         val numOfLongHorMetrics = getNumOfLongHorMetrics()
-        val ttfCMap = getCMap()
-        if (ttfCMap is TTFCMap) {
+        ttfCMap = getCMap()
+        if (ttfCMap != null) {
             if (numOfLongHorMetrics > 0) {
                 val glyphWidths = getAdvancedWidths(numOfLongHorMetrics)
-                val widths = ttfCMap.getCharacterWidths(glyphWidths)
+                val widths = getCharacterWidths(glyphWidths, ttfCMap as TTFCMap)
                 if (platformID == 1) {
                     handleMacOsCMapWidths(widths)
                 }
@@ -114,7 +116,7 @@ internal class TTFParser(val data: ByteArray) {
             } else {
                 val glyphWidths = getGlyphBoundingBoxWidths()
                 if (glyphWidths.count() > 0) {
-                    val widths = ttfCMap.getCharacterWidths(glyphWidths)
+                    val widths = getCharacterWidths(glyphWidths, ttfCMap as TTFCMap)
                     if (platformID == 1) {
                         handleMacOsCMapWidths(widths)
                     }
@@ -127,6 +129,27 @@ internal class TTFParser(val data: ByteArray) {
         }
 
         return SparseArrayCompat()
+    }
+
+    private fun getCharacterWidths(glyphWidths: IntArray, srcCMap: TTFCMap): SparseArrayCompat<Float> {
+        val characterWidths = SparseArrayCompat<Float>()
+        // Assign missing character width to -1
+        characterWidths.put(-1, glyphWidths[0].toFloat())
+
+        val map = SparseArrayCompat<Int>()
+        srcCMap.getAll(map)
+        for (i in 0 until map.size()) {
+            val charCode = map.keyAt(i)
+            val glyphIndex = map.valueAt(i)
+            if (
+                glyphIndex in 0..glyphWidths.lastIndex
+                && glyphWidths[glyphIndex] > 0
+            ) {
+                characterWidths.put(charCode, glyphWidths[glyphIndex].toFloat())
+            }
+        }
+
+        return characterWidths
     }
 
     private fun handleMacOsCMapWidths(widths: SparseArrayCompat<Float>) {
@@ -206,6 +229,8 @@ internal class TTFParser(val data: ByteArray) {
     }
 
     private fun getCMap(): TTFCMap? {
+        if (ttfCMap != null) return ttfCMap
+
         var pos = tables["cmap"]?.offset
         if (pos is Long) {
             val numOfSubTables = getUInt16At(data, pos.toInt() + 2)

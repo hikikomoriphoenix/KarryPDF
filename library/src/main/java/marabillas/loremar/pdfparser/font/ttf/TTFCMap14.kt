@@ -1,12 +1,9 @@
 package marabillas.loremar.pdfparser.font.ttf
 
-import android.support.v4.util.SparseArrayCompat
+import marabillas.loremar.pdfparser.utils.exts.set
 
-internal class TTFCMap14(val data: ByteArray, val pos: Long) : TTFCMap {
-    override fun getCharacterWidths(glyphWidths: IntArray): SparseArrayCompat<Float> {
-        val characterWidths = SparseArrayCompat<Float>()
-        characterWidths.put(-1, glyphWidths[0].toFloat())
-
+internal class TTFCMap14(val data: ByteArray, val pos: Long) : TTFCMapDefault() {
+    init {
         val numVarSelectorRecords = TTFParser.getUInt32At(data, pos.toInt() + 6)
         var start = pos + 10
         for (i in 0 until numVarSelectorRecords) {
@@ -19,19 +16,11 @@ internal class TTFCMap14(val data: ByteArray, val pos: Long) : TTFCMap {
             for (j in 0 until numUVSMappings) {
                 val c = getUInt24At(data, mappingStart.toInt())
                 val glyphIndex = TTFParser.getUInt16At(data, mappingStart.toInt() + 3)
-                if (
-                    glyphIndex in 0..glyphWidths.lastIndex
-                    && glyphWidths[glyphIndex] > 0
-                ) {
-                    characterWidths.put(c.toInt(), glyphWidths[glyphIndex].toFloat())
-                }
+                map[c.toInt()] = glyphIndex
                 mappingStart += 5
             }
             start += 11
         }
-
-
-        return characterWidths
     }
 
     private fun getUInt24At(data: ByteArray, start: Int): Long {

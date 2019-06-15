@@ -110,18 +110,12 @@ internal class TTFParser(val data: ByteArray) {
             if (numOfLongHorMetrics > 0) {
                 val glyphWidths = getAdvancedWidths(numOfLongHorMetrics)
                 val widths = getCharacterWidths(glyphWidths, ttfCMap as TTFCMap)
-                if (platformID == 1) {
-                    handleMacOsCMapWidths(widths)
-                }
                 println("${widths.size()} widths obtained")
                 return widths
             } else {
                 val glyphWidths = getGlyphBoundingBoxWidths()
                 if (glyphWidths.count() > 0) {
                     val widths = getCharacterWidths(glyphWidths, ttfCMap as TTFCMap)
-                    if (platformID == 1) {
-                        handleMacOsCMapWidths(widths)
-                    }
                     println("${widths.size()} widths obtained")
                     return widths
                 }
@@ -143,33 +137,27 @@ internal class TTFParser(val data: ByteArray) {
         for (i in 0 until map.size()) {
             val charCode = map.keyAt(i)
             val glyphIndex = map.valueAt(i)
-            if (
-                glyphIndex in 0..glyphWidths.lastIndex
-                && glyphWidths[glyphIndex] > 0
-            ) {
-                characterWidths.put(charCode, glyphWidths[glyphIndex].toFloat())
+            if (platformID != 1) {
+                if (
+                    glyphIndex in 0..glyphWidths.lastIndex
+                    && glyphWidths[glyphIndex] > 0
+                ) {
+                    characterWidths.put(charCode, glyphWidths[glyphIndex].toFloat())
+                }
+            } else {
+                val charName = MacOSRomanEncoding[charCode]
+                val unicode = charName?.let { AGLCMap.charNameToUnicode(it) }
+                if (
+                    glyphIndex in 0..glyphWidths.lastIndex
+                    && glyphWidths[glyphIndex] > 0
+                    && unicode != null
+                ) {
+                    characterWidths.put(unicode, glyphWidths[glyphIndex].toFloat())
+                }
             }
         }
 
         return characterWidths
-    }
-
-    private fun handleMacOsCMapWidths(widths: SparseArrayCompat<Float>) {
-        val keys = IntArray(widths.size())
-        for (i in 0 until widths.size()) {
-            keys[i] = widths.keyAt(i)
-        }
-
-        for (i in 0 until keys.size) {
-            if (keys[i] == -1) continue
-
-            val charName = MacOSRomanEncoding[keys[i]]
-            val unicode = charName?.let { AGLCMap.charNameToUnicode(it) }
-            if (unicode != null) {
-                widths.put(unicode, widths[keys[i]])
-            }
-            widths.remove(keys[i])
-        }
     }
 
     private fun getNumOfLongHorMetrics(): Int {
@@ -335,24 +323,14 @@ internal class TTFParser(val data: ByteArray) {
             for (i in 0 until cMapArray.size()) {
                 val charCode = cMapArray.keyAt(i)
                 val glyphIndex = cMapArray.valueAt(i)
-                encodingArray.put(charCode, glyphNamesArray[glyphIndex])
-            }
-
-            // If cmap subtable was specified for Macintosh platform, the character code used to get the glyph index must
-            // be converted to unicode using Mac OS Roman encoding. Update encoding array with the unicode as the new key.
-            if (platformID == 1) {
-                val keys = IntArray(encodingArray.size())
-                for (i in 0 until encodingArray.size()) {
-                    keys[i] = encodingArray.keyAt(i)
-                }
-
-                for (i in 0 until keys.size) {
-                    val charName = MacOSRomanEncoding[keys[i]]
+                if (platformID != 1) {
+                    encodingArray.put(charCode, glyphNamesArray[glyphIndex])
+                } else {
+                    val charName = MacOSRomanEncoding[charCode]
                     val unicode = charName?.let { AGLCMap.charNameToUnicode(it) }
                     if (unicode != null) {
-                        encodingArray.put(unicode, encodingArray[keys[i]])
+                        encodingArray.put(unicode, glyphNamesArray[glyphIndex])
                     }
-                    encodingArray.remove(keys[i])
                 }
             }
         }

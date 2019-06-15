@@ -92,10 +92,22 @@ internal class Font() {
     ) {
         val encodingArray = SparseArrayCompat<String>()
         val symbolic = checkSymbolicSimpleFont(fontDescriptor, baseFont, encodingArray)
-        getSimpleFontEncoding(encoding, encodingArray, fontDescriptor, subtype, referenceResolver, symbolic)
 
-        if (cmap !is ToUnicodeCMap) {
-            cmap = AGLCMap(encodingArray)
+        if ((encoding == null || symbolic) && subtype.value == "TrueType" && fontDescriptor is Dictionary) {
+            val fontFile2 = fontDescriptor["FontFile2"]
+            if (fontFile2 is Reference) {
+                val fontProgram = referenceResolver.resolveReferenceToStream(fontFile2)
+                val data = fontProgram?.decodeEncodedStream()
+                if (data is ByteArray) {
+                    TTFParser(data).getDefaultTTFEncoding(encodingArray)
+                }
+            }
+        } else {
+            getSimpleFontEncoding(encoding, encodingArray, fontDescriptor, subtype, referenceResolver, symbolic)
+
+            if (cmap !is ToUnicodeCMap) {
+                cmap = AGLCMap(encodingArray)
+            }
         }
 
         getSimpleFontWidths(dictionary, fontDescriptor, referenceResolver, encodingArray, subtype)

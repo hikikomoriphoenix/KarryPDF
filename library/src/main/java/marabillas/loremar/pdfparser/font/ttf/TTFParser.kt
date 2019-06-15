@@ -300,7 +300,11 @@ internal class TTFParser(val data: ByteArray) {
                 2f -> mapper.post2(glyphNamesArray, data, pos.toInt() + 32)
                 2.5f -> mapper.post25(glyphNamesArray, data, pos.toInt() + 32)
                 3f -> {
-                    StandardEncoding.putAllTo(encodingArray)
+                    if (platformID == 1) {
+                        MacOSRomanEncoding.putAllTo(encodingArray)
+                    } else {
+                        StandardEncoding.putAllTo(encodingArray)
+                    }
                     return
                 }
                 4f -> {
@@ -309,7 +313,11 @@ internal class TTFParser(val data: ByteArray) {
                         val numGlyphs = getUInt16At(data, maxpPos.toInt() + 4)
                         mapper.post4(glyphNamesArray, data, pos.toInt() + 32, numGlyphs)
                     } else {
-                        StandardEncoding.putAllTo(encodingArray)
+                        if (platformID == 1) {
+                            MacOSRomanEncoding.putAllTo(encodingArray)
+                        } else {
+                            StandardEncoding.putAllTo(encodingArray)
+                        }
                         return
                     }
                 }
@@ -333,6 +341,21 @@ internal class TTFParser(val data: ByteArray) {
                     }
                 }
             }
+        }
+    }
+
+    fun getDefaultTTFEncoding(encodingArray: SparseArrayCompat<String>) {
+        println("Getting TrueType font default encoding")
+        getCMap()
+        if (platformID == 1) {
+            MacOSRomanEncoding.putAllTo(encodingArray)
+        } else if (platformID == 3) {
+            // Symbolic flag is assumed to be set and thus platformSpecificID is also assumed to be 0
+            TODO("Implement TTF default encoding with (3, 0) cmap subtable according to manual's instruction.")
+            // Manual's instructions: If the font contains a (3, 0) subtable, the range of character codes shall be one of these: 0x0000 - 0x00FF,
+            //0xF000 - 0xF0FF, 0xF100 - 0xF1FF, or 0xF200 - 0xF2FF. Depending on the range of codes, each byte
+            //from the string shall be prepended with the high byte of the range, to form a two-byte character, which shall
+            //be used to select the associated glyph description from the subtable.
         }
     }
 

@@ -69,11 +69,6 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         // horizontally adjacent to each other.
         TableDetector(textObjects, fonts).detectTableComponents()
 
-        // TODO Add indents. Compare x values of first TextObjects of each line. Give an order value on each. Leftmost
-        // will have lower order and rightmost will have higher order. Pass this value to the first TextElements. After
-        // forming paragraphs, Add indents with increasing amount from lower order to higher order. Each indent is
-        // equivalent to two spaces.
-
         // Group texts in the same line or in adjacent lines with line-spacing less than font size.
         groupTexts()
 
@@ -85,6 +80,9 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
 
         // If line is almost as long as the width of page, then append the next line in the TextGroup.
         formParagraphs(w, measureWidths)
+
+        // Add indents
+        addIndents()
 
         // Convert adjacent elements with same tf and rgb into one element
         mergeElementsWithSameFontAndColor()
@@ -380,15 +378,20 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                     contentGroups.add(currTextGroup)
                     textObj.forEach {
                         var dty = -it.td[1]
+                        var xPos = textObj.td[0]
+
                         if (textObj.first() == it) dty = 0f
+                        else xPos += (it.td[0] * textObj.scaleX)
+
                         sb.clear().append(it.tf, it.tf.indexOf(' ') + 1, it.tf.length)
                         val fSize = sb.toDouble().toFloat() * textObj.scaleY
-                        sortGroup(it, dty, fSize)
+                        sortGroup(it, dty, fSize, xPos)
                     }
                 }
                 else -> {
                     textObj.forEach {
                         var dty = -it.td[1]
+                        var xPos = textObj.td[0]
                         if (textObj.first() == it) {
                             dty = if (prevTextObj == null)
                                 0f
@@ -400,10 +403,14 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                                 }
                                 yOfLast - it.td[1]
                             }
+                        } else {
+                            xPos += (it.td[0] * textObj.scaleX)
                         }
+
                         sb.clear().append(it.tf, it.tf.indexOf(' ') + 1, it.tf.length)
                         val fSize = sb.toDouble().toFloat() * textObj.scaleY
-                        sortGroup(it, dty, fSize)
+
+                        sortGroup(it, dty, fSize, xPos)
                     }
                 }
             }
@@ -418,15 +425,16 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         return dty < fSize * 2
     }
 
-    private fun newLine(textElement: TextElement) {
+    private fun newLine(textElement: TextElement, xPos: Float) {
         currLine = ArrayList()
         currLine.add(textElement)
         currTextGroup.add(currLine)
+        currTextGroup.addX(xPos)
     }
 
-    private fun newTextGroup(textElement: TextElement) {
+    private fun newTextGroup(textElement: TextElement, xPos: Float) {
         currTextGroup = TextGroup()
-        newLine(textElement)
+        newLine(textElement, xPos)
 
         if (table.size() > 0) {
             val lastRow = table[table.size() - 1]
@@ -436,12 +444,12 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         }
     }
 
-    private fun sortGroup(textElement: TextElement, dty: Float, fSize: Float) {
+    private fun sortGroup(textElement: TextElement, dty: Float, fSize: Float, xPos: Float = 0f) {
         when {
-            currTextGroup.size() == 0 -> newLine(textElement)
+            currTextGroup.size() == 0 -> newLine(textElement, xPos)
             sameLine(dty) -> currLine.add(textElement)
-            near(dty, fSize) -> newLine(textElement)
-            else -> newTextGroup(textElement)
+            near(dty, fSize) -> newLine(textElement, xPos)
+            else -> newTextGroup(textElement, xPos)
         }
     }
 
@@ -605,6 +613,57 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                     }
                 }
             }
+    }
+
+    fun addIndents() {
+        val indents = HashMap<Float, Int>()
+        for (i in 0 until contentGroups.size) {
+            val textGroup = contentGroups[i]
+            if (textGroup is TextGroup) {
+                for (j in 0 until textGroup.size()) {
+                    val xNew = textGroup.getLineX(j)
+                    val xes = indents.keys
+                    if (xes.contains(xNew)) continue
+                    var xNewIndent = 0
+                    for (x in xes) {
+                        val xIndent = indents[x] as Int
+                        when {
+                            xNew > x && xNewIndent <= xIndent -> xNewIndent = xIndent + 1
+                            xNew == x && xNewIndent < xIndent -> xNewIndent = xIndent
+                            xNew == x && xNewIndent > xIndent -> indents[x] = xNewIndent
+                            xNew < x && xIndent <= xIndent -> indents[x] = xNewIndent + 1
+                        }
+                    }
+                    indents[xNew] = xNewIndent
+                }
+            }
+        }
+
+        for (i in 0 until contentGroups.size) {
+            val textGroup = contentGroups[i]
+            if (textGroup is TextGroup) {
+                for (j in 0 until textGroup.size()) {
+                    val indent = indents[textGroup.getLineX(j)]
+                    if (indent != null && indent > 0) {
+                        sb.clear()
+                        sb.append('(')
+                        repeat(indent) {
+                            sb.append(' ')
+                        }
+
+                        val line = textGroup[j]
+                        val newTj = sb.append((line.first().tj as PDFString).value).append(')').toPDFString()
+                        line[0] = TextElement(
+                            tf = line.first().tf,
+                            td = line.first().td.copyOf(),
+                            tj = newTj,
+                            ts = line.first().ts,
+                            rgb = line.first().rgb
+                        )
+                    }
+                }
+            }
+        }
     }
 
     internal fun mergeElementsWithSameFontAndColor() {

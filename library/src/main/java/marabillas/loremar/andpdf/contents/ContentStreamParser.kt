@@ -52,7 +52,7 @@ internal class ContentStreamParser {
                     i++
                 }
                 // TF
-                i + 1 < sb.length && sb[i] == 'T' && sb[i + 1] == 'F' -> {
+                i + 1 < sb.length && sb[i] == 'T' && (sb[i + 1] == 'F' || sb[i + 1] == 'f') -> {
                     var j = 3
                     while (true) {
                         if (sb[i - j] == 'F') {
@@ -61,6 +61,7 @@ internal class ContentStreamParser {
                         }
                         j++
                     }
+                    gsStack.lastElement().tf = token.toString()
                     tf.clear().append(token)
                     i += 2
                 }
@@ -97,6 +98,7 @@ internal class ContentStreamParser {
                 sb[i] == 'Q' -> {
                     //println("QEND")
                     gsStack.pop()
+                    tf.clear().append(gsStack.lastElement().tf)
                     i++
                 }
                 // cm
@@ -141,7 +143,7 @@ internal class ContentStreamParser {
         var i = startIndex
         while (i < sb.length) {
             if (
-                (i + 1 < sb.length && sb[i] == 'T' && sb[i + 1] == 'F')
+                (i + 1 < sb.length && sb[i] == 'T' && (sb[i + 1] == 'F' || sb[i + 1] == 'f'))
                 || (sb[i] == 'B' && sb[i + 1] == 'T')
                 || sb[i] == 'q'
                 || sb[i] == 'Q'

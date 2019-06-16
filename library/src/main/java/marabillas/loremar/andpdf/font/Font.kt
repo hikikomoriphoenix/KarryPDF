@@ -252,36 +252,34 @@ internal class Font() {
                     widths.put(-1, 1000f)
                 }
 
-                // Get MissingWidth
+                // If DW = 0, either get MissingWidth from font descriptor or use default which is 1000
                 val cidFontDescriptor = cidFont["FontDescriptor"]
-                if (cidFontDescriptor is Dictionary) {
+                if (widths[-1] == 0f && cidFontDescriptor is Dictionary) {
                     cidFontDescriptor.resolveReferences()
                     val mw = cidFontDescriptor["MissingWidth"]
                     if (mw is Numeric) {
                         widths.put(-1, mw.value.toFloat())
+                    } else {
+                        widths.put(-1, 1000f)
+                        /*val cidSubType = cidFont["Subtype"]
+                        if (cidSubType is Name && cidSubType.value == "CIDFontType2") {
+                            println("Getting widths for CIDFontType2")
+                            getCIDType2Widths(cidFont, cidFontDescriptor, referenceResolver)
+                            println("obtained ${widths.size()} widths")
+                        } else if (cidSubType is Name) {
+                            // Subtype is CIDFontType0. Use FontFile3 with subtype either CIDFontType0C or OpenType
+                            TODO("Get widths for CIDFontType0")
+                        }*/
                     }
                 }
 
-                if (widths[-1] == 0f && cidFontDescriptor is Dictionary) {
-                    cidFontDescriptor.resolveReferences()
-                    val cidSubType = cidFont["Subtype"]
-                    if (cidSubType is Name && cidSubType.value == "CIDFontType2") {
-                        println("Getting widths for CIDFontType2")
-                        getCIDType2Widths(cidFont, cidFontDescriptor, referenceResolver)
-                        println("obtained ${widths.size()} widths")
-                    } else if (cidSubType is Name) {
-                        // Subtype is CIDFontType0. Use FontFile3 with subtype either CIDFontType0C or OpenType
-                        getWidthsFromFontProgram(cidFontDescriptor, referenceResolver, null, cidSubType)
-                    }
-                } else {
-                    // Get widths
-                    val w = cidFont["W"]
-                    if (w is PDFArray) {
-                        getCIDFontWidths(w)
-                        println("obtained ${widths.size()} widths")
-                    }
+                // Get widths
+                val w = cidFont["W"]
+                if (w is PDFArray) {
+                    getCIDFontWidths(w)
                 }
 
+                println("obtained ${widths.size()} widths")
                 println("missing width = ${widths[-1]}")
             }
         }

@@ -20,7 +20,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        val file = RandomAccessFile("${filesDir.path}/seeing-theory.pdf", "r")
+        val file = RandomAccessFile("${filesDir.path}/KotlinNotesForProfessionals.pdf", "r")
         val parser = AndPDF().loadDocument(file)
 
         // Get views

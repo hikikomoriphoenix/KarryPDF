@@ -71,9 +71,12 @@ internal class ContentStreamParser {
                     val cm = gsStack.lastElement().cm
                     val rgb = gsStack.lastElement().rgb
                     i = textObjectParser.parse(sb, textObj, tf, i + 2, cm, rgb)
-                    textObj.scaleX = Math.abs(cm[0])
-                    textObj.scaleY = Math.abs(cm[3])
-                    pageObjects.add(textObj)
+
+                    if (textObj.count() > 0) {
+                        textObj.scaleX = Math.abs(cm[0])
+                        textObj.scaleY = Math.abs(cm[3])
+                        pageObjects.add(textObj)
+                    }
                     //println("textObj -> ${textObj.getX()}, ${textObj.getY()}")
                 }
                 // q

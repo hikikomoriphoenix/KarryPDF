@@ -2,10 +2,7 @@ package marabillas.loremar.andpdf.font
 
 import android.graphics.Typeface
 import android.support.v4.util.SparseArrayCompat
-import marabillas.loremar.andpdf.font.cmap.AGLCMap
-import marabillas.loremar.andpdf.font.cmap.CIDFontCMap
-import marabillas.loremar.andpdf.font.cmap.CMap
-import marabillas.loremar.andpdf.font.cmap.ToUnicodeCMap
+import marabillas.loremar.andpdf.font.cmap.*
 import marabillas.loremar.andpdf.font.encoding.*
 import marabillas.loremar.andpdf.font.ttf.TTFParser
 import marabillas.loremar.andpdf.objects.*
@@ -100,6 +97,14 @@ internal class Font() {
                 val data = fontProgram?.decodeEncodedStream()
                 if (data is ByteArray) {
                     TTFParser(data).getDefaultTTFEncoding(encodingArray)
+                    if (cmap !is ToUnicodeCMap) {
+                        if (encodingArray[0]?.startsWith("F0") == true) {
+                            cmap = HexcodeCMap(encodingArray)
+                        } else {
+                            cmap = AGLCMap(encodingArray)
+                        }
+                    }
+                    // Note that encodingArray will not be used to get widths since TrueType fonts don't need it.
                 }
             }
         } else {

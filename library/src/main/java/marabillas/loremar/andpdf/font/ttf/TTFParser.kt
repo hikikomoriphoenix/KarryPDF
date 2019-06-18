@@ -4,6 +4,8 @@ import android.support.v4.util.SparseArrayCompat
 import marabillas.loremar.andpdf.font.cmap.AGLCMap
 import marabillas.loremar.andpdf.font.encoding.MacOSRomanEncoding
 import marabillas.loremar.andpdf.font.encoding.StandardEncoding
+import marabillas.loremar.andpdf.utils.exts.hexFromInt
+import marabillas.loremar.andpdf.utils.exts.set
 import marabillas.loremar.andpdf.utils.wholeNumToFractional
 
 internal class TTFParser(val data: ByteArray) {
@@ -347,15 +349,17 @@ internal class TTFParser(val data: ByteArray) {
     fun getDefaultTTFEncoding(encodingArray: SparseArrayCompat<String>) {
         println("Getting TrueType font default encoding")
         getCMap()
-        if (platformID == 1) {
-            MacOSRomanEncoding.putAllTo(encodingArray)
-        } else if (platformID == 3) {
-            // Symbolic flag is assumed to be set and thus platformSpecificID is also assumed to be 0
-            TODO("Implement TTF default encoding with (3, 0) cmap subtable according to manual's instruction.")
-            // Manual's instructions: If the font contains a (3, 0) subtable, the range of character codes shall be one of these: 0x0000 - 0x00FF,
-            //0xF000 - 0xF0FF, 0xF100 - 0xF1FF, or 0xF200 - 0xF2FF. Depending on the range of codes, each byte
-            //from the string shall be prepended with the high byte of the range, to form a two-byte character, which shall
-            //be used to select the associated glyph description from the subtable.
+        when (platformID) {
+            1 -> MacOSRomanEncoding.putAllTo(encodingArray)
+            3 -> // Symbolic flag is assumed to be set and thus platformSpecificID is also assumed to be 0
+                for (i in 0..255) {
+                    stringBuilder.clear()
+                    stringBuilder.hexFromInt(i)
+                    stringBuilder.insert(0, "F0")
+                    encodingArray[i] = stringBuilder.toString()
+                }
+            else -> // In case the font uses other Unicode platformID,
+                StandardEncoding.putAllTo(encodingArray)
         }
     }
 

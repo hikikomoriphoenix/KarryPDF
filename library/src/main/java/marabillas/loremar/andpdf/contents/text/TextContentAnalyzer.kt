@@ -8,7 +8,6 @@ import marabillas.loremar.andpdf.objects.PDFArray
 import marabillas.loremar.andpdf.objects.PDFString
 import marabillas.loremar.andpdf.objects.toPDFString
 import marabillas.loremar.andpdf.utils.exts.toDouble
-import marabillas.loremar.andpdf.utils.exts.toInt
 
 internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableListOf()) {
     internal val contentGroups = ArrayList<ContentGroup>()
@@ -19,7 +18,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
     private var table = Table()
     private var currLine = ArrayList<TextElement>()
 
-    private val fonts = SparseArrayCompat<Font>()
+    private val fonts = HashMap<String, Font>()
 
     init {
         textObjects.clear()
@@ -38,18 +37,12 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
 
     fun analyze(
         textObjs: MutableList<TextObject>,
-        fonts: SparseArrayCompat<Font>
+        fonts: HashMap<String, Font>
     ): ArrayList<ContentGroup> {
         resetAnalyzer()
 
         textObjects.addAll(textObjs)
-
-        for (i in 0 until fonts.size()) {
-            this.fonts.put(
-                fonts.keyAt(i),
-                fonts[fonts.keyAt(i)]
-            )
-        }
+        this.fonts.putAll(fonts)
 
         val measureWidths = isMeasureWidths()
         if (measureWidths) {
@@ -93,8 +86,8 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
     }
 
     private fun isMeasureWidths(): Boolean {
-        for (i in 0 until fonts.size()) {
-            if (fonts.valueAt(i)?.widths?.get(-1) == null) {
+        fonts.forEach {
+            if (it.value.widths.get(-1) == null) {
                 return false
             }
         }
@@ -108,9 +101,8 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                 val tj = textElem.tj
 
                 sb.clear()
-                sb.append(textElem.tf, 2, textElem.tf.indexOf(' '))
-                val f = sb.toInt()
-                val widths = fonts[f]?.widths
+                sb.append(textElem.tf, 1, textElem.tf.indexOf(' '))
+                val widths = fonts[sb.toString()]?.widths
 
                 sb.clear()
                 sb.append(textElem.tf, textElem.tf.indexOf(' ') + 1, textElem.tf.length)
@@ -159,11 +151,11 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         handleSpacing(fontSpaceWidths())
     }
 
-    private fun fontSpaceWidths(): SparseArrayCompat<Float> {
+    private fun fontSpaceWidths(): HashMap<String, Float> {
         // Font key to space width mapping
-        val fsw = SparseArrayCompat<Float>()
+        val fsw = HashMap<String, Float>()
         // Width to count mapping for each font
-        val fws = SparseArrayCompat<HashMap<Float, Int>>()
+        val fws = HashMap<String, HashMap<Float, Int>>()
         // Get existing space widths from each font in fonts array
         val esw = existingSpaceWidths()
         fsw.putAll(esw)
@@ -173,8 +165,8 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
             textObj.forEach forEachTextElem@{ textElem ->
                 // Get font key
                 sb.clear()
-                sb.append(textElem.tf, 2, textElem.tf.indexOf(' '))
-                val f = sb.toInt()
+                sb.append(textElem.tf, 1, textElem.tf.indexOf(' '))
+                val f = sb.toString()
 
                 // Existing space widths from fonts array will be used
                 if (esw.containsKey(f)) return@forEachTextElem
@@ -197,13 +189,13 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                                 // Evaluate for new space width
                                 val swCount = fws[f]?.get(fsw[f]) ?: 0
                                 if (count + 1 > swCount) {
-                                    fsw.put(f, w)
+                                    fsw[f] = w
                                 }
                             } else {
                                 // If width has no count value, initialize fws and fsw with new width.
-                                fws.put(f, hashMapOf())
+                                fws[f] = hashMapOf()
                                 fws[f]?.put(w, 1)
-                                fsw.put(f, w)
+                                fsw[f] = w
                             }
                         }
                     }
@@ -214,27 +206,27 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         return fsw
     }
 
-    private fun existingSpaceWidths(): SparseArrayCompat<Float> {
-        val existingSpaceWidths = SparseArrayCompat<Float>()
-        for (i in 0 until fonts.size()) {
-            val font = fonts.valueAt(i)
+    private fun existingSpaceWidths(): HashMap<String, Float> {
+        val existingSpaceWidths = HashMap<String, Float>()
+        fonts.forEach {
+            val font = it.value
             val spaceWidth = font.widths[32]
             if (spaceWidth is Float) {
-                existingSpaceWidths.put(fonts.keyAt(i), spaceWidth)
+                existingSpaceWidths[it.key] = spaceWidth
             }
         }
         return existingSpaceWidths
     }
 
-    private fun handleSpacing(spaceWidths: SparseArrayCompat<Float>) {
+    private fun handleSpacing(spaceWidths: HashMap<String, Float>) {
         for (i in 0 until textObjects.size) {
             val textObj = textObjects[i]
 
             textObj.forEachIndexed { index, textElement ->
                 // Get TextElement's font's space width
                 sb.clear()
-                sb.append(textElement.tf, 2, textElement.tf.indexOf(' '))
-                val spaceWidth = spaceWidths[sb.toInt()] ?: 0f
+                sb.append(textElement.tf, 1, textElement.tf.indexOf(' '))
+                val spaceWidth = spaceWidths[sb.toString()] ?: 0f
 
                 if (textElement.tj is PDFArray) {
                     sb.clear().append('(')

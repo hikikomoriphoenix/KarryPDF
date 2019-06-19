@@ -1,13 +1,11 @@
 package marabillas.loremar.andpdf.font
 
-import android.support.v4.util.SparseArrayCompat
 import marabillas.loremar.andpdf.contents.PageObject
 import marabillas.loremar.andpdf.contents.text.TextElement
 import marabillas.loremar.andpdf.contents.text.TextObject
 import marabillas.loremar.andpdf.objects.*
-import marabillas.loremar.andpdf.utils.exts.toInt
 
-internal class FontDecoder(private val pageObjects: ArrayList<PageObject>, private val fonts: SparseArrayCompat<Font>) {
+internal class FontDecoder(private val pageObjects: ArrayList<PageObject>, private val fonts: HashMap<String, Font>) {
     private val mainSB = StringBuilder()
     private val secondarySB = StringBuilder()
 
@@ -19,8 +17,8 @@ internal class FontDecoder(private val pageObjects: ArrayList<PageObject>, priva
                 val textObject = it as TextObject
                 textObject.forEachIndexed forEachTextElement@{ i, e ->
                     mainSB.clear()
-                    mainSB.append(e.tf, 2, e.tf.indexOf(' '))
-                    val cmap = fonts[mainSB.toInt()]?.cmap
+                    mainSB.append(e.tf, 1, e.tf.indexOf(' '))
+                    val cmap = fonts[mainSB.toString()]?.cmap
 
                     var newTj: PDFObject? = null
                     when (e.tj) {

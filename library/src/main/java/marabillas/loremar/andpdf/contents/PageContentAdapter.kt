@@ -1,6 +1,5 @@
 package marabillas.loremar.andpdf.contents
 
-import android.support.v4.util.SparseArrayCompat
 import marabillas.loremar.andpdf.contents.image.ImageContent
 import marabillas.loremar.andpdf.contents.image.ImageObject
 import marabillas.loremar.andpdf.contents.text.TextContentAdapter
@@ -11,7 +10,7 @@ import marabillas.loremar.andpdf.utils.TimeCounter
 
 internal class PageContentAdapter(
     private val pageObjects: ArrayList<PageObject>,
-    private val fonts: SparseArrayCompat<Font>
+    private val fonts: HashMap<String, Font>
 ) {
     private val textContentAnalyzer = TextContentAnalyzer()
     private val textContentAdapter = TextContentAdapter()

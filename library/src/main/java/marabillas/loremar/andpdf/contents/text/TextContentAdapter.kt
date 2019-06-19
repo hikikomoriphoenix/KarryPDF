@@ -1,7 +1,6 @@
 package marabillas.loremar.andpdf.contents.text
 
 import android.graphics.Color
-import android.support.v4.util.SparseArrayCompat
 import android.text.SpannableString
 import android.text.SpannableStringBuilder
 import android.text.style.ForegroundColorSpan
@@ -12,7 +11,6 @@ import marabillas.loremar.andpdf.font.Font
 import marabillas.loremar.andpdf.font.FontMappings
 import marabillas.loremar.andpdf.font.FontName
 import marabillas.loremar.andpdf.objects.PDFString
-import marabillas.loremar.andpdf.utils.exts.toInt
 
 internal class TextContentAdapter {
     private var spanBuilder = SpannableStringBuilder()
@@ -25,7 +23,7 @@ internal class TextContentAdapter {
         sb.clear()
     }
 
-    fun getContents(contentGroups: ArrayList<ContentGroup>, fonts: SparseArrayCompat<Font>): ArrayList<PageContent> {
+    fun getContents(contentGroups: ArrayList<ContentGroup>, fonts: HashMap<String, Font>): ArrayList<PageContent> {
         resetAdapter()
         var contentGroup: ContentGroup
         for (i in 0 until contentGroups.size) {
@@ -58,7 +56,7 @@ internal class TextContentAdapter {
         return pageContents
     }
 
-    private fun processTextGroup(textGroup: TextGroup, fonts: SparseArrayCompat<Font>) {
+    private fun processTextGroup(textGroup: TextGroup, fonts: HashMap<String, Font>) {
         var line: ArrayList<TextElement>
         for (i in 0 until textGroup.size()) {
             line = textGroup[i]
@@ -68,8 +66,8 @@ internal class TextContentAdapter {
                 val s = SpannableString((line[j].tj as PDFString).value)
 
                 // Style with typeface
-                sb.clear().append(line[j].tf, 2, line[j].tf.indexOf(' '))
-                val t = fonts[sb.toInt()]?.typeface ?: FontMappings[FontName.DEFAULT]
+                sb.clear().append(line[j].tf, 1, line[j].tf.indexOf(' '))
+                val t = fonts[sb.toString()]?.typeface ?: FontMappings[FontName.DEFAULT]
                 val span = CustomTypefaceSpan(t)
                 s.setSpan(span, 0, s.length, SpannableString.SPAN_INCLUSIVE_EXCLUSIVE)
 
@@ -87,7 +85,7 @@ internal class TextContentAdapter {
         }
     }
 
-    private fun processTable(table: Table, fonts: SparseArrayCompat<Font>): TableContent {
+    private fun processTable(table: Table, fonts: HashMap<String, Font>): TableContent {
         val content = TableContent()
         for (i in 0 until table.size()) {
             val rowContent = TableContent.Row()

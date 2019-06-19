@@ -1,19 +1,17 @@
 package marabillas.loremar.andpdf.contents.text
 
-import android.support.v4.util.SparseArrayCompat
 import marabillas.loremar.andpdf.font.Font
 import marabillas.loremar.andpdf.utils.exts.toDouble
-import marabillas.loremar.andpdf.utils.exts.toInt
 
 internal class TableDetector(
     private val textObjects: MutableList<TextObject>,
-    private val fonts: SparseArrayCompat<Font>
+    private val fonts: HashMap<String, Font>
 ) {
     private val prevLineWideSpaces = mutableListOf<WideSpace>()
     private val sb = StringBuilder()
 
     fun detectTableComponents() {
-        if (fonts.size() > 0) {
+        if (fonts.size > 0) {
             detectTables()
         }
         detectMultiLinearColumns()
@@ -273,7 +271,7 @@ internal class TableDetector(
                     val rightBound = currX + elemWdth
                     if (rightBound > rightmost) {
                         rightmost = rightBound
-                        val fKey = sb.clear().append(e.tf, 2, e.tf.indexOf(' ')).toInt()
+                        val fKey = sb.clear().append(e.tf, 1, e.tf.indexOf(' ')).toString()
                         val fSize = sb.clear().append(e.tf, e.tf.indexOf(' ') + 1, e.tf.length).toDouble().toFloat()
                         val widths = fonts[fKey]?.widths
                         val spWdth = widths?.get(32)
@@ -342,7 +340,7 @@ internal class TableDetector(
         var spaceWidth: Float
         val e = textObj.first()
 
-        val fKey = sb.clear().append(e.tf, 2, e.tf.indexOf(' ')).toInt()
+        val fKey = sb.clear().append(e.tf, 1, e.tf.indexOf(' ')).toString()
         val fSize = sb.clear().append(e.tf, e.tf.indexOf(' ') + 1, e.tf.length).toDouble().toFloat()
 
         val widths = fonts[fKey]?.widths

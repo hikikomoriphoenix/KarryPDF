@@ -1,7 +1,6 @@
 package marabillas.loremar.andpdf
 
 import android.graphics.Typeface
-import android.support.v4.util.SparseArrayCompat
 import marabillas.loremar.andpdf.contents.ContentStreamParser
 import marabillas.loremar.andpdf.contents.PageContent
 import marabillas.loremar.andpdf.contents.PageContentAdapter
@@ -126,11 +125,11 @@ class AndPDF {
         // Get all fonts and CMaps required for this page
         val fontsDic = resources["Font"] as Dictionary?
         fontsDic?.resolveReferences()
-        val fonts = SparseArrayCompat<Font>()
+        val fonts = HashMap<String, Font>()
         val fKeys = fontsDic?.getKeys()
         fKeys?.forEach { key ->
             val font = fontsDic[key] as Dictionary
-            fonts.put(key.substring(1, key.length).toInt(), Font(font, referenceResolver))
+            fonts[key] = Font(font, referenceResolver)
         }
 
         // Get XObjects
@@ -159,7 +158,7 @@ class AndPDF {
 
     private fun parseContent(
         content: PDFObject,
-        fonts: SparseArrayCompat<Font>,
+        fonts: HashMap<String, Font>,
         xObjects: HashMap<String, Stream>
     ): ArrayList<PageContent> {
         TimeCounter.reset()

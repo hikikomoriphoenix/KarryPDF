@@ -75,6 +75,7 @@ internal class Font() {
             val b = stream?.decodeEncodedStream()
             b?.let {
                 cmap = ToUnicodeCMap(String(b)).parse()
+                println("Uses a ToUnicode cmap")
             }
         }
     }

@@ -40,10 +40,6 @@ class AndPDF {
         if (trailerEntries["Encrypt"] != null) throw UnsupportedPDFElementException(
             "AndPDF library does not support encrypted pdf files yet."
         )
-        if (trailerEntries["ID"] != null) throw UnsupportedPDFElementException(
-            "This document may contain an embedded file or an external file referenced by ID entry of this document's " +
-                    "trailer. Handling of embedded/external files is not supported yet."
-        )
 
         val pageTree = (documentCatalog?.resolveReferences()?.get("Pages") ?: throw InvalidDocumentException(
             "This document does not have a root page tree."

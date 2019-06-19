@@ -30,7 +30,13 @@ class AndPDF {
         this.fileReader = fileReader
         ObjectIdentifier.referenceResolver = referenceResolver
 
-        objects = fileReader.getLastXRefData()
+        objects = if (fileReader.isLinearized()) {
+            println("Detected linearized PDF document")
+            val startXRef = fileReader.getStartXRefPositionLinearized()
+            fileReader.getXRefData(startXRef)
+        } else {
+            fileReader.getLastXRefData()
+        }
 
         // Process trailer
         val trailerEntries = fileReader.getTrailerEntries(true)

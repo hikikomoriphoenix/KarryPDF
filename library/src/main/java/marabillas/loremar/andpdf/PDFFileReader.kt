@@ -9,6 +9,49 @@ import java.io.RandomAccessFile
 internal class PDFFileReader(private val file: RandomAccessFile) {
     private var startXRefPos: Long? = null
     private var trailerPos: Long? = null
+    private var isLinearized: Boolean? = null
+
+    fun isLinearized(): Boolean {
+        if (isLinearized == null) {
+            file.seek(0)
+            var s = file.readLine()
+            var beginning = file.filePointer
+            while (s.startsWith('%')) {
+                beginning = file.filePointer
+                s = file.readLine()
+            }
+            val firstObj = getIndirectObject(beginning).extractContent().toPDFObject()
+            if (firstObj is Dictionary) {
+                val linearized = firstObj["Linearized"]
+                if (linearized != null) {
+                    isLinearized = true
+                    return true
+                }
+            }
+            isLinearized = false
+            return false
+        } else {
+            return isLinearized as Boolean
+        }
+    }
+
+    fun getStartXRefPositionLinearized(): Long {
+        if (isLinearized()) {
+            file.seek(0)
+            var s = file.readLine()
+            while (!s.contains("endobj"))
+                s = file.readLine()
+            var beginning = file.filePointer
+            s = file.readLine()
+            while (s.isBlank() || s.startsWith('%')) {
+                beginning = file.filePointer
+                s = file.readLine()
+            }
+            return beginning
+        } else {
+            throw IllegalStateException("PDF document is not linearized")
+        }
+    }
 
     /**
      * Read the line containing the character in the given offset position. Trailing line feed and carriage return is
@@ -52,24 +95,28 @@ internal class PDFFileReader(private val file: RandomAccessFile) {
      * Get the offset position of the cross reference section.
      */
     fun getStartXRefPosition(): Long {
-        if (startXRefPos == null) {
-            var p = file.length() - 1
-            while (true) {
-                var s = readContainingLine(p)
-                if (s.startsWith("startxref")) {
-                    file.seek(file.filePointer + 1)
-                    file.readLine()
-                    while (true) {
-                        s = file.readLine()
-                        if (!s.startsWith("%")) {
-                            startXRefPos = s.toLong()
-                            return startXRefPos as Long
+        if (!isLinearized()) {
+            if (startXRefPos == null) {
+                var p = file.length() - 1
+                while (true) {
+                    var s = readContainingLine(p)
+                    if (s.startsWith("startxref")) {
+                        file.seek(file.filePointer + 1)
+                        file.readLine()
+                        while (true) {
+                            s = file.readLine()
+                            if (!s.startsWith("%")) {
+                                startXRefPos = s.toLong()
+                                return startXRefPos as Long
+                            }
                         }
                     }
+                    p = file.filePointer
                 }
-                p = file.filePointer
-            }
-        } else return startXRefPos as Long
+            } else return startXRefPos as Long
+        } else {
+            return getStartXRefPositionLinearized()
+        }
     }
 
     /**
@@ -92,7 +139,7 @@ internal class PDFFileReader(private val file: RandomAccessFile) {
     fun getXRefData(pos: Long): HashMap<String, XRefEntry> {
         file.seek(pos)
         val s = file.readLine()
-        return if (s.startsWith("xref")) {
+        return if (s.contains("xref")) {
             var data = parseXRefSection()
             data = parseOtherXRefInTrailer(file.filePointer, data)
             data
@@ -109,12 +156,13 @@ internal class PDFFileReader(private val file: RandomAccessFile) {
         val entries = HashMap<String, XRefEntry>()
 
         println("Parsing XRef section start")
+        val subSectionRegex = Regex("^\\s*(\\d+) (\\d+)\\s*$")
         while (true) {
             val p = file.filePointer
             // Find next subsection
             val s = file.readLine()
             if (s == "") continue
-            if (!s.matches(Regex("^(\\d+) (\\d+)$"))) {
+            if (!s.matches(subSectionRegex)) {
                 // File pointer should be reset to right after the last entry
                 file.seek(p)
                 break
@@ -157,11 +205,6 @@ internal class PDFFileReader(private val file: RandomAccessFile) {
             s = file.readLine()
         } while (!s.startsWith("trailer"))
 
-        // Store the main trailer position.
-        if (trailerPos == null) {
-            trailerPos = p
-        }
-
         val trailer = getDictionary(p, false)
 
         // Parse any existing cross reference stream
@@ -195,7 +238,7 @@ internal class PDFFileReader(private val file: RandomAccessFile) {
             val startXRef = getStartXRefPosition()
             file.seek(startXRef)
             var s = file.readLine()
-            if (s.startsWith("xref")) {
+            if (s.contains("xref")) {
                 parseXRefSection()
                 var p: Long
                 do {
@@ -203,8 +246,12 @@ internal class PDFFileReader(private val file: RandomAccessFile) {
                     s = file.readLine()
                 } while (!s.startsWith("trailer"))
                 p
-            } else null
-        } else trailerPos
+            } else {
+                null
+            }
+        } else {
+            trailerPos
+        }
     }
 
     fun getTrailerEntries(resolveReferences: Boolean = true): HashMap<String, PDFObject?> {

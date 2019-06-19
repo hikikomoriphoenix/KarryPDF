@@ -13,7 +13,7 @@ internal class XObjectsResolver(
     private val xObjects: HashMap<String, Stream>
 ) {
     fun resolve() {
-        val toRemove = mutableListOf<Int>()
+        val toRemove = mutableListOf<PageObject>()
         pageObjects.forEachIndexed { i, obj ->
             if (obj is XObject) {
                 val xObjStm = xObjects[obj.resourceName.value]
@@ -32,16 +32,16 @@ internal class XObjectsResolver(
                             if (element.toString().contains("XObjectsResolver.resolve"))
                                 break
                         }
-                        toRemove.add(i)
+                        toRemove.add(obj)
                     }
                 } else {
                     // TODO Other types of XObjects need to be handled. Until then, remove this XObject.
-                    toRemove.add(i)
+                    toRemove.add(obj)
                 }
             }
         }
-        toRemove.forEach { objIndex ->
-            pageObjects.removeAt(objIndex)
+        toRemove.forEach { obj ->
+            pageObjects.remove(obj)
         }
     }
 

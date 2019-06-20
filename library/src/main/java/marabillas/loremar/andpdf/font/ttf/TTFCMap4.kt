@@ -2,7 +2,7 @@ package marabillas.loremar.andpdf.font.ttf
 
 import marabillas.loremar.andpdf.utils.exts.set
 
-internal class TTFCMap4(val data: ByteArray, val pos: Long) : TTFCMapDefault() {
+internal class TTFCMap4(data: ByteArray, pos: Long) : TTFCMapDefault(data, pos) {
     init {
         // Get segCountX2 word and divide by 2 to get number of segments.
         val segCount = TTFParser.getUInt16At(data, pos.toInt() + 6) / 2
@@ -51,7 +51,8 @@ internal class TTFCMap4(val data: ByteArray, val pos: Long) : TTFCMapDefault() {
 
     private fun fillImportantArrayForSegments(array: IntArray, start: Long, segCount: Int) {
         for (i in 0 until segCount) {
-            array[i] = TTFParser.getUInt16At(data, start.toInt() + (i * 2))
+            val segPos = start.toInt() + (i * 2)
+            array[i] = TTFParser.getUInt16At(data, segPos)
         }
     }
 }

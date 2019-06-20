@@ -244,6 +244,7 @@ internal class TTFParser(val data: ByteArray) {
                     val offset = getUInt32At(data, pos.toInt() + 4)
                     val cmapTableLoc = pos + offset
                     val format = getUInt16At(data, cmapTableLoc.toInt())
+                    println("($platformID, $platformSpecificID) format=$format")
                     val ttfCMap = TTFCMapFactory().getTTFCMap(format, data, cmapTableLoc)
 
                     if (ttfCMap is TTFCMap) {

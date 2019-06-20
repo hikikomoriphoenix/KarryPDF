@@ -89,10 +89,10 @@ internal class ContentStreamParser {
                         gsHolders.add(GraphicsState())
                     }
 
-                    // Reset variable in selected GraphicsState
-                    gsHolders[index].cm = identityCm
-                    gsHolders[index].rgb = noRgb
-                    gsHolders[index].tf = null
+                    // Use values from previous element in the stack
+                    gsHolders[index].cm = gsStack.lastElement().cm
+                    gsHolders[index].rgb = gsStack.lastElement().rgb
+                    gsHolders[index].tf = gsStack.lastElement().tf
 
                     gsStack.push(gsHolders[index])
                     i++
@@ -220,6 +220,6 @@ internal class ContentStreamParser {
     inner class GraphicsState(
         var cm: FloatArray = identityCm,
         var rgb: FloatArray = floatArrayOf(-1f, -1f, -1f),
-        var tf: String? = null
+        var tf: String = ""
     )
 }

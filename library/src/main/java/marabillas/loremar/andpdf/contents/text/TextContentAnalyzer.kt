@@ -465,7 +465,27 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
     private fun sortGroup(textElement: TextElement, dty: Float, fSize: Float, xPos: Float = 0f) {
         when {
             currTextGroup.size() == 0 -> newLine(textElement, xPos)
-            sameLine(dty) -> currLine.add(textElement)
+            sameLine(dty) -> {
+                if (
+                    (currLine.last().tj as PDFString).value.last() != ' ' // If last TextElement does not end with space
+                    || (textElement.tj as PDFString).value.first() != ' ' // If new TextElement does not start with space
+                ) {
+                    // Put space between last TextElement and new TextElement
+                    sb.clear().append(' ').append((textElement.tj as PDFString).value)
+                    sb.insert(0, '(').append(')')
+                    val te = TextElement(
+                        tf = textElement.tf,
+                        td = textElement.td.copyOf(),
+                        tj = sb.toPDFString(),
+                        ts = textElement.ts,
+                        rgb = textElement.rgb
+                    )
+                    te.width = textElement.width
+                    currLine.add(te)
+                } else {
+                    currLine.add(textElement)
+                }
+            }
             near(dty, fSize) -> newLine(textElement, xPos)
             else -> newTextGroup(textElement, xPos)
         }

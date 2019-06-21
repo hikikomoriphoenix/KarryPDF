@@ -294,7 +294,7 @@ internal class ToUnicodeCMap(private var stream: String) : EmbeddedCMap {
     private fun isNextValid(): Boolean {
         codeSpaceRange.forEach {
             codeLength = it[0].length
-            if (encodedSB.length < codeLength)
+            if (encodedSB.length < (ptr + codeLength))
                 return@forEach
             srcCodeSB.clear()
             srcCodeSB.append(encodedSB, ptr, ptr + codeLength)

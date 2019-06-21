@@ -90,8 +90,8 @@ internal class ContentStreamParser {
                     }
 
                     // Use values from previous element in the stack
-                    gsHolders[index].cm = gsStack.lastElement().cm
-                    gsHolders[index].rgb = gsStack.lastElement().rgb
+                    gsHolders[index].cm = gsStack.lastElement().cm.copyOf()
+                    gsHolders[index].rgb = gsStack.lastElement().rgb.copyOf()
                     gsHolders[index].tf = gsStack.lastElement().tf
 
                     gsStack.push(gsHolders[index])
@@ -101,7 +101,16 @@ internal class ContentStreamParser {
                 sb[i] == 'Q' -> {
                     //println("QEND")
                     gsStack.pop()
-                    tf.clear().append(gsStack.lastElement().tf)
+                    if (gsStack.size > 0) {
+                        tf.clear().append(gsStack.lastElement().tf)
+                    } else {
+                        // Restore Graphics State to default
+                        gsHolders[0].cm = identityCm
+                        gsHolders[0].rgb = floatArrayOf(-1f, -1f, -1f)
+                        gsHolders[0].tf = ""
+                        gsStack.add(gsHolders[0])
+                        tf.clear()
+                    }
                     i++
                 }
                 // cm

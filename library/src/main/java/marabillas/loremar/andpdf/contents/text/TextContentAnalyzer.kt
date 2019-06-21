@@ -678,6 +678,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                             ts = line.first().ts,
                             rgb = line.first().rgb
                         )
+                        line[0].width = line.first().width
                     }
                 }
             }

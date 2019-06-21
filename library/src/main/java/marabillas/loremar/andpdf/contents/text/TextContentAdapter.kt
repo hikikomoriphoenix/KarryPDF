@@ -63,7 +63,10 @@ internal class TextContentAdapter {
             if (line != textGroup[0])
                 spanBuilder.append('\n')
             for (j in 0 until line.size) {
-                val s = SpannableString((line[j].tj as PDFString).value)
+                sb.clear().append((line[j].tj as PDFString).value)
+                val isFirst = (j == 0)
+                reduceLongSpaces(sb, isFirst)
+                val s = SpannableString(sb)
 
                 // Style with typeface
                 sb.clear().append(line[j].tf, 1, line[j].tf.indexOf(' '))
@@ -100,5 +103,31 @@ internal class TextContentAdapter {
             content.rows.add(rowContent)
         }
         return content
+    }
+
+    private fun reduceLongSpaces(s: StringBuilder, isFirst: Boolean) {
+        var isSpace = false
+        var isIndent = false
+        if (isFirst) {
+            isIndent = true
+        }
+        s.forEachIndexed { i, c ->
+            if (isIndent) {
+                if (c != ' ') {
+                    isIndent = false
+                    return@forEachIndexed
+                } else {
+                    return@forEachIndexed
+                }
+            }
+
+            if (!isSpace && c == ' ') {
+                isSpace = true
+            } else if (isSpace && c == ' ') {
+                s.deleteCharAt(i)
+            } else if (isSpace && c != ' ') {
+                isSpace = false
+            }
+        }
     }
 }

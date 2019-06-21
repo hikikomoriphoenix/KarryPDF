@@ -1,6 +1,7 @@
 package marabillas.loremar.andpdf.contents.text
 
 import android.support.v4.util.SparseArrayCompat
+import android.util.Log
 import marabillas.loremar.andpdf.contents.ContentGroup
 import marabillas.loremar.andpdf.font.Font
 import marabillas.loremar.andpdf.objects.Numeric
@@ -19,6 +20,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
     private var currLine = ArrayList<TextElement>()
 
     private val fonts = HashMap<String, Font>()
+    private var isDetectTables = false
 
     init {
         textObjects.clear()
@@ -60,7 +62,26 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         // Tables are detected by looking for wide spaces placed on top of each other. These wide spaces serve as
         // dividers between table columns. Tables are also detected by looking for multi-linear TextObjects placed
         // horizontally adjacent to each other.
-        TableDetector(textObjects, fonts).detectTableComponents()
+        if (isDetectTables) {
+            try {
+                TableDetector(textObjects, fonts).detectTableComponents()
+            } catch (e: Exception) {
+                // Log exception
+                Log.e("${javaClass.name}.analyze", "Exception in TableDetection: ${e.message}")
+                e.stackTrace.forEach {
+                    Log.e("${javaClass.name}.analyze", "$it")
+                }
+                // Set all TextObjects to not belong to a table column
+                textObjects.forEach {
+                    it.column = -1
+                }
+                // Restart analyze with table detection turned off
+                isDetectTables = false
+                analyze(textObjects, fonts)
+                isDetectTables = true
+                return contentGroups
+            }
+        }
 
         // Group texts in the same line or in adjacent lines with line-spacing less than font size.
         groupTexts()
@@ -83,6 +104,11 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         deleteBlankLines()
 
         return contentGroups
+    }
+
+    fun detectTables(isDetectTables: Boolean): TextContentAnalyzer {
+        this.isDetectTables = isDetectTables
+        return this
     }
 
     private fun isMeasureWidths(): Boolean {

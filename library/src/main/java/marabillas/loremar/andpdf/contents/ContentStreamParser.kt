@@ -55,8 +55,8 @@ internal class ContentStreamParser {
                 i + 1 < sb.length && sb[i] == 'T' && (sb[i + 1] == 'F' || sb[i + 1] == 'f') -> {
                     var j = 3
                     while (true) {
-                        if (sb[i - j] == 'F') {
-                            token.clear().append(sb, i - j, i - 1)
+                        if (sb[i - j] == '/') {
+                            token.clear().append(sb, i - j + 1, i - 1)
                             break
                         }
                         j++

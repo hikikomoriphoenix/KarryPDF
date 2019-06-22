@@ -12,7 +12,7 @@ internal class ToUnicodeCMap(private var stream: String) : EmbeddedCMap {
     /**
      * List of code spaces. A code that is outside the code space range does not have mapping.
      */
-    private val codeSpaceRange = ArrayList<Array<String>>()
+    private val codeSpaceRange = ArrayList<Array<Int>>()
     /**
      * A list of single mappings
      */
@@ -76,9 +76,6 @@ internal class ToUnicodeCMap(private var stream: String) : EmbeddedCMap {
 
     private val encodedSB = StringBuilder()
     private val decodedSB = StringBuilder()
-    /*private val IDENTITY = "Identity"
-    private val UCS = "UCS"
-    private val ZERO = "00"*/
     /**
      * Length of current code to be decoded.
      */
@@ -91,6 +88,10 @@ internal class ToUnicodeCMap(private var stream: String) : EmbeddedCMap {
      * StringBuilder to hold map value for code
      */
     private val dstCodeSB = StringBuilder()
+    /**
+     * The longest length of code in the code space range
+     */
+    private var srcCodeMaxLength = 0
 
     /**
      * Class to hold values for a mapping within beginbfrange and endbfrange
@@ -113,13 +114,17 @@ internal class ToUnicodeCMap(private var stream: String) : EmbeddedCMap {
             hiEnd = stream.indexOf('>', hiStart)
             codeSpaceRange.add(
                 arrayOf(
-                    stream.substring(loStart + 1, loEnd), // Exclude '<' and '>'
-                    stream.substring(hiStart + 1, hiEnd) // Exclude '<' and '>'
+                    srcCodeSB.clear().append(stream, loStart + 1, loEnd).hexToInt(), // Exclude '<' and '>'
+                    srcCodeSB.clear().append(stream, hiStart + 1, hiEnd).hexToInt() // Exclude '<' and '>'
                 )
             )
             ptr = hiEnd + 1
             // Skip whitespaces.
             skipWhitespaces()
+
+            val rangeLength = loEnd - loStart - 1
+            if (rangeLength > srcCodeMaxLength)
+                srcCodeMaxLength = rangeLength
         }
 
         var cStart: Int
@@ -204,15 +209,13 @@ internal class ToUnicodeCMap(private var stream: String) : EmbeddedCMap {
 
         extractActualEncoded(encodedSB)
 
-        /*// Add missing "00" in first code
-        if (cMapName.contains(IDENTITY, true) && cMapName.contains(UCS, true)) {
-            encodedSB.insert(0, ZERO)
-        }*/
-
         ptr = 0
         while (ptr < encodedSB.length) {
-            // Determine if next code is within code space range. If not, proceed to next code.
+            // Check if next code is within code space range. If not, proceed to its succeeding or, if possible, combine
+            // it with its succeeding code and check again.
             if (!isNextValid()) {
+                if (codeLength < srcCodeMaxLength)
+                    continue
                 decodedSB.append(MISSING_CHAR)
                 ptr += 2
                 continue
@@ -276,12 +279,12 @@ internal class ToUnicodeCMap(private var stream: String) : EmbeddedCMap {
                     convertCodeToCharAndAppend(dstCodeSB)
                     continue
                 } else {
-                    decodedSB.append(MISSING_CHAR)
-                    ptr += 2
+                    handleNoMapping()
+                    continue
                 }
             } catch (e: NoSuchElementException) {
-                decodedSB.append(MISSING_CHAR)
-                ptr += 2
+                handleNoMapping()
+                continue
             }
         }
 
@@ -292,14 +295,19 @@ internal class ToUnicodeCMap(private var stream: String) : EmbeddedCMap {
     }
 
     private fun isNextValid(): Boolean {
-        codeSpaceRange.forEach {
-            codeLength = it[0].length
-            if (encodedSB.length < (ptr + codeLength))
-                return@forEach
-            srcCodeSB.clear()
-            srcCodeSB.append(encodedSB, ptr, ptr + codeLength)
-            if (isWithinRange(it, srcCodeSB))
-                return true
+        while (true) {
+            codeLength += 2
+            if ((ptr + codeLength) > encodedSB.length) break
+            if (codeLength > srcCodeMaxLength) break
+
+            srcCodeSB.clear().append(encodedSB, ptr, ptr + codeLength)
+            val srcCodeInt = srcCodeSB.hexToInt()
+            if (srcCodeInt == 0)
+                continue
+            codeSpaceRange.forEach { range ->
+                if (srcCodeInt in range[0]..range[1])
+                    return true
+            }
         }
         return false
     }
@@ -320,6 +328,7 @@ internal class ToUnicodeCMap(private var stream: String) : EmbeddedCMap {
             }
         }
         ptr += codeLength
+        codeLength = 0
     }
 
     private fun skipWhitespaces() {
@@ -329,6 +338,15 @@ internal class ToUnicodeCMap(private var stream: String) : EmbeddedCMap {
             else
                 break
         }
+    }
+
+    private fun handleNoMapping() {
+        // If no mapping found, try to decode it together with the next code. If not possible, append missing
+        // character.
+        if (codeLength < srcCodeMaxLength)
+            return
+        decodedSB.append(MISSING_CHAR)
+        ptr += 2
     }
 
     override fun charCodeToUnicode(code: Int): Int? {

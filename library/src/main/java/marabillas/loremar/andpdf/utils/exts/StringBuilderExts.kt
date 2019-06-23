@@ -156,6 +156,9 @@ internal fun StringBuilder.indexOfClosingChar(start: Int): Int {
                     prev = this[i]
                 }
             }
+            c == '\\' && prev == '\\' -> {
+                prev = null
+            }
             else -> {
                 prev = c
             }

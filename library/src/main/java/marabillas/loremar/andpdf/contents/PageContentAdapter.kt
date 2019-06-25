@@ -1,5 +1,6 @@
 package marabillas.loremar.andpdf.contents
 
+import android.graphics.Bitmap
 import marabillas.loremar.andpdf.contents.image.ImageContent
 import marabillas.loremar.andpdf.contents.image.ImageObject
 import marabillas.loremar.andpdf.contents.text.TextContentAdapter
@@ -58,9 +59,11 @@ internal class PageContentAdapter(
                     contents.addAll(textContents)
                 }
                 is ImageObject -> {
-                    contents.add(
-                        ImageContent(next.imageData)
-                    )
+                    if (next.bitmap != null) {
+                        contents.add(
+                            ImageContent(next.bitmap as Bitmap)
+                        )
+                    }
                     i++
                 }
                 // TODO Process other types of objects and add results to contents.

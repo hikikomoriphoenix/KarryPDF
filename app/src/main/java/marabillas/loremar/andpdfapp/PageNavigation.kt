@@ -1,6 +1,5 @@
 package marabillas.loremar.andpdfapp
 
-import android.graphics.BitmapFactory
 import android.graphics.drawable.BitmapDrawable
 import android.support.v7.app.AppCompatActivity
 import android.text.SpannableStringBuilder
@@ -52,8 +51,7 @@ class PageNavigation(private val activity: AppCompatActivity, private val pageVi
                     )
                     imageView.layoutParams = params
                     imageView.adjustViewBounds = true
-                    val bitmap = BitmapFactory.decodeByteArray(content.content, 0, content.content.size)
-                    val drawable = BitmapDrawable(activity.resources, bitmap)
+                    val drawable = BitmapDrawable(activity.resources, content.content)
                     imageView.setImageDrawable(drawable)
                     pageView.addView(imageView)
                 }

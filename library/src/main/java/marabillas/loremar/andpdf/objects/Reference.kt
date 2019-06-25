@@ -11,6 +11,10 @@ internal class Reference(val obj: Int, val gen: Int) : PDFObject {
     fun resolve(referenceResolver: ReferenceResolver? = ObjectIdentifier.referenceResolver): PDFObject? {
         return referenceResolver?.resolveReference(this)
     }
+
+    fun resolveToStream(referenceResolver: ReferenceResolver? = ObjectIdentifier.referenceResolver): Stream? {
+        return referenceResolver?.resolveReferenceToStream(this)
+    }
 }
 
 internal fun String.toReference(): Reference {

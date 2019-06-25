@@ -1,9 +1,6 @@
 package marabillas.loremar.andpdf.contents.image
 
-import marabillas.loremar.andpdf.filters.DecoderFactory
 import marabillas.loremar.andpdf.objects.Dictionary
-import marabillas.loremar.andpdf.objects.Name
-import marabillas.loremar.andpdf.objects.PDFArray
 import marabillas.loremar.andpdf.objects.toDictionary
 import marabillas.loremar.andpdf.utils.exts.trimContainedChars
 import java.nio.CharBuffer
@@ -53,11 +50,11 @@ internal class ImageObjectParser {
                 "Height" to imageDic["H"]
             )
         )
-        imageObject.imageData = decodeEncodedImageData(encoded, encodedDic)
+        // imageObject.bitmap = decodeEncodedImageData(encoded, encodedDic)
         return eiIndex + 1
     }
 
-    private fun decodeEncodedImageData(encoded: ByteArray, encodedDic: Dictionary): ByteArray {
+    /*private fun decodeEncodedImageData(encoded: ByteArray, encodedDic: Dictionary): ByteArray {
         var decoded = encoded
         val filter = encodedDic["Filter"]
         val decoderFactory = DecoderFactory()
@@ -77,5 +74,5 @@ internal class ImageObjectParser {
             decoded = decoder?.decode(decoded) ?: encoded
         }
         return decoded
-    }
+    }*/
 }

@@ -76,15 +76,35 @@ internal class TextContentAdapter {
 
                 // Style with color
                 if (line[j].rgb[0] != -1f) {
-                    val red = Math.round(line[j].rgb[0] * 255)
-                    val green = Math.round(line[j].rgb[1] * 255)
-                    val blue = Math.round(line[j].rgb[2] * 255)
+                    darkenBrighFontColors(line[j].rgb)
+                    val red = Math.round(line[j].rgb[0] * 255f)
+                    val green = Math.round(line[j].rgb[1] * 255f)
+                    val blue = Math.round(line[j].rgb[2] * 255f)
                     val colorSpan = ForegroundColorSpan(Color.rgb(red, green, blue))
                     s.setSpan(colorSpan, 0, s.length, SpannableString.SPAN_INCLUSIVE_EXCLUSIVE)
                 }
 
                 spanBuilder.append(s)
             }
+        }
+    }
+
+    private fun darkenBrighFontColors(rgb: FloatArray) {
+        if (rgb[0] > 0.5f && rgb[1] > 0.5f && rgb[2] > 0.5f) {
+            // Get the largest value. The amount of darkening will be based on this.
+            var max = 0
+            rgb.forEachIndexed { i, c ->
+                if (c > rgb[max])
+                    max = i
+            }
+            // Get darken rate based on value. The brighter the value, the darker it will become, wherein a value of 1
+            // will be darkened to 0%.
+            var darkenRate = (1f - rgb[max]) / 0.5f
+            // Allow not more than 50% darken rate.
+            if (darkenRate > 0.5f) darkenRate = 0.5f
+            rgb[0] *= darkenRate
+            rgb[1] *= darkenRate
+            rgb[2] *= darkenRate
         }
     }
 

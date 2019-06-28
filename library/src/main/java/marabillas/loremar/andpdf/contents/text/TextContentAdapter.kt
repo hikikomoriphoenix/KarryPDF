@@ -133,7 +133,7 @@ internal class TextContentAdapter {
         }
         s.forEachIndexed { i, c ->
             if (isIndent) {
-                if (c != ' ') {
+                if (!isSpace(c)) {
                     isIndent = false
                     return@forEachIndexed
                 } else {
@@ -141,13 +141,43 @@ internal class TextContentAdapter {
                 }
             }
 
-            if (!isSpace && c == ' ') {
+            if (!isSpace && isSpace(c)) {
                 isSpace = true
-            } else if (isSpace && c == ' ') {
+            } else if (isSpace && isSpace(c)) {
                 s.deleteCharAt(i)
-            } else if (isSpace && c != ' ') {
+            } else if (isSpace && !isSpace(c)) {
                 isSpace = false
             }
+        }
+    }
+
+    private fun isSpace(c: Char): Boolean {
+        // Reference: http://jkorpela.fi/chars/spaces.html
+        return when (c) {
+            ' ' -> true
+            '\u00A0' -> true
+            '\u1680' -> true
+            '\u180E' -> true
+            '\u2000' -> true
+            '\u2001' -> true
+            '\u2002' -> true
+            '\u2003' -> true
+            '\u2004' -> true
+            '\u2005' -> true
+            '\u2006' -> true
+            '\u2007' -> true
+            '\u2008' -> true
+            '\u2009' -> true
+            '\u200A' -> true
+            '\u200B' -> true
+            '\u202F' -> true
+            '\u205F' -> true
+            '\u3000' -> true
+            '\uFEFF' -> true
+            '\u0009' -> true
+            '\u200C' -> true
+            '\u2060' -> true
+            else -> false
         }
     }
 }

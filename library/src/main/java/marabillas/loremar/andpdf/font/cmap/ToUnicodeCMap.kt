@@ -302,7 +302,7 @@ internal class ToUnicodeCMap(private var stream: String) : EmbeddedCMap {
 
             srcCodeSB.clear().append(encodedSB, ptr, ptr + codeLength)
             val srcCodeInt = srcCodeSB.hexToInt()
-            if (srcCodeInt == 0)
+            if (srcCodeInt == 0 && codeLength < srcCodeMaxLength)
                 continue
             codeSpaceRange.forEach { range ->
                 if (srcCodeInt in range[0]..range[1])

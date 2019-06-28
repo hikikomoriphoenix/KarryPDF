@@ -81,7 +81,7 @@ internal class TextObjectParser {
                             td[1] = td[1] * (-1)
                         }
                     } else if (s[pos] == 'f') {
-                        tf.clear().append(s, operandsIndices[0], pos - 2)
+                        tf.clear().append(s, operandsIndices[0] + 1/* Exclude (/) delimiter */, pos - 2)
                     } else if (s[pos] == 'D') {
                         positionText(s)
                         tl = -td[1]

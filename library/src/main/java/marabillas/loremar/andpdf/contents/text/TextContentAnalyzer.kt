@@ -127,7 +127,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                 val tj = textElem.tj
 
                 sb.clear()
-                sb.append(textElem.tf, 1, textElem.tf.indexOf(' '))
+                sb.append(textElem.tf, 0, textElem.tf.indexOf(' '))
                 val widths = fonts[sb.toString()]?.widths
 
                 sb.clear()
@@ -191,7 +191,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
             textObj.forEach forEachTextElem@{ textElem ->
                 // Get font key
                 sb.clear()
-                sb.append(textElem.tf, 1, textElem.tf.indexOf(' '))
+                sb.append(textElem.tf, 0, textElem.tf.indexOf(' '))
                 val f = sb.toString()
 
                 // Existing space widths from fonts array will be used
@@ -251,7 +251,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
             textObj.forEachIndexed { index, textElement ->
                 // Get TextElement's font's space width
                 sb.clear()
-                sb.append(textElement.tf, 1, textElement.tf.indexOf(' '))
+                sb.append(textElement.tf, 0, textElement.tf.indexOf(' '))
                 val spaceWidth = spaceWidths[sb.toString()] ?: 0f
 
                 if (textElement.tj is PDFArray) {

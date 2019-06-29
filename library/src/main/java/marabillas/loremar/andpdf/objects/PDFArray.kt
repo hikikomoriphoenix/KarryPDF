@@ -102,10 +102,12 @@ internal fun StringBuilder.toPDFArray(secondary: StringBuilder, resolveReference
             // Check for a Reference Object.
             if (this[i].isDigit()) {
                 val firstSpace = this.indexOf(' ', i)
-                val secondSpace = this.indexOf(' ', firstSpace + 1)
-                if (this[secondSpace + 1] == 'R') {
-                    isReference = true
-                    i = secondSpace + 2
+                if (firstSpace != -1) {
+                    val secondSpace = this.indexOf(' ', firstSpace + 1)
+                    if (secondSpace != -1 && this[secondSpace + 1] == 'R') {
+                        isReference = true
+                        i = secondSpace + 2
+                    }
                 }
             }
 

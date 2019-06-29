@@ -35,9 +35,8 @@ internal class FontDecoder(private val pageObjects: ArrayList<PageObject>, priva
                                             p.original
                                         )
                                     }
-                                } else {
-                                    val n = p as Numeric
-                                    mainSB.append(n.value.toFloat())
+                                } else if (p is Numeric) {
+                                    mainSB.append(p.value.toFloat())
                                 }
                             }
                             mainSB.append(']')

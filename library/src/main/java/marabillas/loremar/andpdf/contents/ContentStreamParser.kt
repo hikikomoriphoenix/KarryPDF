@@ -5,6 +5,9 @@ import marabillas.loremar.andpdf.contents.text.TextObject
 import marabillas.loremar.andpdf.contents.text.TextObjectParser
 import marabillas.loremar.andpdf.exceptions.UnsupportedPDFElementException
 import marabillas.loremar.andpdf.objects.toName
+import marabillas.loremar.andpdf.utils.exts.indexOfClosingChar
+import marabillas.loremar.andpdf.utils.exts.isEnclosingAt
+import marabillas.loremar.andpdf.utils.exts.isWhiteSpaceAt
 import marabillas.loremar.andpdf.utils.exts.toDouble
 import java.util.*
 import kotlin.collections.ArrayList
@@ -166,9 +169,16 @@ internal class ContentStreamParser {
                 || sb[i] == 'K'
                 || sb[i] == 'k'
             // TODO Add BI
-            )
+            ) {
                 return i
-
+            } else if (sb.isEnclosingAt(i)) {
+                i = sb.indexOfClosingChar(i)
+            } else if (sb[i] == '/') {
+                i++
+                while (i < sb.length && !sb.isEnclosingAt(i) && !sb.isWhiteSpaceAt(i) && sb[i] != '/')
+                    i++
+                continue
+            }
             i++
         }
         return i

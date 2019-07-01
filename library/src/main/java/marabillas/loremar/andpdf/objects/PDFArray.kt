@@ -101,9 +101,9 @@ internal fun StringBuilder.toPDFArray(secondary: StringBuilder, resolveReference
             var isReference = false
             // Check for a Reference Object.
             if (this[i].isDigit()) {
-                val firstSpace = this.indexOf(' ', i)
+                val firstSpace = this.indexOfSpaceAfterNumberStartingAt(i)
                 if (firstSpace != -1) {
-                    val secondSpace = this.indexOf(' ', firstSpace + 1)
+                    val secondSpace = this.indexOfSpaceAfterNumberStartingAt(firstSpace + 1)
                     if (secondSpace != -1 && this[secondSpace + 1] == 'R') {
                         isReference = true
                         i = secondSpace + 2
@@ -134,4 +134,25 @@ internal fun StringBuilder.toPDFArray(secondary: StringBuilder, resolveReference
     }
 
     return PDFArray(array)
+}
+
+private fun StringBuilder.indexOfSpaceAfterNumberStartingAt(startIndex: Int): Int {
+    var i = startIndex
+    while (true) {
+        if (this.outOfBoundsAt(i))
+            return -1
+        else if (i != startIndex && this.foundSpaceAt(i))
+            return i
+        else if (this[i].isDigit())
+            i++
+        else return -1
+    }
+}
+
+private fun StringBuilder.outOfBoundsAt(i: Int): Boolean {
+    return i >= this.length
+}
+
+private fun StringBuilder.foundSpaceAt(i: Int): Boolean {
+    return this[i] == ' '
 }

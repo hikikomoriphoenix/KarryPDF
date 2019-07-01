@@ -30,7 +30,7 @@ internal open class Indirect(private val file: RandomAccessFile, private val sta
             val s = " ${file.readLine()}"
             if (s.endsWith("stream", true)) return "pdf_stream_content"
             sb.append(s)
-            if (s.endsWith("endobj", true)) break
+            if (s.contains("endobj", true)) break
         }
         val s = sb.toString()
         return s.substringAfter("obj").substringBeforeLast("endobj").trim()

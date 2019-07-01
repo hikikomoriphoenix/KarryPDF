@@ -7,18 +7,19 @@ import java.math.BigInteger
  */
 internal class ASCIIHex : Decoder {
     override fun decode(encoded: ByteArray): ByteArray {
-        if (encoded.size % 2 != 0) throw IllegalArgumentException("Hex string to decode is not divisible by 2")
-
         val bytes = ByteArray(encoded.size / 2)
         var i = 0
-        while (i + 1 < encoded.size) {
+        while (i < encoded.size) {
             if (encoded[i].toChar() == ' ' || encoded[i].toChar() == '\n' || encoded[i].toChar() == '\r') {
                 i++
                 continue
             }
 
-            val c1 = encoded[i++].toChar().toLowerCase()
-            val c2 = encoded[i++].toChar().toLowerCase()
+            val c1 = encoded[i].toChar().toLowerCase()
+            val c2 = if (i++ == encoded.lastIndex)
+                '0'
+            else
+                encoded[i].toChar().toLowerCase()
             bytes[(i - 2) / 2] = hexToByteMap[c1]?.get(c2) ?: 0.toByte()
         }
 

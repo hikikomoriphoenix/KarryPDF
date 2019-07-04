@@ -176,8 +176,8 @@ internal fun StringBuilder.isWhiteSpaceAt(i: Int): Boolean {
     return (this[i] == ' ' || this[i] == '\n' || this[i] == '\r')
 }
 
-internal fun StringBuilder.resolveEscapedSequences() {
-    var i = 0
+internal fun StringBuilder.resolveEscapedSequences(startIndex: Int = 0) {
+    var i = startIndex
     while (i < this.length) {
         if (this[i] == '\\' && (i + 1 < this.length)) {
             when (this[i + 1]) {

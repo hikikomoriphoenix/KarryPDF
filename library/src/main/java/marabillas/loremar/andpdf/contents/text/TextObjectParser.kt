@@ -6,7 +6,7 @@ import marabillas.loremar.andpdf.objects.toPDFObject
 import marabillas.loremar.andpdf.objects.toPDFString
 import marabillas.loremar.andpdf.utils.exts.*
 
-internal class TextObjectParser {
+internal class TextObjectParser(private val obj: Int, private val gen: Int) {
     private val operandsIndices = IntArray(6)
     private val operand = StringBuilder()
     private var pos = 0
@@ -111,7 +111,7 @@ internal class TextObjectParser {
                         tjEnd = pos - 1
                     operand.clear().append(s, operandsIndices[2], tjEnd)
                     // TODO Support Tw(Word Spacing) and Tc(Character Spacing)
-                    addTextElement(textObj, operand.toPDFObject() ?: "()".toPDFString(), ctm)
+                    addTextElement(textObj, operand.toPDFObject(obj, gen) ?: "()".toPDFString(), ctm)
                     operandsCount = 0
                 } else if (s[pos] == '\'') {
                     // Perform T*
@@ -157,7 +157,7 @@ internal class TextObjectParser {
         if (s.isUnEnclosingAt(tjEnd))
             tjEnd = pos - 1
         operand.clear().append(s, operandsIndices[0], tjEnd)
-        addTextElement(textObj, operand.toPDFObject() ?: "()".toPDFString(), ctm)
+        addTextElement(textObj, operand.toPDFObject(obj, gen) ?: "()".toPDFString(), ctm)
     }
 
     private fun addTextElement(textObj: TextObject, tj: PDFObject, ctm: FloatArray) {

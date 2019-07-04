@@ -40,7 +40,7 @@ internal class FontDecoder(private val pageObjects: ArrayList<PageObject>, priva
                                 }
                             }
                             mainSB.append(']')
-                            newTj = mainSB.toPDFArray(secondarySB.clear())
+                            newTj = mainSB.toPDFArray(secondarySB.clear(), -1, 0)
                         }
                         is PDFString -> {
                             if (cmap != null) {

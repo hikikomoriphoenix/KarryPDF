@@ -45,9 +45,15 @@ internal fun String.toDictionary(resolveReferences: Boolean = false): Dictionary
     return Dictionary(entries)
 }
 
-internal fun StringBuilder.toDictionary(secondary: StringBuilder, resolveReferences: Boolean = false): Dictionary {
+internal fun StringBuilder.toDictionary(
+    secondary: StringBuilder,
+    obj: Int,
+    gen: Int,
+    resolveReferences: Boolean = false
+): Dictionary {
     val entries = HashMap<String, PDFObject?>()
     var i = this.indexOf('/')
+    if (i == -1) return Dictionary(entries)
     i++
     while (i < this.length) {
         // Locate next key position and length
@@ -74,6 +80,8 @@ internal fun StringBuilder.toDictionary(secondary: StringBuilder, resolveReferen
         val valueIndex = i
         if (this.isEnclosingAt(i))
             i = this.indexOfClosingChar(i)
+        else if (this[i] == '/')
+            i++
         i = this.indexOf('/', i)
         var valueLength: Int
         if (i == -1) {
@@ -86,7 +94,7 @@ internal fun StringBuilder.toDictionary(secondary: StringBuilder, resolveReferen
         // Store value in a StringBuilder and remove whitespaces and closing '>> for dictionary.
         secondary.clear()
         secondary.append(this, valueIndex, valueIndex + valueLength)
-        var hasClosing = true
+        var hasClosing = (valueIndex + valueLength) == this.length
         while (true) {
             if (secondary.last() == ' ' || secondary.last() == '\n' || secondary.last() == '\r')
                 secondary.deleteCharAt(secondary.lastIndex)
@@ -97,7 +105,7 @@ internal fun StringBuilder.toDictionary(secondary: StringBuilder, resolveReferen
         }
 
         // Add entry
-        entries[this.substring(keyIndex, keyIndex + keyLength)] = secondary.toPDFObject(resolveReferences)
+        entries[this.substring(keyIndex, keyIndex + keyLength)] = secondary.toPDFObject(obj, gen, resolveReferences)
 
         i++
     }

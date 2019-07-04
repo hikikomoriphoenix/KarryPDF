@@ -73,7 +73,12 @@ internal fun String.toPDFArray(resolveReferences: Boolean = false): PDFArray {
     return PDFArray(array)
 }
 
-internal fun StringBuilder.toPDFArray(secondary: StringBuilder, resolveReferences: Boolean = false): PDFArray {
+internal fun StringBuilder.toPDFArray(
+    secondary: StringBuilder,
+    obj: Int,
+    gen: Int,
+    resolveReferences: Boolean = false
+): PDFArray {
     val array = ArrayList<PDFObject?>()
 
     // Remove enclosing '[' and ']'
@@ -129,7 +134,7 @@ internal fun StringBuilder.toPDFArray(secondary: StringBuilder, resolveReference
         secondary.clear()
         secondary.append(this, entryIndex, i)
         secondary.trimEndOfContainedChars()
-        array.add(secondary.toPDFObject(resolveReferences))
+        array.add(secondary.toPDFObject(obj, gen, resolveReferences))
         secondary.clear()
     }
 

@@ -23,16 +23,19 @@ internal open class Indirect(private val file: RandomAccessFile, private val sta
         gen = s.substringAfter(' ').substringBefore(' ').toInt()
     }
 
-    fun extractContent(): String {
+    fun extractContent(): StringBuilder {
         file.seek(start)
         val sb = StringBuilder()
         while (true) {
             val s = " ${file.readLine()}"
-            if (s.endsWith("stream", true)) return "pdf_stream_content"
+            if (s.endsWith("stream", true)) return sb.clear().append("pdf_stream_content")
             sb.append(s)
             if (s.contains("endobj", true)) break
         }
-        val s = sb.toString()
-        return s.substringAfter("obj").substringBeforeLast("endobj").trim()
+        val objIndex = sb.indexOf("obj")
+        val endobjIndex = sb.lastIndexOf("endobj")
+        sb.delete(endobjIndex, sb.length)
+        sb.delete(0, objIndex + 3)
+        return sb
     }
 }

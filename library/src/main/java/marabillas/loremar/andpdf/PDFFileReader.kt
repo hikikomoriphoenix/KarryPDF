@@ -11,6 +11,8 @@ internal class PDFFileReader(private val file: RandomAccessFile) {
     private var trailerPos: Long? = null
     private var isLinearized: Boolean? = null
 
+    private val stringBuilder = StringBuilder()
+
     fun isLinearized(): Boolean {
         if (isLinearized == null) {
             file.seek(0)
@@ -20,7 +22,8 @@ internal class PDFFileReader(private val file: RandomAccessFile) {
                 beginning = file.filePointer
                 s = file.readLine()
             }
-            val firstObj = getIndirectObject(beginning).extractContent().toPDFObject()
+            val indObj = getIndirectObject(beginning)
+            val firstObj = indObj.extractContent().toPDFObject(indObj.obj ?: -1, indObj.gen)
             if (firstObj is Dictionary) {
                 val linearized = firstObj["Linearized"]
                 if (linearized != null) {
@@ -205,7 +208,7 @@ internal class PDFFileReader(private val file: RandomAccessFile) {
             s = file.readLine()
         } while (!s.startsWith("trailer"))
 
-        val trailer = getDictionary(p, false)
+        val trailer = getDictionary(p, -1, 0, false)
 
         // Parse any existing cross reference stream
         val xRefStm = trailer["XRefStm"] as Numeric?
@@ -258,7 +261,7 @@ internal class PDFFileReader(private val file: RandomAccessFile) {
         val trailerPos = getTrailerPosition()
         return if (trailerPos != null) {
             file.seek(trailerPos)
-            val dictionary = getDictionary(file.filePointer, resolveReferences)
+            val dictionary = getDictionary(file.filePointer, -1, 0, resolveReferences)
             if (resolveReferences) dictionary.resolveReferences()
             createTrailerHashMap(dictionary)
         } else {
@@ -285,27 +288,50 @@ internal class PDFFileReader(private val file: RandomAccessFile) {
         return Indirect(file, pos)
     }
 
-    fun getDictionary(pos: Long, resolveReferences: Boolean = false): Dictionary {
+    fun getDictionary(pos: Long, obj: Int, gen: Int, resolveReferences: Boolean = false): Dictionary {
         file.seek(pos)
-        var s: String
-        do {
-            s = file.readLine()
-        } while (!s.contains("<<") || s.startsWith('%'))
+        goToDictionaryStart()
+        extractDictionary()
+        return stringBuilder.toPDFObject(obj, gen, resolveReferences) as Dictionary
+    }
 
-        val sb = StringBuilder("<<").append(s.substringAfter("<<"))
-
-        var open = 0
-        var close = 0
+    private fun goToDictionaryStart() {
+        var isComment = false
+        var isLineStart = true
         while (true) {
-            open += s.split("<<").count() - 1
-            close += s.split(">>").count() - 1
-            if (close >= open) break
-            s = " ${file.readLine()}"
-            sb.append(s)
+            val c = file.readByte().toChar()
+            if (isLineStart) {
+                isComment = c == '%'
+                isLineStart = false
+            }
+            if (isComment)
+                continue
+            if (c == '\n' || c == '\r')
+                isLineStart = true
+            else if (c == '<' && !isComment) {
+                val c2 = file.readByte().toChar()
+                if (c2 == '<')
+                    break
+            }
         }
+    }
 
-        s = EnclosedObjectExtractor(sb.toString()).extract()
-        return s.toDictionary(resolveReferences)
+    private fun extractDictionary() {
+        stringBuilder.clear().append("<<")
+        var unbalance = 1
+        while (unbalance != 0) {
+            var c = file.readByte().toChar()
+            if (c == '<') {
+                stringBuilder.append(c)
+                c = file.readByte().toChar()
+                if (c == '<') unbalance++
+            } else if (c == '>') {
+                stringBuilder.append(c)
+                c = file.readByte().toChar()
+                if (c == '>') unbalance--
+            }
+            stringBuilder.append(c)
+        }
     }
 
     fun getObjectStream(pos: Long): ObjectStream {

@@ -5,15 +5,16 @@ import marabillas.loremar.andpdf.contents.ContentStreamParser
 import marabillas.loremar.andpdf.contents.PageContent
 import marabillas.loremar.andpdf.contents.PageContentAdapter
 import marabillas.loremar.andpdf.contents.XObjectsResolver
+import marabillas.loremar.andpdf.encryption.Decryptor
 import marabillas.loremar.andpdf.exceptions.InvalidDocumentException
 import marabillas.loremar.andpdf.exceptions.NoDocumentException
-import marabillas.loremar.andpdf.exceptions.UnsupportedPDFElementException
 import marabillas.loremar.andpdf.font.Font
 import marabillas.loremar.andpdf.font.FontDecoder
 import marabillas.loremar.andpdf.font.FontMappings
 import marabillas.loremar.andpdf.font.FontName
 import marabillas.loremar.andpdf.objects.*
 import marabillas.loremar.andpdf.utils.TimeCounter
+import marabillas.loremar.andpdf.utils.exts.containedEqualsWith
 import java.io.RandomAccessFile
 
 class AndPDF {
@@ -22,12 +23,13 @@ class AndPDF {
     internal val pages: ArrayList<Reference> = ArrayList()
     private val referenceResolver = ReferenceResolverImpl()
 
-    fun loadDocument(file: RandomAccessFile): AndPDF {
+    fun loadDocument(file: RandomAccessFile, password: String = ""): AndPDF {
         TimeCounter.reset()
 
         val fileReader = PDFFileReader(file)
         this.fileReader = fileReader
         ObjectIdentifier.referenceResolver = referenceResolver
+        PDFObjectAdapter.referenceResolver = referenceResolver
 
         objects = if (fileReader.isLinearized()) {
             println("Detected linearized PDF document")
@@ -42,9 +44,11 @@ class AndPDF {
         size = (trailerEntries["Size"] as Numeric).value.toInt()
         documentCatalog = trailerEntries["Root"] as Dictionary
         info = trailerEntries["Info"] as Dictionary?
-        if (trailerEntries["Encrypt"] != null) throw UnsupportedPDFElementException(
-            "AndPDF library does not support encrypted pdf files yet."
-        )
+        val id = trailerEntries["ID"] as PDFArray?
+        val encrypt = trailerEntries["Encrypt"] as Dictionary?
+        if (encrypt is Dictionary) {
+            Decryptor.instance = Decryptor(encrypt, id, password)
+        }
 
         val pageTree = (documentCatalog?.resolveReferences()?.get("Pages") ?: throw InvalidDocumentException(
             "This document does not have a root page tree."
@@ -75,8 +79,8 @@ class AndPDF {
                 return objStm?.getObject(obj.index)
             } else {
                 val content = fileReader.getIndirectObject(obj.pos).extractContent()
-                if (content == "" || content == "null") return null
-                return content.toPDFObject(false) ?: reference
+                if (content.isEmpty() || content.containedEqualsWith('n', 'u', 'l', 'l')) return null
+                return content.toPDFObject(reference.obj, reference.gen, false) ?: reference
             }
         }
 
@@ -170,7 +174,7 @@ class AndPDF {
             println("Stream.decodeEncodedStream -> ${TimeCounter.getTimeElapsed()} ms")
 
             TimeCounter.reset()
-            val pageObjs = ContentStreamParser().parse(String(data))
+            val pageObjs = ContentStreamParser().parse(String(data), ref.obj, ref.gen)
             println("ContentStreamParser.parse -> ${TimeCounter.getTimeElapsed()} ms")
 
             TimeCounter.reset()

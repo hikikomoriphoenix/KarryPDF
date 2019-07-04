@@ -1,6 +1,7 @@
 package marabillas.loremar.andpdf.objects
 
 import marabillas.loremar.andpdf.filters.DecoderFactory
+import marabillas.loremar.andpdf.utils.exts.resolveEscapedSequences
 import java.math.BigInteger
 
 internal class PDFString(val original: String, val value: String) : Any(), PDFObject {
@@ -66,25 +67,7 @@ internal fun StringBuilder.toPDFString(): PDFString {
             this.delete(new, new + 1)
             this.delete(this.lastIndex, this.length)
 
-            var i = new
-            while (i <= this.lastIndex) {
-                if (this[i] == '\\') {
-                    val digits = CharArray(3)
-                    var dCounts = 0
-                    for (j in 0..2) {
-                        if (this[j].isDigit()) {
-                            digits[j] = this[i + 1 + j]
-                            dCounts++
-                        } else break
-                    }
-                    if (dCounts > 0) {
-                        val int = Integer.parseInt(String(digits, 0, dCounts), 8)
-                        this.delete(i, i + dCounts)
-                        this.insert(i, int.toChar())
-                    }
-                }
-                i++
-            }
+            this.resolveEscapedSequences(new)
 
             // original = substring containing original string
             // value = substring containing modified string with deleted enclosing parentheses

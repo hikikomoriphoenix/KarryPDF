@@ -21,7 +21,7 @@ internal class ContentStreamParser {
     private val gsStack = Stack<GraphicsState>()
     private val gsHolders = mutableListOf<GraphicsState>()
 
-    fun parse(streamData: String): ArrayList<PageObject> {
+    fun parse(streamData: String, obj: Int, gen: Int): ArrayList<PageObject> {
         sb.clear().append(streamData)
 
         // Initialize graphics state stack
@@ -33,8 +33,8 @@ internal class ContentStreamParser {
         println("ContentStreamParser.parse begins")
         //println("stream->$streamData")
         val pageObjects = ArrayList<PageObject>()
-        val textObjectParser = TextObjectParser()
-        val imageObjectParser = ImageObjectParser()
+        val textObjectParser = TextObjectParser(obj, gen)
+        val imageObjectParser = ImageObjectParser(obj, gen)
         val tf = StringBuilder()
         var i = 0
 

@@ -9,10 +9,14 @@ internal class PDFObjectAdapter {
     companion object {
         var referenceResolver: ReferenceResolver? = null
         private val NUMERIC_PATTERN = "-?\\d*.?\\d+".toRegex()
-        private val auxiliaryStringBuilder = StringBuilder()
+        private var auxiliaryStringBuilder = StringBuilder()
 
-        fun getPDFObject(sb: StringBuilder, resolverReferences: Boolean = false): PDFObject? {
+        fun getPDFObject(sb: StringBuilder, resolveReferences: Boolean = false, obj: Int, gen: Int): PDFObject? {
             sb.trimContainedChars()
+
+            if (sb == auxiliaryStringBuilder) {
+                auxiliaryStringBuilder = StringBuilder()
+            }
 
             return when {
                 sb.containedEqualsWith('t', 'r', 'u', 'e') -> PDFBoolean(true)
@@ -20,12 +24,12 @@ internal class PDFObjectAdapter {
                 NUMERIC_PATTERN.matches(sb) -> sb.toNumeric()
                 sb.isEnclosedWith('(', ')') -> sb.toPDFString()
                 sb.isEnclosedWith(arrayOf('<', '<'), arrayOf('>', '>')) ->
-                    sb.toDictionary(auxiliaryStringBuilder, resolverReferences)
+                    sb.toDictionary(auxiliaryStringBuilder, obj, gen, resolveReferences)
                 sb.isEnclosedWith('<', '>') -> sb.toPDFString()
                 sb.startsWith("/") -> sb.toName()
-                sb.isEnclosedWith('[', ']') -> sb.toPDFArray(auxiliaryStringBuilder, resolverReferences)
+                sb.isEnclosedWith('[', ']') -> sb.toPDFArray(auxiliaryStringBuilder, obj, gen, resolveReferences)
                 Reference.REGEX.matches(sb) -> {
-                    if (resolverReferences) {
+                    if (resolveReferences) {
                         if (referenceResolver == null)
                             throw NoReferenceResolverException()
                         else
@@ -41,6 +45,6 @@ internal class PDFObjectAdapter {
     }
 }
 
-internal fun StringBuilder.toPDFObject(resolveReferences: Boolean = false): PDFObject? {
-    return PDFObjectAdapter.getPDFObject(this, resolveReferences)
+internal fun StringBuilder.toPDFObject(obj: Int, gen: Int, resolveReferences: Boolean = false): PDFObject? {
+    return PDFObjectAdapter.getPDFObject(this, resolveReferences, obj, gen)
 }

@@ -8,11 +8,11 @@ internal class Reference(val obj: Int, val gen: Int) : PDFObject {
         val REGEX = "^\\d+ \\d+ R\$".toRegex()
     }
 
-    fun resolve(referenceResolver: ReferenceResolver? = ObjectIdentifier.referenceResolver): PDFObject? {
+    fun resolve(referenceResolver: ReferenceResolver? = PDFObjectAdapter.referenceResolver): PDFObject? {
         return referenceResolver?.resolveReference(this)
     }
 
-    fun resolveToStream(referenceResolver: ReferenceResolver? = ObjectIdentifier.referenceResolver): Stream? {
+    fun resolveToStream(referenceResolver: ReferenceResolver? = PDFObjectAdapter.referenceResolver): Stream? {
         return referenceResolver?.resolveReferenceToStream(this)
     }
 }

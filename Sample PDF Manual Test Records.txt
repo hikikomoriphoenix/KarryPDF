@@ -1,0 +1,46 @@
+Title: Pro Git Second Edition
+Author/Publisher: Scott Chacon and Ben Straub
+File: progit.pdf
+Bugs:
+- Very slow performance
+- Font colors not shown
+
+Title: Heartfulness Magazine Issue 10
+Author/Publisher: heartfulness.org
+File: Heartfulness-Magazine-Issue-10.pdf
+Bugs: 
+- None. Except that all pages are in pictures with text. Perhaps this can be solved by getting Alternative Text for page
+
+Title: AM031
+Author/Publisher: Audiation Magazine
+File: AM031.pdf
+Bugs:
+- None. Except that all pages are in pictures with text. Perhaps this can be solved by getting Alternative Text for page
+
+Title: An Introduction to Accounting Theory
+Author/Publisher: Gabriel Donleavy
+File: an-introduction-to-accounting-theory.pdf
+Bugs:
+- missing images
+- missing characters at page 15 and other several pages
+
+Title: Artificial intelligence - Agent Behaviour
+Author/Publisher: William John Teahan
+File: artificial-intelligence-agent-behaviour-i.pdf
+Bugs:
+- very minor issues with character spacing
+- Error at page 81, issue with the Flate decoding
+
+Title: Bridging gender gaps?
+Author/Publisher: Leonardo Gasparini, Mariana Marchionni
+File: Bridging_Gender_Gaps.pdf
+Bugs:
+- Incoherent character spacing. Affected pages: All
+- Graphs not rendered. Affected pages: 133, etc.
+
+Title: Automation and Robotics
+Author/Publisher: Dr. Miltiadis A. Boboulos
+File: automation-and-robotics.pdf
+Bugs:
+- Incoherent character spacing. Affected pages: All
+- missing images

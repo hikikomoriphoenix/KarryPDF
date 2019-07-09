@@ -35,12 +35,19 @@ Title: Bridging gender gaps?
 Author/Publisher: Leonardo Gasparini, Mariana Marchionni
 File: Bridging_Gender_Gaps.pdf
 Bugs:
-- Incoherent character spacing. Affected pages: All
+- Innacurate character spacing. Affected pages: All
 - Graphs not rendered. Affected pages: 133, etc.
 
 Title: Automation and Robotics
 Author/Publisher: Dr. Miltiadis A. Boboulos
 File: automation-and-robotics.pdf
 Bugs:
-- Incoherent character spacing. Affected pages: All
+- Innacurate character spacing. Affected pages: All
 - missing images
+
+Title: Document Management - Portable Document Format - Part 1: PDF 1.7
+Author/Publisher: Adobe Systems Incorporated
+File: PDF32000_2008.pdf
+Bugs:
+- Innacurate character spacing
+- Takes a long time to load document

@@ -9,7 +9,6 @@ import kotlin.math.min
 internal class Decryptor(dictionary: Dictionary, idArray: PDFArray?, password: String) {
     private var encryptionKey: ByteArray
     private val securityHandler: SecurityHandler
-    private val md5: MessageDigest = MessageDigest.getInstance("MD5")
     private val rc4 = RC4()
     private var useAES = false
 
@@ -48,7 +47,7 @@ internal class Decryptor(dictionary: Dictionary, idArray: PDFArray?, password: S
         newKey[newKey.size - 2] = (gen and 0xff).toByte()
         newKey[newKey.size - 1] = (gen shr 8 and 0xff).toByte()
 
-        md5.reset()
+        val md5 = MessageDigest.getInstance("MD5")
         md5.update(newKey)
 
         if (useAES) {
@@ -58,7 +57,7 @@ internal class Decryptor(dictionary: Dictionary, idArray: PDFArray?, password: S
         val digestedKey = md5.digest()
         val length = min(newKey.size, 16)
         val finalKey = ByteArray(length)
-        digestedKey.copyInto(finalKey)
+        digestedKey.copyInto(finalKey, 0, 0, length)
         return finalKey
     }
 

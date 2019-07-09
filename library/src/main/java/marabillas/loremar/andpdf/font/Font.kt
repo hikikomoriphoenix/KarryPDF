@@ -2,12 +2,13 @@ package marabillas.loremar.andpdf.font
 
 import android.graphics.Typeface
 import android.support.v4.util.SparseArrayCompat
+import android.util.Log
 import marabillas.loremar.andpdf.font.cmap.*
 import marabillas.loremar.andpdf.font.encoding.*
 import marabillas.loremar.andpdf.font.ttf.TTFParser
 import marabillas.loremar.andpdf.objects.*
 
-internal class Font() {
+internal class Font(private val dictionary: Dictionary, private val referenceResolver: ReferenceResolver) {
     var typeface: Typeface = FontMappings[FontName.DEFAULT]
         private set
     var cmap: CMap? = null
@@ -15,7 +16,12 @@ internal class Font() {
     var widths = SparseArrayCompat<Float>()
         private set
 
-    constructor(dictionary: Dictionary, referenceResolver: ReferenceResolver) : this() {
+    private var encodingArray = SparseArrayCompat<String>()
+    private var fontFile1: Reference? = null
+    private var fontFile2: Reference? = null
+    private var fontFile3: Reference? = null
+
+    init {
         dictionary.resolveReferences()
         val fontDescriptor = dictionary["FontDescriptor"]
         // Get type of font
@@ -27,12 +33,12 @@ internal class Font() {
         // Get cmap of character code to unicode mappings
         val toUnicode = dictionary["ToUnicode"]
 
-        processDictionaryEntries(fontDescriptor, subtype, baseFont, encoding, toUnicode, referenceResolver)
+        processDictionaryEntries(fontDescriptor, subtype, baseFont, encoding, toUnicode)
 
         if (subtype is Name && subtype.value != "Type0") {
-            setupSimpleFont(dictionary, fontDescriptor, subtype, baseFont, encoding, referenceResolver)
+            setupSimpleFont(dictionary, fontDescriptor, subtype, baseFont, encoding)
         } else {
-            setupCompositeFont(dictionary, encoding, referenceResolver)
+            setupCompositeFont(dictionary, encoding)
         }
     }
 
@@ -41,8 +47,7 @@ internal class Font() {
         subtype: PDFObject?,
         baseFont: PDFObject?,
         encoding: PDFObject?,
-        toUnicode: PDFObject?,
-        referenceResolver: ReferenceResolver
+        toUnicode: PDFObject?
     ) {
         // FontDescriptor
         if (fontDescriptor is Dictionary) {
@@ -71,12 +76,20 @@ internal class Font() {
 
         // ToUnicode
         if (toUnicode is Reference) {
+            getToUnicodeCMap(toUnicode)
+        }
+    }
+
+    private fun getToUnicodeCMap(toUnicode: Reference) {
+        try {
             val stream = referenceResolver.resolveReferenceToStream(toUnicode)
             val b = stream?.decodeEncodedStream()
             b?.let {
                 cmap = ToUnicodeCMap(String(b)).parse()
                 println("Uses a ToUnicode cmap")
             }
+        } catch (e: Exception) {
+            Log.e(javaClass.name, "Exception in getting ToUnicode CMap", e)
         }
     }
 
@@ -85,11 +98,9 @@ internal class Font() {
         fontDescriptor: PDFObject?,
         subtype: Name,
         baseFont: PDFObject?,
-        encoding: PDFObject?,
-        referenceResolver: ReferenceResolver
+        encoding: PDFObject?
     ) {
-        val encodingArray = SparseArrayCompat<String>()
-        val symbolic = checkSymbolicSimpleFont(fontDescriptor, baseFont, encodingArray)
+        val symbolic = checkSymbolicSimpleFont(fontDescriptor, baseFont)
 
         if ((encoding == null || symbolic) && subtype.value == "TrueType" && fontDescriptor is Dictionary) {
             val fontFile2 = fontDescriptor["FontFile2"]
@@ -109,20 +120,19 @@ internal class Font() {
                 }
             }
         } else {
-            getSimpleFontEncoding(encoding, encodingArray, fontDescriptor, subtype, referenceResolver, symbolic)
+            getSimpleFontEncoding(encoding, fontDescriptor, subtype, symbolic)
 
             if (cmap !is ToUnicodeCMap) {
                 cmap = AGLCMap(encodingArray)
             }
         }
 
-        getSimpleFontWidths(dictionary, fontDescriptor, referenceResolver, encodingArray, subtype)
+        getSimpleFontWidths(dictionary, fontDescriptor, subtype)
     }
 
     private fun checkSymbolicSimpleFont(
         fontDescriptor: PDFObject?,
-        baseFont: PDFObject?,
-        encodingArray: SparseArrayCompat<String>
+        baseFont: PDFObject?
     ): Boolean {
         var symbolic = false
         if (fontDescriptor is Dictionary) {
@@ -146,10 +156,8 @@ internal class Font() {
 
     private fun getSimpleFontEncoding(
         encoding: PDFObject?,
-        encodingArray: SparseArrayCompat<String>,
         fontDescriptor: PDFObject?,
         subtype: Name,
-        referenceResolver: ReferenceResolver,
         symbolic: Boolean
     ) {
         when (encoding) {
@@ -198,8 +206,6 @@ internal class Font() {
     private fun getSimpleFontWidths(
         dictionary: Dictionary,
         fontDescriptor: PDFObject?,
-        referenceResolver: ReferenceResolver,
-        encodingArray: SparseArrayCompat<String>,
         subtype: Name
     ) {
         // Get FirstChar
@@ -229,12 +235,12 @@ internal class Font() {
             }
         } else {
             if (fontDescriptor is Dictionary) {
-                getWidthsFromFontProgram(fontDescriptor, referenceResolver, encodingArray, subtype)
+                getWidthsFromFontProgram(fontDescriptor, subtype)
             }
         }
     }
 
-    private fun setupCompositeFont(dictionary: Dictionary, encoding: PDFObject?, referenceResolver: ReferenceResolver) {
+    private fun setupCompositeFont(dictionary: Dictionary, encoding: PDFObject?) {
         // Handle encoding
         if (encoding is Name && !encoding.value.contains("Identity")) {
             TODO("Needs to handle predefined CMaps. If ToUnicodeCMap exist, pass it to constructor.")
@@ -293,34 +299,73 @@ internal class Font() {
 
     private fun getWidthsFromFontProgram(
         fontDescriptor: Dictionary,
-        referenceResolver: ReferenceResolver,
-        encodingArray: SparseArrayCompat<String>?,
         fontType: Name
     ) {
-        val fontFile = fontDescriptor["FontFile"]
-        val fontFile2 = fontDescriptor["FontFile2"]
-        val fontFile3 = fontDescriptor["FontFile3"]
+        fontFile1 = fontDescriptor["FontFile"] as Reference?
+        fontFile2 = fontDescriptor["FontFile2"] as Reference?
+        fontFile3 = fontDescriptor["FontFile3"] as Reference?
 
         when {
-            (fontType.value == "Type1" || fontType.value == "MMType1") && fontFile is Reference -> {
-                val fontProgram = referenceResolver.resolveReferenceToStream(fontFile)
+            fontFile3 is Reference -> {
+                getWidthsFromFontFile3(fontType)
+            }
+            fontFile1IsEmbedded(fontType) -> {
+                getWidthsFromFontFile1()
+            }
+            fontFile2IsEmbedded(fontType) -> {
+                getWidthsFromFontFile2()
+            }
+        }
+    }
+
+    private fun getWidthsFromFontFile3(fontType: Name) {
+        //TODO("Getting widths from FontFile3 not implemented")
+        /*try {
+            // Implementation for FontFile3
+        } catch (e: Exception) {
+            if (fontFile1IsEmbedded(fontType))
+                getWidthsFromFontFile1()
+            else if (fontFile2IsEmbedded(fontType))
+                getWidthsFromFontFile2()
+        }*/
+    }
+
+    private fun fontFile1IsEmbedded(fontType: Name): Boolean {
+        return (fontType.value == "Type1" || fontType.value == "MMType1") && fontFile1 is Reference
+    }
+
+    private fun fontFile2IsEmbedded(fontType: Name): Boolean {
+        return (fontType.value == "TrueType" || fontType.value == "CIDFontType2") && fontFile2 is Reference
+    }
+
+    private fun getWidthsFromFontFile1() {
+        try {
+            fontFile1?.let {
+                val fontProgram = referenceResolver.resolveReferenceToStream(it)
                 val data = fontProgram?.decodeEncodedStream()
-                if (data is ByteArray && encodingArray != null) {
+                if (data is ByteArray) {
                     widths = Type1Parser(data).getCharacterWidths(encodingArray, cmap)
                 }
             }
-            (fontType.value == "TrueType" || fontType.value == "CIDFontType2") && fontFile2 is Reference -> {
-                val fontProgram = referenceResolver.resolveReferenceToStream(fontFile2)
+        } catch (e: Exception) {
+            Log.e(javaClass.name, "Exception in getting widths from FontFile1", e)
+        }
+    }
+
+    private fun getWidthsFromFontFile2() {
+        try {
+            fontFile2?.let {
+                val fontProgram = referenceResolver.resolveReferenceToStream(it)
                 val data = fontProgram?.decodeEncodedStream()
                 if (data is ByteArray) {
                     widths = TTFParser(data).getCharacterWidths()
                 }
             }
-            fontFile3 is Stream -> {
-                TODO("Getting widths from fontFile3 not implemented")
-            }
+        } catch (e: Exception) {
+            Log.e(javaClass.name, "Exception in getting widths from FontFile2", e)
         }
     }
+
 
     private fun getDifferencesArray(encoding: Dictionary, diffArray: SparseArrayCompat<String>) {
         encoding.resolveReferences()

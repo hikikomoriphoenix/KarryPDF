@@ -21,7 +21,7 @@ import java.io.RandomAccessFile
 class AndPDF(file: RandomAccessFile, password: String = "") {
     private var fileReader: PDFFileReader? = null
     private var objects: HashMap<String, XRefEntry>? = null
-    private val pages: ArrayList<Reference> = ArrayList()
+    internal val pages: ArrayList<Reference> = ArrayList()
     private val referenceResolver = ReferenceResolverImpl()
 
     internal var size: Int? = null

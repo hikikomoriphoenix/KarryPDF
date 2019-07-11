@@ -20,6 +20,6 @@ class IndirectTest {
                 "/Encoding /Identity-H " +
                 "/DescendantFonts [18 0 R] " +
                 "/ToUnicode 19 0 R>>"
-        assertThat(content, `is`(expected))
+        assertThat(content.toString(), `is`(expected))
     }
 }

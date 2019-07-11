@@ -18,13 +18,21 @@ import marabillas.loremar.andpdf.utils.exts.containedEqualsWith
 import marabillas.loremar.andpdf.utils.logd
 import java.io.RandomAccessFile
 
-class AndPDF {
+class AndPDF(file: RandomAccessFile, password: String = "") {
     private var fileReader: PDFFileReader? = null
     private var objects: HashMap<String, XRefEntry>? = null
-    internal val pages: ArrayList<Reference> = ArrayList()
+    private val pages: ArrayList<Reference> = ArrayList()
     private val referenceResolver = ReferenceResolverImpl()
 
-    fun loadDocument(file: RandomAccessFile, password: String = ""): AndPDF {
+    internal var size: Int? = null
+        get() = field ?: throw NoDocumentException()
+
+    internal var documentCatalog: Dictionary? = null
+        get() = field ?: throw NoDocumentException()
+
+    internal var info: Dictionary? = null
+
+    init {
         TimeCounter.reset()
 
         val fileReader = PDFFileReader(file)
@@ -57,16 +65,7 @@ class AndPDF {
         getPageTreeLeafNodes(pageTree)
 
         logd("AndPDF.loadDocument() -> ${TimeCounter.getTimeElapsed()} ms")
-        return this
     }
-
-    internal var size: Int? = null
-        get() = field ?: throw NoDocumentException()
-
-    internal var documentCatalog: Dictionary? = null
-        get() = field ?: throw NoDocumentException()
-
-    internal var info: Dictionary? = null
 
     private inner class ReferenceResolverImpl : ReferenceResolver {
         override fun resolveReference(reference: Reference): PDFObject? {

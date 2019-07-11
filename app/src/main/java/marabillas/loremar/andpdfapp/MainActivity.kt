@@ -21,7 +21,7 @@ class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         val file = RandomAccessFile("${filesDir.path}/KotlinNotesForProfessionals.pdf", "r")
-        val parser = AndPDF().loadDocument(file)
+        val parser = AndPDF(file)
 
         // Get views
         val pageView = findViewById<LinearLayout>(R.id.pageview)

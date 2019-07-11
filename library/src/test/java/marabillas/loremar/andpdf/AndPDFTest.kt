@@ -12,7 +12,7 @@ class AndPDFTest {
     fun testLoadDocument() {
         val path = javaClass.classLoader.getResource("samplepdf1.4.pdf").path
         val file = RandomAccessFile(path, "r")
-        val parser = AndPDF().loadDocument(file)
+        val parser = AndPDF(file)
         assertThat(parser.size, `is`(20))
         val docCat = parser.documentCatalog
         val pages = docCat?.resolveReferences()?.get("Pages") as Dictionary
@@ -30,7 +30,7 @@ class AndPDFTest {
     fun testResolveReference() {
         var path = javaClass.classLoader.getResource("samplepdf1.4.pdf").path
         var file = RandomAccessFile(path, "r")
-        AndPDF().loadDocument(file) // This also sets ReferenceResolver for ObjectIdentifier class
+        AndPDF(file) // This also sets ReferenceResolver for ObjectIdentifier class
         var obj = "3 0 R".toPDFObject(true) // resolveReference() is indirectly called
         assertTrue(obj is Dictionary)
         obj = "19 0 R".toPDFObject(true) // resolveReference() is indirectly called
@@ -38,7 +38,7 @@ class AndPDFTest {
 
         path = javaClass.classLoader.getResource("samplepdf1.4compressed.pdf").path
         file = RandomAccessFile(path, "r")
-        AndPDF().loadDocument(file)
+        AndPDF(file)
         obj = "10 0 R".toPDFObject(true)
         assertTrue(obj is Reference)
         obj = "1 0 R".toPDFObject(true)

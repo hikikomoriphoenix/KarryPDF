@@ -15,6 +15,7 @@ import marabillas.loremar.andpdf.font.FontName
 import marabillas.loremar.andpdf.objects.*
 import marabillas.loremar.andpdf.utils.TimeCounter
 import marabillas.loremar.andpdf.utils.exts.containedEqualsWith
+import marabillas.loremar.andpdf.utils.logd
 import java.io.RandomAccessFile
 
 class AndPDF {
@@ -32,7 +33,7 @@ class AndPDF {
         PDFObjectAdapter.referenceResolver = referenceResolver
 
         objects = if (fileReader.isLinearized()) {
-            println("Detected linearized PDF document")
+            logd("Detected linearized PDF document")
             val startXRef = fileReader.getStartXRefPositionLinearized()
             fileReader.getXRefData(startXRef)
         } else {
@@ -55,7 +56,7 @@ class AndPDF {
         )) as Dictionary
         getPageTreeLeafNodes(pageTree)
 
-        println("AndPDF.loadDocument() -> ${TimeCounter.getTimeElapsed()} ms")
+        logd("AndPDF.loadDocument() -> ${TimeCounter.getTimeElapsed()} ms")
         return this
     }
 
@@ -108,7 +109,7 @@ class AndPDF {
     }
 
     fun getPageContents(pageNum: Int): ArrayList<PageContent> {
-        println("Getting page $pageNum")
+        logd("Getting page $pageNum")
         TimeCounter.reset()
 
         val contentsList = ArrayList<PageContent>()
@@ -117,9 +118,9 @@ class AndPDF {
         // Attempt to get ActualText
         val structParents = pageDic["StructParents"]
         if (structParents is Numeric) {
-            println("StructParents=${structParents.value}")
+            logd("StructParents=${structParents.value}")
         } else {
-            println("No StructParents")
+            logd("No StructParents")
         }
 
         pageDic.resolveReferences()
@@ -144,7 +145,7 @@ class AndPDF {
         }
 
         val contents = pageDic["Contents"] ?: throw InvalidDocumentException("Missing Contents entry in Page object.")
-        println("Preparations -> ${TimeCounter.getTimeElapsed()} ms")
+        logd("Preparations -> ${TimeCounter.getTimeElapsed()} ms")
         return if (contents is PDFArray) {
             contents.asSequence()
                 .filterNotNull()
@@ -171,19 +172,19 @@ class AndPDF {
         stream?.let {
             TimeCounter.reset()
             val data = it.decodeEncodedStream()
-            println("Stream.decodeEncodedStream -> ${TimeCounter.getTimeElapsed()} ms")
+            logd("Stream.decodeEncodedStream -> ${TimeCounter.getTimeElapsed()} ms")
 
             TimeCounter.reset()
             val pageObjs = ContentStreamParser().parse(String(data), ref.obj, ref.gen)
-            println("ContentStreamParser.parse -> ${TimeCounter.getTimeElapsed()} ms")
+            logd("ContentStreamParser.parse -> ${TimeCounter.getTimeElapsed()} ms")
 
             TimeCounter.reset()
             FontDecoder(pageObjs, fonts).decodeEncoded()
-            println("FontDecoder.decodeEncoded -> ${TimeCounter.getTimeElapsed()} ms")
+            logd("FontDecoder.decodeEncoded -> ${TimeCounter.getTimeElapsed()} ms")
 
             TimeCounter.reset()
             XObjectsResolver(pageObjs, xObjects).resolve()
-            println("XObjectsResolver.resolve -> ${TimeCounter.getTimeElapsed()} ms")
+            logd("XObjectsResolver.resolve -> ${TimeCounter.getTimeElapsed()} ms")
 
             return PageContentAdapter(pageObjs, fonts).getPageContents()
         }

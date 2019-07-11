@@ -3,6 +3,7 @@ package marabillas.loremar.andpdf
 import marabillas.loremar.andpdf.objects.Numeric
 import marabillas.loremar.andpdf.objects.PDFArray
 import marabillas.loremar.andpdf.objects.Stream
+import marabillas.loremar.andpdf.utils.logd
 import java.io.RandomAccessFile
 import java.math.BigInteger
 import java.nio.ByteBuffer
@@ -28,14 +29,14 @@ internal class XRefStream(private val file: RandomAccessFile, private val start:
         val w2 = (w[2] as Numeric).value.toInt()
 
         if (index != null) {
-            println("Parsing XRefStream start")
+            logd("Parsing XRefStream start")
             val channel = Channels.newChannel(stream.inputStream())
             for (i in 0 until index.count() step 2) {
                 val start = (index[i] as Numeric).value.toInt()
                 val count = (index[i + 1] as Numeric).value.toInt()
 
                 repeat(count) {
-                    //print("Parsing XRef entry for obj ${start + it}")
+                    //logd("Parsing XRef entry for obj ${start + it}")
                     val fields = arrayOf(ByteBuffer.allocate(w0), ByteBuffer.allocate(w1), ByteBuffer.allocate(w2))
                     repeat(3) { m ->
                         if (fields[m].capacity() > 0) {
@@ -47,7 +48,7 @@ internal class XRefStream(private val file: RandomAccessFile, private val start:
                     }
 
                     /*if (fields[0].capacity() > 0 && fields[1].capacity() > 0 && fields[2].capacity() > 0) {
-                        print(
+                        logd(
                             " x=${getUnsignedNumber(fields[0])} y=${getUnsignedNumber(fields[1])} z=${getUnsignedNumber(
                                 fields[2]
                             )} "
@@ -57,10 +58,10 @@ internal class XRefStream(private val file: RandomAccessFile, private val start:
                     addEntry(start + it, fields)
                 }
             }
-            println("Parsing XRefStream end")
+            logd("Parsing XRefStream end")
             channel.close()
         } else {
-            println("Parsing XRefStream start")
+            logd("Parsing XRefStream start")
             val channel = Channels.newChannel(stream.inputStream())
             var count = 0
             loop@ while (true) {
@@ -77,13 +78,13 @@ internal class XRefStream(private val file: RandomAccessFile, private val start:
                 addEntry(count, fields)
                 count++
             }
-            println("Parsing XRefStream end")
+            logd("Parsing XRefStream end")
             channel.close()
         }
 
         val prev = dictionary["Prev"] as Numeric?
         if (prev != null) {
-            println("Prev = ${prev.value.toLong()}")
+            logd("Prev = ${prev.value.toLong()}")
             val data = PDFFileReader(file).getXRefData(prev.value.toLong())
             data.putAll(entries)
             entries = data

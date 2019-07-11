@@ -8,6 +8,7 @@ import marabillas.loremar.andpdf.contents.text.TextContentAnalyzer
 import marabillas.loremar.andpdf.contents.text.TextObject
 import marabillas.loremar.andpdf.font.Font
 import marabillas.loremar.andpdf.utils.TimeCounter
+import marabillas.loremar.andpdf.utils.logd
 
 internal class PageContentAdapter(
     private val pageObjects: ArrayList<PageObject>,
@@ -46,15 +47,15 @@ internal class PageContentAdapter(
                         }
                         i++
                     }
-                    println("Collecting successive TextObjects -> ${TimeCounter.getTimeElapsed()} ms")
+                    logd("Collecting successive TextObjects -> ${TimeCounter.getTimeElapsed()} ms")
                     TimeCounter.reset()
 
                     val textContentGroups = textContentAnalyzer.analyze(textObjects, fonts)
-                    println("TextContentAnalyzer.analyze -> ${TimeCounter.getTimeElapsed()} ms")
+                    logd("TextContentAnalyzer.analyze -> ${TimeCounter.getTimeElapsed()} ms")
 
                     TimeCounter.reset()
                     val textContents = textContentAdapter.getContents(textContentGroups, fonts)
-                    println("TextContentAdapter.getContents -> ${TimeCounter.getTimeElapsed()} ms")
+                    logd("TextContentAdapter.getContents -> ${TimeCounter.getTimeElapsed()} ms")
 
                     contents.addAll(textContents)
                 }

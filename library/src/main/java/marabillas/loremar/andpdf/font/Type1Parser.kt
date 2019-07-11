@@ -8,6 +8,7 @@ import marabillas.loremar.andpdf.font.encoding.StandardEncoding
 import marabillas.loremar.andpdf.font.encoding.WinAnsiEncoding
 import marabillas.loremar.andpdf.utils.exts.set
 import marabillas.loremar.andpdf.utils.exts.toInt
+import marabillas.loremar.andpdf.utils.logd
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -353,7 +354,7 @@ internal class Type1Parser(val data: ByteArray) {
             characterWidths[-1] = width.toFloat()
         }
 
-        println("${characterWidths.size()} widths obtained from Type1 font")
+        logd("${characterWidths.size()} widths obtained from Type1 font")
         return characterWidths
     }
 
@@ -481,23 +482,23 @@ internal class Type1Parser(val data: ByteArray) {
     }
 
     fun getBuiltInEncoding(encodingArray: SparseArrayCompat<String>) {
-        println("Getting built-in encoding from Type1 font")
+        logd("Getting built-in encoding from Type1 font")
         val encodingPos = getEncodingLocation() + 10
         when {
             isMacRomanEncoding(encodingPos) -> {
-                println("Type1 Encoding = MacRomanEncoding")
+                logd("Type1 Encoding = MacRomanEncoding")
                 MacRomanEncoding.putAllTo(encodingArray)
             }
             isWinAnsiEncoding(encodingPos) -> {
-                println("Type1 Encoding = WinAnsiEncoding")
+                logd("Type1 Encoding = WinAnsiEncoding")
                 WinAnsiEncoding.putAllTo(encodingArray)
             }
             isMacExpertEncoding(encodingPos) -> {
-                println("Type1 Encoding = MacExpertEncoding")
+                logd("Type1 Encoding = MacExpertEncoding")
                 MacExpertEncoding.putAllTo(encodingArray)
             }
             isStandardEncoding(encodingPos) -> {
-                println("Type1 Encoding = StandardEncoding")
+                logd("Type1 Encoding = StandardEncoding")
                 StandardEncoding.putAllTo(encodingArray)
             }
             else -> {
@@ -506,7 +507,7 @@ internal class Type1Parser(val data: ByteArray) {
                 }
                 val initial = encodingArray.size()
                 parseAndProcessEncoding(encodingPos, getEncoding)
-                println("Obtained ${encodingArray.size() - initial} character names from Encoding array")
+                logd("Obtained ${encodingArray.size() - initial} character names from Encoding array")
             }
         }
     }

@@ -7,6 +7,7 @@ import marabillas.loremar.andpdf.font.cmap.*
 import marabillas.loremar.andpdf.font.encoding.*
 import marabillas.loremar.andpdf.font.ttf.TTFParser
 import marabillas.loremar.andpdf.objects.*
+import marabillas.loremar.andpdf.utils.logd
 
 internal class Font(private val dictionary: Dictionary, private val referenceResolver: ReferenceResolver) {
     var typeface: Typeface = FontMappings[FontName.DEFAULT]
@@ -56,22 +57,22 @@ internal class Font(private val dictionary: Dictionary, private val referenceRes
 
         // Subtype
         if (subtype is Name) {
-            println("Using ${subtype.value} font")
+            logd("Using ${subtype.value} font")
         }
 
         // BaseFont
         if (baseFont is Name) {
             typeface = FontIdentifier().identifyFont(baseFont.value)
-            println("Basefont=${baseFont.value}")
+            logd("Basefont=${baseFont.value}")
         }
 
         // Encoding
         if (encoding is Name) {
-            println("Font uses ${encoding.value}")
+            logd("Font uses ${encoding.value}")
         } else if (encoding is Dictionary) {
-            println("Font uses an Encoding dictionary")
+            logd("Font uses an Encoding dictionary")
         } else if (encoding is Reference) {
-            println("Font is a Composite Font and may be using a CMap")
+            logd("Font is a Composite Font and may be using a CMap")
         }
 
         // ToUnicode
@@ -86,7 +87,7 @@ internal class Font(private val dictionary: Dictionary, private val referenceRes
             val b = stream?.decodeEncodedStream()
             b?.let {
                 cmap = ToUnicodeCMap(String(b)).parse()
-                println("Uses a ToUnicode cmap")
+                logd("Uses a ToUnicode cmap")
             }
         } catch (e: Exception) {
             Log.e(javaClass.name, "Exception in getting ToUnicode CMap", e)
@@ -141,7 +142,7 @@ internal class Font(private val dictionary: Dictionary, private val referenceRes
             // then font is symbolic.
             if ((flags and 4) != 0) {
                 symbolic = true
-                println("Symbolic flag is set true")
+                logd("Symbolic flag is set true")
                 if (baseFont is Name && baseFont.value.contains("Zapf", true)
                     && baseFont.value.contains("Dingbats", true)
                 ) {
@@ -275,9 +276,9 @@ internal class Font(private val dictionary: Dictionary, private val referenceRes
                         widths.put(-1, 1000f)
                         /*val cidSubType = cidFont["Subtype"]
                         if (cidSubType is Name && cidSubType.value == "CIDFontType2") {
-                            println("Getting widths for CIDFontType2")
+                            logd("Getting widths for CIDFontType2")
                             getCIDType2Widths(cidFont, cidFontDescriptor, referenceResolver)
-                            println("obtained ${widths.size()} widths")
+                            logd("obtained ${widths.size()} widths")
                         } else if (cidSubType is Name) {
                             // Subtype is CIDFontType0. Use FontFile3 with subtype either CIDFontType0C or OpenType
                             TODO("Get widths for CIDFontType0")
@@ -291,8 +292,8 @@ internal class Font(private val dictionary: Dictionary, private val referenceRes
                     getCIDFontWidths(w)
                 }
 
-                println("obtained ${widths.size()} widths")
-                println("missing width = ${widths[-1]}")
+                logd("obtained ${widths.size()} widths")
+                logd("missing width = ${widths[-1]}")
             }
         }
     }

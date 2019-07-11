@@ -41,7 +41,7 @@ internal class TableDetector(
         var i = 0
         while (i < textObjects.count()) {
             val textObj = textObjects[i]
-            //println((textObj.first().tj as PDFString).value)
+            //logd((textObj.first().tj as PDFString).value)
 
             // Check if the first TextObject of the current line is to the right of any divider of the previous line. Look
             // for the rightmost divider that is at the left of the TextObject. Initialize belowColumn based on the
@@ -75,8 +75,8 @@ internal class TableDetector(
                             )
                             currLineWideSpaces.add(currWideSpace)
 
-                            /*println("Added widespace before first TextObject")
-                            println("w=$w belowColumn=$belowColumn aboveColumn=$aboveColumn")*/
+                            /*logd("Added widespace before first TextObject")
+                            logd("w=$w belowColumn=$belowColumn aboveColumn=$aboveColumn")*/
 
                             break
                         } else {
@@ -96,7 +96,7 @@ internal class TableDetector(
                 // a widespace between them, and proceed to detecting for divider. Else continue iterating through
                 // TextObjects.
                 if (rbArr[1] != Float.MAX_VALUE && diff > (rbArr[1] * 3f)) {
-                    //println("A wide space")
+                    //logd("A wide space")
                     val currWideSpace = WideSpace(
                         left = rbArr[0],
                         right = textObjects[i + 1].td[0],
@@ -108,18 +108,18 @@ internal class TableDetector(
                     // Iterate through wide spaces of the previous line. Each wide space will be evaluated together with
                     // the current wide space for divider detection.
                     while (w < prevLineWideSpaces.count()) {
-                        //println("w=$w")
+                        //logd("w=$w")
                         val aboveWideSpace = prevLineWideSpaces[w]
 
                         // Check if current WideSpace and selected WideSpace from previous line forms a divider between
                         // two columns in a table.
                         if (isFormingColumnDivider(currWideSpace, aboveWideSpace, rbArr[1])) {
-                            //println("A column divider is formed")
+                            //logd("A column divider is formed")
                             aboveWideSpace.isDivider = true
                             currWideSpace.isDivider = true
 
-                            /*println("aboveColumn = $aboveColumn")
-                            println("belowColumn = $belowColumn")*/
+                            /*logd("aboveColumn = $aboveColumn")
+                            logd("belowColumn = $belowColumn")*/
 
                             // Set column number for text objects at the left of column boundary and whose column numbers
                             // are not set.
@@ -149,7 +149,7 @@ internal class TableDetector(
                             var r = aboveWideSpace.rightTextObj
                             if (textObjects[r].column != -1 && textObjects[r].column <= aboveColumn) {
                                 // TODO Adjust column number of all previous rows.
-                                //println("Column number to the right of divider is adjusted in previous line")
+                                //logd("Column number to the right of divider is adjusted in previous line")
                                 val inc = aboveColumn - textObjects[r].column + 1
                                 textObjects[r].column += inc
                                 r++
@@ -168,7 +168,7 @@ internal class TableDetector(
                             // If it is, then it implies that a blank empty Table cell is formed between these dividers.
                             w++
                         } else if (aboveWideSpace.left > currWideSpace.right) {
-                            //println("above.left > curr.right")
+                            //logd("above.left > curr.right")
                             // If not forming divider and above wide space is to the right of current wide space.
                             // Allow the previous WideSpace to be checked in the next iteration.
                             if (w - 1 >= 0) {
@@ -176,7 +176,7 @@ internal class TableDetector(
                             }
                             break
                         } else if (aboveWideSpace.isDivider) {
-                            //println("above.isdivider")
+                            //logd("above.isdivider")
                             // If above wide space is not forming divider with current wide space but has already formed
                             // a divider previously.
                             // Update next column number for previous line. The column number for current line might now
@@ -192,8 +192,8 @@ internal class TableDetector(
                 }
             } else { // If current TextObject is the last one in the line.
                 if (belowColumn > 0) {
-                    /*println("belowColumn=$belowColumn")
-                    println("aboveColumn=$aboveColumn")*/
+                    /*logd("belowColumn=$belowColumn")
+                    logd("aboveColumn=$aboveColumn")*/
                     // Set the last TextObject's column first to avoid out of bounds in setColumnNumberForTextObjectsToLeft.
                     textObjects[i].column = belowColumn
                     setColumnNumberForTextObjectsToLeft(i - 1, belowColumn)
@@ -219,7 +219,7 @@ internal class TableDetector(
                 w = 0
                 prevLineWideSpaces.clear()
                 prevLineWideSpaces.addAll(currLineWideSpaces)
-                //println("Previous line's wide spaces are set. Count -> ${prevLineWideSpaces.size}")
+                //logd("Previous line's wide spaces are set. Count -> ${prevLineWideSpaces.size}")
                 currLineWideSpaces.clear()
             }
 

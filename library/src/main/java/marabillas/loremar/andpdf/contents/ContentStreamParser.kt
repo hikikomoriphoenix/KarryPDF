@@ -9,6 +9,7 @@ import marabillas.loremar.andpdf.utils.exts.indexOfClosingChar
 import marabillas.loremar.andpdf.utils.exts.isEnclosingAt
 import marabillas.loremar.andpdf.utils.exts.isWhiteSpaceAt
 import marabillas.loremar.andpdf.utils.exts.toDouble
+import marabillas.loremar.andpdf.utils.logd
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -30,8 +31,8 @@ internal class ContentStreamParser {
         }
         gsStack.push(gsHolders[0])
 
-        println("ContentStreamParser.parse begins")
-        //println("stream->$streamData")
+        logd("ContentStreamParser.parse begins")
+        //logd("stream->$streamData")
         val pageObjects = ArrayList<PageObject>()
         val textObjectParser = TextObjectParser(obj, gen)
         val imageObjectParser = ImageObjectParser(obj, gen)
@@ -80,11 +81,11 @@ internal class ContentStreamParser {
                         textObj.scaleY = Math.abs(cm[3])
                         pageObjects.add(textObj)
                     }
-                    //println("textObj -> ${textObj.getX()}, ${textObj.getY()}")
+                    //logd("textObj -> ${textObj.getX()}, ${textObj.getY()}")
                 }
                 // q
                 sb[i] == 'q' -> {
-                    //println("QSTART")
+                    //logd("QSTART")
 
                     // If next index for stack is greater than gsHolders' size, add a new GraphicsState
                     val index = gsStack.size
@@ -102,7 +103,7 @@ internal class ContentStreamParser {
                 }
                 // Q
                 sb[i] == 'Q' -> {
-                    //println("QEND")
+                    //logd("QEND")
                     gsStack.pop()
                     if (gsStack.size > 0) {
                         tf.clear().append(gsStack.lastElement().tf)
@@ -119,13 +120,13 @@ internal class ContentStreamParser {
                 // cm
                 i + 1 < sb.length && sb[i] == 'c' && sb[i + 1] == 'm' -> {
                     val cm = getCM(i)
-                    //println("cm -> ${cm[0]}, ${cm[1]}, ${cm[2]}, ${cm[3]}, ${cm[4]}, ${cm[5]}")
+                    //logd("cm -> ${cm[0]}, ${cm[1]}, ${cm[2]}, ${cm[3]}, ${cm[4]}, ${cm[5]}")
                     gsStack.lastElement().cm = cm
                     i += 2
                 }
                 // Do
                 i + 1 < sb.length && sb[i] == 'D' && sb[i + 1] == 'o' -> {
-                    //println("Do XObject")
+                    //logd("Do XObject")
                     val nameIndex = sb.lastIndexOf('/', i)
                     token.clear().append(sb, nameIndex, i - 1)
 
@@ -141,7 +142,7 @@ internal class ContentStreamParser {
                         XObject(x, y, token.toName())
                     )
                     i += 2
-                    //println("xObj -> ${pageObjects.last().getX()}, ${pageObjects.last().getY()}")
+                    //logd("xObj -> ${pageObjects.last().getX()}, ${pageObjects.last().getY()}")
                 }
                 // BI
                 i + 1 < sb.length && sb[i] == 'B' && sb[i + 1] == 'I' -> {

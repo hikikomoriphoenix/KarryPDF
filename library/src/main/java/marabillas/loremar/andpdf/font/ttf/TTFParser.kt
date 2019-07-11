@@ -6,6 +6,7 @@ import marabillas.loremar.andpdf.font.encoding.MacOSRomanEncoding
 import marabillas.loremar.andpdf.font.encoding.StandardEncoding
 import marabillas.loremar.andpdf.utils.exts.hexFromInt
 import marabillas.loremar.andpdf.utils.exts.set
+import marabillas.loremar.andpdf.utils.logd
 import marabillas.loremar.andpdf.utils.wholeNumToFractional
 
 internal class TTFParser(val data: ByteArray) {
@@ -39,7 +40,7 @@ internal class TTFParser(val data: ByteArray) {
             stringBuilder.append(data[i].toChar())
         }
         scalerType = stringBuilder.toString()
-        //println("scaler -> $scalerType")
+        //logd("scaler -> $scalerType")
 
         var pos = 4
         numTables = getUInt16At(data, pos); pos += 2
@@ -54,16 +55,16 @@ internal class TTFParser(val data: ByteArray) {
         var pos = getNextTablePosition(start, data.size.toLong())
         var nearestOffset = data.size.toLong()
         while (pos < data.size) {
-            //println(stringBuilder.toString())
+            //logd(stringBuilder.toString())
             pos += 4
             val checksum = getUInt32At(data, pos)
-            //println("checksum=$checksum")
+            //logd("checksum=$checksum")
             pos += 4
             val offset = getUInt32At(data, pos)
-            //println("offset=$offset")
+            //logd("offset=$offset")
             pos += 4
             val length = getUInt32At(data, pos)
-            //println("length=$length")
+            //logd("length=$length")
             pos += 4
             tables[stringBuilder.toString()] =
                 Table(checksum, offset, length)
@@ -104,7 +105,7 @@ internal class TTFParser(val data: ByteArray) {
     }
 
     fun getCharacterWidths(): SparseArrayCompat<Float> {
-        println("Getting character widths from a TrueType font")
+        logd("Getting character widths from a TrueType font")
 
         val numOfLongHorMetrics = getNumOfLongHorMetrics()
         ttfCMap = getCMap()
@@ -112,18 +113,18 @@ internal class TTFParser(val data: ByteArray) {
             if (numOfLongHorMetrics > 0) {
                 val glyphWidths = getAdvancedWidths(numOfLongHorMetrics)
                 val widths = getCharacterWidths(glyphWidths, ttfCMap as TTFCMap)
-                println("${widths.size()} widths obtained")
+                logd("${widths.size()} widths obtained")
                 return widths
             } else {
                 val glyphWidths = getGlyphBoundingBoxWidths()
                 if (glyphWidths.count() > 0) {
                     val widths = getCharacterWidths(glyphWidths, ttfCMap as TTFCMap)
-                    println("${widths.size()} widths obtained")
+                    logd("${widths.size()} widths obtained")
                     return widths
                 }
             }
         } else {
-            println("Can not obtain valid TTF cmap")
+            logd("Can not obtain valid TTF cmap")
         }
 
         return SparseArrayCompat()
@@ -244,7 +245,7 @@ internal class TTFParser(val data: ByteArray) {
                     val offset = getUInt32At(data, pos.toInt() + 4)
                     val cmapTableLoc = pos + offset
                     val format = getUInt16At(data, cmapTableLoc.toInt())
-                    println("($platformID, $platformSpecificID) format=$format")
+                    logd("($platformID, $platformSpecificID) format=$format")
                     val ttfCMap = TTFCMapFactory().getTTFCMap(format, data, cmapTableLoc)
 
                     if (ttfCMap is TTFCMap) {
@@ -259,8 +260,8 @@ internal class TTFParser(val data: ByteArray) {
                 pos += 8
             }
 
-            println("platformID=$selectedPlatformID, platformSpecificID=$selectedPlatformSpecificID")
-            println("TTF CMap format = $selectedFormat")
+            logd("platformID=$selectedPlatformID, platformSpecificID=$selectedPlatformSpecificID")
+            logd("TTF CMap format = $selectedFormat")
             platformID = selectedPlatformID
             return selectedTTFCMap
         }
@@ -290,14 +291,14 @@ internal class TTFParser(val data: ByteArray) {
     }
 
     fun getBuiltInEncoding(encodingArray: SparseArrayCompat<String>) {
-        println("Getting TyueType font built-in encoding")
+        logd("Getting TyueType font built-in encoding")
         val pos = tables["post"]?.offset
         val ttfCMap = getCMap()
         if (pos is Long && ttfCMap is TTFCMap) {
             val mapper = TTFGlyphNamesMapper()
             val glyphNamesArray = SparseArrayCompat<String>()
             val format = getFixedAt(data, pos.toInt())
-            println("post format=$format")
+            logd("post format=$format")
             when (format) {
                 1f -> mapper.post1(glyphNamesArray)
                 2f -> mapper.post2(glyphNamesArray, data, pos.toInt() + 32)
@@ -348,7 +349,7 @@ internal class TTFParser(val data: ByteArray) {
     }
 
     fun getDefaultTTFEncoding(encodingArray: SparseArrayCompat<String>) {
-        println("Getting TrueType font default encoding")
+        logd("Getting TrueType font default encoding")
         getCMap()
         when (platformID) {
             1 -> MacOSRomanEncoding.putAllTo(encodingArray)

@@ -1,6 +1,7 @@
 package marabillas.loremar.andpdf
 
 import marabillas.loremar.andpdf.objects.*
+import marabillas.loremar.andpdf.utils.logd
 import java.io.RandomAccessFile
 
 /**
@@ -158,7 +159,7 @@ internal class PDFFileReader(private val file: RandomAccessFile) {
     private fun parseXRefSection(): HashMap<String, XRefEntry> {
         val entries = HashMap<String, XRefEntry>()
 
-        println("Parsing XRef section start")
+        logd("Parsing XRef section start")
         val subSectionRegex = Regex("^\\s*(\\d+) (\\d+)\\s*$")
         while (true) {
             val p = file.filePointer
@@ -176,7 +177,7 @@ internal class PDFFileReader(private val file: RandomAccessFile) {
 
             // Iterate through every entry and add to entries
             for (i in obj..(obj + count - 1)) {
-                //print("Parsing XRef entry for obj $i ")
+                //logd("Parsing XRef entry for obj $i ")
                 val e = file.readLine()
                 val eFields = e.split(" ")
                 val pos = eFields.component1().toLong()
@@ -188,10 +189,10 @@ internal class PDFFileReader(private val file: RandomAccessFile) {
                 } else {
                     entries["$i $gen"] = XRefEntry(i, pos, gen)
                 }
-                //println("${entries["$i $gen"]}")
+                //logd("${entries["$i $gen"]}")
             }
         }
-        println("Parsing XRef section end")
+        logd("Parsing XRef section end")
         return entries
     }
 
@@ -213,7 +214,7 @@ internal class PDFFileReader(private val file: RandomAccessFile) {
         // Parse any existing cross reference stream
         val xRefStm = trailer["XRefStm"] as Numeric?
         if (xRefStm != null) {
-            println("XRefStm = ${xRefStm.value.toLong()}")
+            logd("XRefStm = ${xRefStm.value.toLong()}")
             val data = getXRefData((xRefStm.value.toLong()))
             data.putAll(entries)
             entries = data
@@ -222,7 +223,7 @@ internal class PDFFileReader(private val file: RandomAccessFile) {
         // Parse any existing previous cross reference table
         val prev = trailer["Prev"] as Numeric?
         if (prev != null) {
-            println("Prev = ${prev.value.toLong()}")
+            logd("Prev = ${prev.value.toLong()}")
             val data = getXRefData(prev.value.toLong())
             data.putAll(entries)
             entries = data

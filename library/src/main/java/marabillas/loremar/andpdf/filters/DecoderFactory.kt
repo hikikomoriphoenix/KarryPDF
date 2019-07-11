@@ -4,7 +4,7 @@ import marabillas.loremar.andpdf.objects.*
 
 internal class DecoderFactory {
     fun getDecoder(filter: String, objDic: Dictionary? = null): Decoder {
-        //println("Filter->$filter")
+        //logd("Filter->$filter")
         return when (filter) {
             "ASCIIHexDecode" -> ASCIIHex()
             "ASCII85Decode" -> ASCII85()

@@ -7,6 +7,7 @@ import marabillas.loremar.andpdf.contents.image.ImageObject
 import marabillas.loremar.andpdf.contents.image.JPEGImage
 import marabillas.loremar.andpdf.filters.DecoderFactory
 import marabillas.loremar.andpdf.objects.*
+import marabillas.loremar.andpdf.utils.logd
 
 internal class XObjectsResolver(
     private val pageObjects: MutableList<PageObject>,
@@ -81,7 +82,7 @@ internal class XObjectsResolver(
     }
 
     private fun handleDCTDecode(decoded: ByteArray, decodeParms: PDFObject?): Bitmap? {
-        println("Handling DCTDecode")
+        logd("Handling DCTDecode")
         var colorTransformValue: Int? = null
         if (decodeParms is Dictionary) {
             decodeParms.resolveReferences()

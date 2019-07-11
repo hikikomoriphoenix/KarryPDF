@@ -7,6 +7,7 @@ package marabillas.loremar.andpdf.filters
 
 import marabillas.loremar.andpdf.objects.Dictionary
 import marabillas.loremar.andpdf.objects.Numeric
+import marabillas.loremar.andpdf.utils.logd
 import java.io.ByteArrayOutputStream
 import java.util.zip.DataFormatException
 import java.util.zip.Inflater
@@ -58,7 +59,7 @@ internal class Flate(decodeParams: Dictionary?) : Decoder {
                 } catch (exception: DataFormatException) {
                     if (dataWritten) {
                         // some data could be read -> don't throw an exception
-                        println("FlateFilter: premature end of stream due to a DataFormatException")
+                        logd("FlateFilter: premature end of stream due to a DataFormatException")
                         break
                     } else {
                         // nothing could be read -> re-throw exception

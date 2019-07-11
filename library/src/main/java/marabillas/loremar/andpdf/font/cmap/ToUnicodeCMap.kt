@@ -99,7 +99,7 @@ internal class ToUnicodeCMap(private var stream: String) : EmbeddedCMap {
     data class BfRange(val lo: Int, val hi: Int, val dst: String)
 
     fun parse(): ToUnicodeCMap {
-        //print("cmap -> $stream")
+        //logd("cmap -> $stream")
 
         ptr = getCMapName()
 

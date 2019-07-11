@@ -161,6 +161,8 @@ internal class TextObjectParser(private val obj: Int, private val gen: Int) {
     }
 
     private fun addTextElement(textObj: TextObject, tj: PDFObject, ctm: FloatArray) {
+        if (tf.isEmpty()) return
+
         // If first element, apply CTM and initialize TextObject's x and y
         if (textObj.count() == 0) {
             td[0] = td[0] * ctm[0] + ctm[4]

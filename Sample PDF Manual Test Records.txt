@@ -29,7 +29,8 @@ Author/Publisher: William John Teahan
 File: artificial-intelligence-agent-behaviour-i.pdf
 Bugs:
 - very minor issues with character spacing
-- Error at page 81, issue with the Flate decoding
+- Error at page 81, 133 up until 192, Flate decoding fails
+- NumberFormatException at page 193
 
 Title: Bridging gender gaps?
 Author/Publisher: Leonardo Gasparini, Mariana Marchionni

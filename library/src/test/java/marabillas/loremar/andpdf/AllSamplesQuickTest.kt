@@ -1,5 +1,6 @@
 package marabillas.loremar.andpdf
 
+import marabillas.loremar.andpdf.utils.forceHideLogs
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -20,6 +21,7 @@ class AllSamplesQuickTest {
 
     @Test
     fun testAll() {
+        forceHideLogs = true
         getAllSamples()
         samples.forEach { pdfFilename ->
             test(pdfFilename)

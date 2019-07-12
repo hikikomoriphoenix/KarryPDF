@@ -1,6 +1,7 @@
 package marabillas.loremar.andpdf.utils
 
 internal var showAndPDFLogs = false
+internal var forceHideLogs = false
 
 internal fun logd(message: String) {
     if (showAndPDFLogs) {

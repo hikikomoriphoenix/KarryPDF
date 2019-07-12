@@ -16,6 +16,7 @@ import marabillas.loremar.andpdf.objects.*
 import marabillas.loremar.andpdf.utils.TimeCounter
 import marabillas.loremar.andpdf.utils.exts.containedEqualsWith
 import marabillas.loremar.andpdf.utils.logd
+import marabillas.loremar.andpdf.utils.showAndPDFLogs
 import java.io.RandomAccessFile
 
 class AndPDF(file: RandomAccessFile, password: String = "") {
@@ -33,6 +34,10 @@ class AndPDF(file: RandomAccessFile, password: String = "") {
     internal var info: Dictionary? = null
 
     init {
+        if (BuildConfig.DEBUG) {
+            showAndPDFLogs = true
+        }
+
         TimeCounter.reset()
 
         val fileReader = PDFFileReader(file)

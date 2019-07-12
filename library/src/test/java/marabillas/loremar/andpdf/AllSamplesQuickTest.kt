@@ -26,7 +26,7 @@ class AllSamplesQuickTest {
         samples.forEach { pdfFilename ->
             test(pdfFilename)
         }
-        if (numFails > 0) Assert.fail("Library failed in some samples")
+        if (numFails > 0) Assert.fail("Library failed in $numFails/${samples.size} samples")
     }
 
     private fun getAllSamples() {

@@ -2,12 +2,13 @@ package marabillas.loremar.andpdf.font
 
 import android.graphics.Typeface
 import android.support.v4.util.SparseArrayCompat
-import android.util.Log
+import marabillas.loremar.andpdf.exceptions.InvalidStreamException
 import marabillas.loremar.andpdf.font.cmap.*
 import marabillas.loremar.andpdf.font.encoding.*
 import marabillas.loremar.andpdf.font.ttf.TTFParser
 import marabillas.loremar.andpdf.objects.*
 import marabillas.loremar.andpdf.utils.logd
+import marabillas.loremar.andpdf.utils.loge
 
 internal class Font(private val dictionary: Dictionary, private val referenceResolver: ReferenceResolver) {
     var typeface: Typeface = FontMappings[FontName.DEFAULT]
@@ -89,8 +90,9 @@ internal class Font(private val dictionary: Dictionary, private val referenceRes
                 cmap = ToUnicodeCMap(String(b)).parse()
                 logd("Uses a ToUnicode cmap")
             }
-        } catch (e: Exception) {
-            Log.e(javaClass.name, "Exception in getting ToUnicode CMap", e)
+        } catch (e: InvalidStreamException) {
+            loge("Invalid Unicode CMap", null)
+            return
         }
     }
 
@@ -348,8 +350,9 @@ internal class Font(private val dictionary: Dictionary, private val referenceRes
                     widths = Type1Parser(data).getCharacterWidths(encodingArray, cmap)
                 }
             }
-        } catch (e: Exception) {
-            Log.e(javaClass.name, "Exception in getting widths from FontFile1", e)
+        } catch (e: InvalidStreamException) {
+            loge("Invalid FontFile. Getting widths from FontFile will be skipped", null)
+            return
         }
     }
 
@@ -362,8 +365,9 @@ internal class Font(private val dictionary: Dictionary, private val referenceRes
                     widths = TTFParser(data).getCharacterWidths()
                 }
             }
-        } catch (e: Exception) {
-            Log.e(javaClass.name, "Exception in getting widths from FontFile2", e)
+        } catch (e: InvalidStreamException) {
+            loge("Invalid FontFile2. Getting widths from FontFile2 will be skipped", null)
+            return
         }
     }
 

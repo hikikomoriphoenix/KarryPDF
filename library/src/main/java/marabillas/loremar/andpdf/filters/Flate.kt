@@ -5,6 +5,7 @@ Original authors: Ben Litchfield, Marcel Kammer
  */
 package marabillas.loremar.andpdf.filters
 
+import marabillas.loremar.andpdf.exceptions.InvalidStreamException
 import marabillas.loremar.andpdf.objects.Dictionary
 import marabillas.loremar.andpdf.objects.Numeric
 import marabillas.loremar.andpdf.utils.logd
@@ -63,7 +64,7 @@ internal class Flate(decodeParams: Dictionary?) : Decoder {
                         break
                     } else {
                         // nothing could be read -> re-throw exception
-                        throw exception
+                        throw InvalidStreamException("Failed to decode stream with Flate", exception)
                     }
                 }
 

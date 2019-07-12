@@ -1,7 +1,7 @@
 package marabillas.loremar.andpdf.font.ttf
 
-import android.util.Log
 import marabillas.loremar.andpdf.exceptions.font.InvalidTTFCMapException
+import marabillas.loremar.andpdf.utils.loge
 
 internal class TTFCMapFactory {
     fun getTTFCMap(format: Int, data: ByteArray, pos: Long): TTFCMap? {
@@ -18,14 +18,10 @@ internal class TTFCMapFactory {
                 else -> null
             }
         } catch (e: InvalidTTFCMapException) {
-            Log.e("${javaClass.name}.getTTFCMap", e.message)
+            loge("Invalid TTF", null)
             return null
         } catch (e: Exception) {
-            Log.e(javaClass.name, "${e.javaClass.name}: ${e.message}")
-            val elements = e.stackTrace
-            for (element in elements) {
-                Log.e(javaClass.name, "$element")
-            }
+            loge("Invalid TTF", e)
             return null
         }
     }

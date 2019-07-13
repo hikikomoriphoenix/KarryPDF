@@ -93,6 +93,8 @@ internal class Font(private val dictionary: Dictionary, private val referenceRes
         } catch (e: InvalidStreamException) {
             loge("Invalid Unicode CMap", null)
             return
+        } catch (e: Exception) {
+            loge("Exception on getting ToUnicodeCMap", e)
         }
     }
 
@@ -353,6 +355,8 @@ internal class Font(private val dictionary: Dictionary, private val referenceRes
         } catch (e: InvalidStreamException) {
             loge("Invalid FontFile. Getting widths from FontFile will be skipped", null)
             return
+        } catch (e: Exception) {
+            loge("Exception on getting widths from FontFile", e)
         }
     }
 
@@ -368,6 +372,8 @@ internal class Font(private val dictionary: Dictionary, private val referenceRes
         } catch (e: InvalidStreamException) {
             loge("Invalid FontFile2. Getting widths from FontFile2 will be skipped", null)
             return
+        } catch (e: Exception) {
+            loge("Exception on getting widths from FontFile2", e)
         }
     }
 

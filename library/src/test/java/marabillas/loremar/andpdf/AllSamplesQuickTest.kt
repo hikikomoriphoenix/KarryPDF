@@ -1,6 +1,8 @@
 package marabillas.loremar.andpdf
 
+import marabillas.loremar.andpdf.utils.filterErrorLogs
 import marabillas.loremar.andpdf.utils.forceHideLogs
+import marabillas.loremar.andpdf.utils.loge
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -79,7 +81,58 @@ class AllSamplesQuickTest {
             pdf.getPageContents(pageNum)
             true
         } catch (e: Exception) {
+            loge("UNCAUGHT EXCEPTION on page $pageNum", e)
             false
+        }
+    }
+
+    @Test
+    fun testOneSample() {
+        forceHideLogs = true
+        val pdfFilename = "artificial-intelligence-agent-behaviour-i.pdf"
+        print("Testing library on $pdfFilename...")
+        val path = javaClass.classLoader.getResource("$samplesDir$pdfFilename").path
+        val file = RandomAccessFile(path, "r")
+        val pdf = loadDocument(file, pdfFilename)
+        if (pdf != null) {
+            val numPages = pdf.getTotalPages()
+            var numExceptions = 0
+            repeat(numPages) { pageNum ->
+                val success = executeGetPageContents(pdf, pageNum)
+                if (success) {
+                    println("Test page $pageNum...success")
+                } else {
+                    System.err.println("Testpage $pageNum...fail")
+                    numExceptions++
+                }
+            }
+            if (numExceptions > 0) {
+                Assert.fail("$numExceptions Exceptions!")
+            }
+        } else {
+            Assert.fail("Document does not exist")
+        }
+    }
+
+    @Test
+    fun testOnePage() {
+        forceHideLogs = false
+        filterErrorLogs = true
+
+        val pdfFilename = "artificial-intelligence-agent-behaviour-i.pdf"
+        val pageNum = 192
+        print("Testing library on $pdfFilename at page $pageNum")
+        val path = javaClass.classLoader.getResource("$samplesDir$pdfFilename").path
+        val file = RandomAccessFile(path, "r")
+        val pdf = loadDocument(file, pdfFilename)
+
+        if (pdf != null) {
+            val success = executeGetPageContents(pdf, pageNum)
+            if (!success) {
+                Assert.fail("This page threw an uncaught exception")
+            }
+        } else {
+            Assert.fail("Document does not exist")
         }
     }
 }

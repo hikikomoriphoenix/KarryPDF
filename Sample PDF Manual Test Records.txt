@@ -1,33 +1,33 @@
 Title: Pro Git Second Edition
 Author/Publisher: Scott Chacon and Ben Straub
 File: progit.pdf
-Bugs:
+Issues:
 - Very slow performance
 - Font colors not shown
 
 Title: Heartfulness Magazine Issue 10
 Author/Publisher: heartfulness.org
 File: Heartfulness-Magazine-Issue-10.pdf
-Bugs: 
+Issues: 
 - None. Except that all pages are in pictures with text. Perhaps this can be solved by getting Alternative Text for page
 
 Title: AM031
 Author/Publisher: Audiation Magazine
 File: AM031.pdf
-Bugs:
+Issues:
 - None. Except that all pages are in pictures with text. Perhaps this can be solved by getting Alternative Text for page
 
 Title: An Introduction to Accounting Theory
 Author/Publisher: Gabriel Donleavy
 File: an-introduction-to-accounting-theory.pdf
-Bugs:
+Issues:
 - missing images
 - missing characters at page 15 and other several pages
 
 Title: Artificial intelligence - Agent Behaviour
 Author/Publisher: William John Teahan
 File: artificial-intelligence-agent-behaviour-i.pdf
-Bugs:
+Issues:
 - very minor issues with character spacing
 - Error at page 81, 133 up until 192, Flate decoding fails
 - NumberFormatException at page 193
@@ -35,35 +35,35 @@ Bugs:
 Title: Bridging gender gaps?
 Author/Publisher: Leonardo Gasparini, Mariana Marchionni
 File: Bridging_Gender_Gaps.pdf
-Bugs:
+Issues:
 - Innacurate character spacing. Affected pages: All
 - Graphs not rendered. Affected pages: 133, etc.
 
 Title: Automation and Robotics
 Author/Publisher: Dr. Miltiadis A. Boboulos
 File: automation-and-robotics.pdf
-Bugs:
+Issues:
 - Innacurate character spacing. Affected pages: All
 - missing images
 
 Title: Document Management - Portable Document Format - Part 1: PDF 1.7
 Author/Publisher: Adobe Systems Incorporated
 File: PDF32000_2008.pdf
-Bugs:
+Issues:
 - Innacurate character spacing
 - Takes a long time to load document
 
 Title: Players Unleashed! Modding the Sims and the Culture of Gaming
 Author/Publisher: Tanja Sihvonen
 File: Players-Unleashed-Open-Access
-Bugs: 
+Issues: 
 - Missing characters at the top of page. Affected pages: page 11 above
 - missing images
 
 Title: Artificial Intelligence - Agents and Environments
 Author/Publisher: William John Teahan
 File: artificial-intelligence-agents-and-environments.pdf
-Bugs:
+Issues:
 - missing images, Affected pages: 58, 71, 75, etc.
 - Some encoded text is not decoded, Affected pages: 66
 - Innacurate character spacing

@@ -1,5 +1,6 @@
 package marabillas.loremar.andpdf.objects
 
+import marabillas.loremar.andpdf.utils.exts.toInt
 import java.io.RandomAccessFile
 
 /**
@@ -14,13 +15,33 @@ internal open class Indirect(private val file: RandomAccessFile, private val sta
     var gen: Int = 0
         private set
 
+    private object Inst {
+        val stringBuilder = StringBuilder()
+    }
+
     init {
         file.seek(start)
-        var s = ""
-        while (s == "")
-            s = file.readLine().trim()
-        obj = s.substringBefore(' ').toInt()
-        gen = s.substringAfter(' ').substringBefore(' ').toInt()
+        obj = extractNextNumber()
+        gen = extractNextNumber()
+    }
+
+    private fun extractNextNumber(): Int {
+        Inst.stringBuilder.clear()
+        var c = nextDigit()
+        while (c != ' ') {
+            Inst.stringBuilder.append(c)
+            c = file.readByte().toChar()
+        }
+
+        return Inst.stringBuilder.toInt()
+    }
+
+    private fun nextDigit(): Char {
+        var c = ' '
+        while (!c.isDigit()) {
+            c = file.readByte().toChar()
+        }
+        return c
     }
 
     fun extractContent(): StringBuilder {

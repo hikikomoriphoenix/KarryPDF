@@ -45,8 +45,14 @@ internal class StandardSecurityHandler(encryptionDictionary: Dictionary, idArray
             authenticateUserPassword(passwordBytes)
         }
 
-        if ((version != null && version >= 4) || revision >= 4) {
-            TODO("Determine from crypt filter if AES algorithm is to be used")
+        if (version != null) {
+            if ((version >= 4) || revision >= 4) {
+                TODO("Determine from crypt filter if AES algorithm is to be used")
+            } else if (version == 3) {
+                TODO("Encyption algorithms for version 3 is not supported")
+            }
+        } else {
+            throw UnsupportedPDFElementException("Version 0 encryption algorithm is not supported")
         }
     }
 

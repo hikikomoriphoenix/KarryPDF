@@ -63,8 +63,7 @@ internal class Flate(decodeParams: Dictionary?) : Decoder {
                         logd("FlateFilter: premature end of stream due to a DataFormatException")
                         break
                     } else {
-                        // nothing could be read -> re-throw exception
-                        throw InvalidStreamException("Failed to decode stream with Flate", exception)
+                        return handleCorruptedStream(encoded)
                     }
                 }
 
@@ -84,5 +83,14 @@ internal class Flate(decodeParams: Dictionary?) : Decoder {
         predictedOut.flush()
 
         return out.toByteArray()
+    }
+
+    private fun handleCorruptedStream(corrupted: ByteArray): ByteArray {
+        val repaired = FlateRepair(corrupted).repair()
+        if (repaired.isNotEmpty()) {
+            return decode(repaired)
+        } else {
+            throw InvalidStreamException("corrupted stream data using Flate filter", null)
+        }
     }
 }

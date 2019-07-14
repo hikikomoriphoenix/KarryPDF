@@ -7,17 +7,15 @@ import marabillas.loremar.andpdf.contents.PageContentAdapter
 import marabillas.loremar.andpdf.contents.XObjectsResolver
 import marabillas.loremar.andpdf.encryption.Decryptor
 import marabillas.loremar.andpdf.exceptions.InvalidDocumentException
+import marabillas.loremar.andpdf.exceptions.InvalidStreamException
 import marabillas.loremar.andpdf.exceptions.NoDocumentException
 import marabillas.loremar.andpdf.font.Font
 import marabillas.loremar.andpdf.font.FontDecoder
 import marabillas.loremar.andpdf.font.FontMappings
 import marabillas.loremar.andpdf.font.FontName
 import marabillas.loremar.andpdf.objects.*
-import marabillas.loremar.andpdf.utils.TimeCounter
+import marabillas.loremar.andpdf.utils.*
 import marabillas.loremar.andpdf.utils.exts.containedEqualsWith
-import marabillas.loremar.andpdf.utils.forceHideLogs
-import marabillas.loremar.andpdf.utils.logd
-import marabillas.loremar.andpdf.utils.showAndPDFLogs
 import java.io.RandomAccessFile
 
 class AndPDF(file: RandomAccessFile, password: String = "") {
@@ -171,29 +169,34 @@ class AndPDF(file: RandomAccessFile, password: String = "") {
         fonts: HashMap<String, Font>,
         xObjects: HashMap<String, Stream>
     ): ArrayList<PageContent> {
-        TimeCounter.reset()
-        val ref = content as Reference
-        val stream = referenceResolver.resolveReferenceToStream(ref)
-        stream?.let {
+        try {
             TimeCounter.reset()
-            val data = it.decodeEncodedStream()
-            logd("Stream.decodeEncodedStream -> ${TimeCounter.getTimeElapsed()} ms")
+            val ref = content as Reference
+            val stream = referenceResolver.resolveReferenceToStream(ref)
+            stream?.let {
+                TimeCounter.reset()
+                val data = it.decodeEncodedStream()
+                logd("Stream.decodeEncodedStream -> ${TimeCounter.getTimeElapsed()} ms")
 
-            TimeCounter.reset()
-            val pageObjs = ContentStreamParser().parse(String(data), ref.obj, ref.gen)
-            logd("ContentStreamParser.parse -> ${TimeCounter.getTimeElapsed()} ms")
+                TimeCounter.reset()
+                val pageObjs = ContentStreamParser().parse(String(data), ref.obj, ref.gen)
+                logd("ContentStreamParser.parse -> ${TimeCounter.getTimeElapsed()} ms")
 
-            TimeCounter.reset()
-            FontDecoder(pageObjs, fonts).decodeEncoded()
-            logd("FontDecoder.decodeEncoded -> ${TimeCounter.getTimeElapsed()} ms")
+                TimeCounter.reset()
+                FontDecoder(pageObjs, fonts).decodeEncoded()
+                logd("FontDecoder.decodeEncoded -> ${TimeCounter.getTimeElapsed()} ms")
 
-            TimeCounter.reset()
-            XObjectsResolver(pageObjs, xObjects).resolve()
-            logd("XObjectsResolver.resolve -> ${TimeCounter.getTimeElapsed()} ms")
+                TimeCounter.reset()
+                XObjectsResolver(pageObjs, xObjects).resolve()
+                logd("XObjectsResolver.resolve -> ${TimeCounter.getTimeElapsed()} ms")
 
-            return PageContentAdapter(pageObjs, fonts).getPageContents()
+                return PageContentAdapter(pageObjs, fonts).getPageContents()
+            }
+            return ArrayList()
+        } catch (e: InvalidStreamException) {
+            loge("Unable to parse content due to InvalidStreamException", e)
+            return ArrayList()
         }
-        return ArrayList()
     }
 
     private fun getXObjects(xObjectDic: Dictionary): HashMap<String, Stream> {

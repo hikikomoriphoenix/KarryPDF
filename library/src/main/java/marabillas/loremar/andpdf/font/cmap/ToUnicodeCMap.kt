@@ -183,7 +183,7 @@ internal class ToUnicodeCMap(private var stream: String) : EmbeddedCMap {
                         skipWhitespaces()
                     }
                 }
-                stream.startsWith(ENDCMAP, operator) -> {
+                stream.startsWith(ENDCMAP, operator) || operator == -1 -> {
                     break@loop
                 }
             }

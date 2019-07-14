@@ -10,6 +10,7 @@ import marabillas.loremar.andpdf.utils.exts.isEnclosingAt
 import marabillas.loremar.andpdf.utils.exts.isWhiteSpaceAt
 import marabillas.loremar.andpdf.utils.exts.toDouble
 import marabillas.loremar.andpdf.utils.logd
+import marabillas.loremar.andpdf.utils.loge
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -23,136 +24,141 @@ internal class ContentStreamParser {
     private val gsHolders = mutableListOf<GraphicsState>()
 
     fun parse(streamData: String, obj: Int, gen: Int): ArrayList<PageObject> {
-        sb.clear().append(streamData)
+        try {
+            sb.clear().append(streamData)
 
-        // Initialize graphics state stack
-        repeat(4) {
-            gsHolders.add(GraphicsState())
-        }
-        gsStack.push(gsHolders[0])
+            // Initialize graphics state stack
+            repeat(4) {
+                gsHolders.add(GraphicsState())
+            }
+            gsStack.push(gsHolders[0])
 
-        logd("ContentStreamParser.parse begins")
-        //logd("stream->$streamData")
-        val pageObjects = ArrayList<PageObject>()
-        val textObjectParser = TextObjectParser(obj, gen)
-        val imageObjectParser = ImageObjectParser(obj, gen)
-        val tf = StringBuilder()
-        var i = 0
+            logd("ContentStreamParser.parse begins")
+            //logd("stream->$streamData")
+            val pageObjects = ArrayList<PageObject>()
+            val textObjectParser = TextObjectParser(obj, gen)
+            val imageObjectParser = ImageObjectParser(obj, gen)
+            val tf = StringBuilder()
+            var i = 0
 
-        while (i < sb.length) {
-            i = nextOperator(i)
-            if (i >= sb.length) break
+            while (i < sb.length) {
+                i = nextOperator(i)
+                if (i >= sb.length) break
 
-            when {
-                // RG or rg
-                (i + 1 < sb.length) && ((sb[i] == 'R' && sb[i + 1] == 'G') || (sb[i] == 'r' && sb[i + 1] == 'g')) -> {
-                    gsStack.lastElement().rgb = getRGB(i)
-                    i += 2
-                }
-                // K or k
-                sb[i] == 'K' || sb[i] == 'k' -> {
-                    val cmyk = getCMYK(i)
-                    gsStack.lastElement().rgb = CmykToRgbConverter.inst.convert(cmyk)
-                    i++
-                }
-                // TF
-                i + 1 < sb.length && sb[i] == 'T' && (sb[i + 1] == 'F' || sb[i + 1] == 'f') -> {
-                    var j = 3
-                    while (true) {
-                        if (sb[i - j] == '/') {
-                            token.clear().append(sb, i - j + 1, i - 1)
-                            break
+                when {
+                    // RG or rg
+                    (i + 1 < sb.length) && ((sb[i] == 'R' && sb[i + 1] == 'G') || (sb[i] == 'r' && sb[i + 1] == 'g')) -> {
+                        gsStack.lastElement().rgb = getRGB(i)
+                        i += 2
+                    }
+                    // K or k
+                    sb[i] == 'K' || sb[i] == 'k' -> {
+                        val cmyk = getCMYK(i)
+                        gsStack.lastElement().rgb = CmykToRgbConverter.inst.convert(cmyk)
+                        i++
+                    }
+                    // TF
+                    i + 1 < sb.length && sb[i] == 'T' && (sb[i + 1] == 'F' || sb[i + 1] == 'f') -> {
+                        var j = 3
+                        while (true) {
+                            if (sb[i - j] == '/') {
+                                token.clear().append(sb, i - j + 1, i - 1)
+                                break
+                            }
+                            j++
                         }
-                        j++
+                        gsStack.lastElement().tf = token.toString()
+                        tf.clear().append(token)
+                        i += 2
                     }
-                    gsStack.lastElement().tf = token.toString()
-                    tf.clear().append(token)
-                    i += 2
-                }
-                // BT
-                i + 1 < sb.length && sb[i] == 'B' && sb[i + 1] == 'T' -> {
-                    val textObj = TextObject()
-                    val cm = gsStack.lastElement().cm
-                    val rgb = gsStack.lastElement().rgb
-                    i = textObjectParser.parse(sb, textObj, tf, i + 2, cm, rgb)
+                    // BT
+                    i + 1 < sb.length && sb[i] == 'B' && sb[i + 1] == 'T' -> {
+                        val textObj = TextObject()
+                        val cm = gsStack.lastElement().cm
+                        val rgb = gsStack.lastElement().rgb
+                        i = textObjectParser.parse(sb, textObj, tf, i + 2, cm, rgb)
 
-                    if (textObj.count() > 0) {
-                        textObj.scaleX = Math.abs(cm[0])
-                        textObj.scaleY = Math.abs(cm[3])
-                        pageObjects.add(textObj)
+                        if (textObj.count() > 0) {
+                            textObj.scaleX = Math.abs(cm[0])
+                            textObj.scaleY = Math.abs(cm[3])
+                            pageObjects.add(textObj)
+                        }
+                        //logd("textObj -> ${textObj.getX()}, ${textObj.getY()}")
                     }
-                    //logd("textObj -> ${textObj.getX()}, ${textObj.getY()}")
-                }
-                // q
-                sb[i] == 'q' -> {
-                    //logd("QSTART")
+                    // q
+                    sb[i] == 'q' -> {
+                        //logd("QSTART")
 
-                    // If next index for stack is greater than gsHolders' size, add a new GraphicsState
-                    val index = gsStack.size
-                    if (index >= gsHolders.size) {
-                        gsHolders.add(GraphicsState())
+                        // If next index for stack is greater than gsHolders' size, add a new GraphicsState
+                        val index = gsStack.size
+                        if (index >= gsHolders.size) {
+                            gsHolders.add(GraphicsState())
+                        }
+
+                        // Use values from previous element in the stack
+                        gsHolders[index].cm = gsStack.lastElement().cm.copyOf()
+                        gsHolders[index].rgb = gsStack.lastElement().rgb.copyOf()
+                        gsHolders[index].tf = gsStack.lastElement().tf
+
+                        gsStack.push(gsHolders[index])
+                        i++
                     }
-
-                    // Use values from previous element in the stack
-                    gsHolders[index].cm = gsStack.lastElement().cm.copyOf()
-                    gsHolders[index].rgb = gsStack.lastElement().rgb.copyOf()
-                    gsHolders[index].tf = gsStack.lastElement().tf
-
-                    gsStack.push(gsHolders[index])
-                    i++
-                }
-                // Q
-                sb[i] == 'Q' -> {
-                    //logd("QEND")
-                    gsStack.pop()
-                    if (gsStack.size > 0) {
-                        tf.clear().append(gsStack.lastElement().tf)
-                    } else {
-                        // Restore Graphics State to default
-                        gsHolders[0].cm = identityCm
-                        gsHolders[0].rgb = floatArrayOf(-1f, -1f, -1f)
-                        gsHolders[0].tf = ""
-                        gsStack.add(gsHolders[0])
-                        tf.clear()
+                    // Q
+                    sb[i] == 'Q' -> {
+                        //logd("QEND")
+                        gsStack.pop()
+                        if (gsStack.size > 0) {
+                            tf.clear().append(gsStack.lastElement().tf)
+                        } else {
+                            // Restore Graphics State to default
+                            gsHolders[0].cm = identityCm
+                            gsHolders[0].rgb = floatArrayOf(-1f, -1f, -1f)
+                            gsHolders[0].tf = ""
+                            gsStack.add(gsHolders[0])
+                            tf.clear()
+                        }
+                        i++
                     }
-                    i++
-                }
-                // cm
-                i + 1 < sb.length && sb[i] == 'c' && sb[i + 1] == 'm' -> {
-                    val cm = getCM(i)
-                    //logd("cm -> ${cm[0]}, ${cm[1]}, ${cm[2]}, ${cm[3]}, ${cm[4]}, ${cm[5]}")
-                    gsStack.lastElement().cm = cm
-                    i += 2
-                }
-                // Do
-                i + 1 < sb.length && sb[i] == 'D' && sb[i + 1] == 'o' -> {
-                    //logd("Do XObject")
-                    val nameIndex = sb.lastIndexOf('/', i)
-                    token.clear().append(sb, nameIndex, i - 1)
+                    // cm
+                    i + 1 < sb.length && sb[i] == 'c' && sb[i + 1] == 'm' -> {
+                        val cm = getCM(i)
+                        //logd("cm -> ${cm[0]}, ${cm[1]}, ${cm[2]}, ${cm[3]}, ${cm[4]}, ${cm[5]}")
+                        gsStack.lastElement().cm = cm
+                        i += 2
+                    }
+                    // Do
+                    i + 1 < sb.length && sb[i] == 'D' && sb[i + 1] == 'o' -> {
+                        //logd("Do XObject")
+                        val nameIndex = sb.lastIndexOf('/', i)
+                        token.clear().append(sb, nameIndex, i - 1)
 
-                    var x = gsStack.lastElement().cm[4]
-                    var y = gsStack.lastElement().cm[5]
-                    val sx = gsStack.lastElement().cm[0]
-                    val sy = gsStack.lastElement().cm[3]
-                    if (sx < 0)
-                        x = -x
-                    if (sy < 0)
-                        y = -y
-                    pageObjects.add(
-                        XObject(x, y, token.toName())
-                    )
-                    i += 2
-                    //logd("xObj -> ${pageObjects.last().getX()}, ${pageObjects.last().getY()}")
-                }
-                // BI
-                i + 1 < sb.length && sb[i] == 'B' && sb[i + 1] == 'I' -> {
-                    // TODO parse inline image object
-                    throw UnsupportedPDFElementException("Extraction of inline image objects is not yet supported.")
+                        var x = gsStack.lastElement().cm[4]
+                        var y = gsStack.lastElement().cm[5]
+                        val sx = gsStack.lastElement().cm[0]
+                        val sy = gsStack.lastElement().cm[3]
+                        if (sx < 0)
+                            x = -x
+                        if (sy < 0)
+                            y = -y
+                        pageObjects.add(
+                            XObject(x, y, token.toName())
+                        )
+                        i += 2
+                        //logd("xObj -> ${pageObjects.last().getX()}, ${pageObjects.last().getY()}")
+                    }
+                    // BI
+                    i + 1 < sb.length && sb[i] == 'B' && sb[i + 1] == 'I' -> {
+                        // TODO parse inline image object
+                        throw UnsupportedPDFElementException("Extraction of inline image objects is not yet supported.")
+                    }
                 }
             }
-        }
 
-        return pageObjects
+            return pageObjects
+        } catch (e: Exception) {
+            loge("Exception on parsing content stream", e)
+            return arrayListOf()
+        }
     }
 
     private fun nextOperator(startIndex: Int): Int {

@@ -63,6 +63,7 @@ internal class Flate(decodeParams: Dictionary?) : Decoder {
                         logd("FlateFilter: premature end of stream due to a DataFormatException")
                         break
                     } else {
+                        inflater.end()
                         return handleCorruptedStream(encoded)
                     }
                 }

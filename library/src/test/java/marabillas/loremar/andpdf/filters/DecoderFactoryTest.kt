@@ -1,7 +1,6 @@
 package marabillas.loremar.andpdf.filters
 
 import junit.framework.Assert.assertTrue
-import marabillas.loremar.andpdf.objects.toDictionary
 import org.junit.Test
 
 class DecoderFactoryTest {
@@ -17,7 +16,7 @@ class DecoderFactoryTest {
         assertTrue(decoder is ASCII85)
     }
 
-    @Test
+/*    @Test
     fun testForLZW() {
         val objDic = "<</DecodeParams <<>>>>".toDictionary()
         val decoder = DecoderFactory().getDecoder("LZWDecode", objDic)
@@ -36,7 +35,7 @@ class DecoderFactoryTest {
         val objDic = "<</DecodeParams <<>>/Height 0>>".toDictionary()
         val decoder = DecoderFactory().getDecoder("CCITTFaxDecode", objDic)
         assertTrue(decoder is CCITTFax)
-    }
+    }*/
 
     @Test
     fun testForRunLength() {

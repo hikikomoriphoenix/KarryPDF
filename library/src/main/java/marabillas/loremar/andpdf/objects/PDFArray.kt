@@ -31,48 +31,6 @@ internal class PDFArray(val array: ArrayList<PDFObject?>) : PDFObject, Iterable<
     }
 }
 
-internal fun String.toPDFArray(resolveReferences: Boolean = false): PDFArray {
-    val array = ArrayList<PDFObject?>()
-    if (!this.startsWith("[") || !this.endsWith("]")) throw IllegalArgumentException(
-        "An array object needs to be enclosed in []"
-    )
-
-    var content = this.substringAfter("[").substringBeforeLast("]")
-
-    while (true) {
-        content = content.trim()
-        if (content == "") break
-
-        var entry: String
-        when {
-            content.startsEnclosed() -> entry = content.extractEnclosedObject()
-            content.startsWith("/") -> {
-                entry = content.substringAfter("/")
-                entry = entry.split(regex = "[()<\\[{/ ]".toRegex())[0]
-                entry = "/$entry"
-            }
-            else -> {
-                entry = content.split(regex = "[()<\\[{/ ]".toRegex())[0]
-                if (entry == "R") {
-                    val a = (array[array.lastIndex - 1] as Numeric).value.toInt()
-                    val b = (array[array.lastIndex] as Numeric).value.toInt()
-                    val ref = "$a $b R"
-                    if ("^\\d+ \\d+ R$".toRegex().matches(ref)) {
-                        repeat(2) { array.removeAt(array.lastIndex) }
-                        entry = ref
-                        content = "$a $b $content"
-                    }
-                }
-            }
-        }
-
-        content = content.substringAfter(entry)
-        if (entry == "") break
-        array.add(entry.toPDFObject(resolveReferences))
-    }
-    return PDFArray(array)
-}
-
 internal fun StringBuilder.toPDFArray(
     secondary: StringBuilder,
     obj: Int,

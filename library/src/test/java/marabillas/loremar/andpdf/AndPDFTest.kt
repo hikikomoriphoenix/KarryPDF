@@ -1,9 +1,10 @@
 package marabillas.loremar.andpdf
 
-import marabillas.loremar.andpdf.objects.*
+import marabillas.loremar.andpdf.objects.Dictionary
+import marabillas.loremar.andpdf.objects.Numeric
+import marabillas.loremar.andpdf.objects.PDFString
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.RandomAccessFile
 
@@ -26,22 +27,22 @@ class AndPDFTest {
         )
     }
 
-    @Test
-    fun testResolveReference() {
-        var path = javaClass.classLoader.getResource("samplepdf1.4.pdf").path
-        var file = RandomAccessFile(path, "r")
-        AndPDF(file) // This also sets ReferenceResolver for ObjectIdentifier class
-        var obj = "3 0 R".toPDFObject(true) // resolveReference() is indirectly called
-        assertTrue(obj is Dictionary)
-        obj = "19 0 R".toPDFObject(true) // resolveReference() is indirectly called
-        assertTrue(obj is Reference)
+    /*   @Test
+       fun testResolveReference() {
+           var path = javaClass.classLoader.getResource("samplepdf1.4.pdf").path
+           var file = RandomAccessFile(path, "r")
+           AndPDF(file) // This also sets ReferenceResolver for ObjectIdentifier class
+           var obj = "3 0 R".toPDFObject(true) // resolveReference() is indirectly called
+           assertTrue(obj is Dictionary)
+           obj = "19 0 R".toPDFObject(true) // resolveReference() is indirectly called
+           assertTrue(obj is Reference)
 
-        path = javaClass.classLoader.getResource("samplepdf1.4compressed.pdf").path
-        file = RandomAccessFile(path, "r")
-        AndPDF(file)
-        obj = "10 0 R".toPDFObject(true)
-        assertTrue(obj is Reference)
-        obj = "1 0 R".toPDFObject(true)
-        assertTrue(obj is Dictionary)
-    }
+           path = javaClass.classLoader.getResource("samplepdf1.4compressed.pdf").path
+           file = RandomAccessFile(path, "r")
+           AndPDF(file)
+           obj = "10 0 R".toPDFObject(true)
+           assertTrue(obj is Reference)
+           obj = "1 0 R".toPDFObject(true)
+           assertTrue(obj is Dictionary)
+       }*/
 }

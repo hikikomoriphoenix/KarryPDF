@@ -292,3 +292,10 @@ internal fun StringBuilder.hexFromInt(int: Int): StringBuilder {
     remainders.clear()
     return this
 }
+
+internal fun StringBuilder.append(bytes: ByteArray, start: Int = 0, end: Int = bytes.size) {
+    for (i in start until end) {
+        val c = bytes[i].toChar()
+        this.append(c)
+    }
+}

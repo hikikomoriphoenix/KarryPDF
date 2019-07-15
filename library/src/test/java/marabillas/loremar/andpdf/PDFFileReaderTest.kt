@@ -74,7 +74,7 @@ class PDFFileReaderTest {
         var path = javaClass.classLoader.getResource("samplepdf1.4.pdf").path
         var file = RandomAccessFile(path, "r")
         var reader = PDFFileReader(file)
-        ObjectIdentifier.referenceResolver = object : ReferenceResolver {
+        PDFObjectAdapter.referenceResolver = object : ReferenceResolver {
             override fun resolveReferenceToStream(reference: Reference): Stream? {
                 TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
             }

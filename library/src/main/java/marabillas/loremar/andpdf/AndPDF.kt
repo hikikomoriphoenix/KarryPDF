@@ -41,8 +41,6 @@ class AndPDF(file: RandomAccessFile, password: String = "") {
 
         val fileReader = PDFFileReader(file)
         this.fileReader = fileReader
-        ObjectIdentifier.referenceResolver = referenceResolver
-        PDFObjectAdapter.referenceResolver = referenceResolver
 
         objects = if (fileReader.isLinearized()) {
             logd("Detected linearized PDF document")
@@ -72,15 +70,18 @@ class AndPDF(file: RandomAccessFile, password: String = "") {
     }
 
     private inner class ReferenceResolverImpl : ReferenceResolver {
+        private val stringBuilder = StringBuilder()
+
         override fun resolveReference(reference: Reference): PDFObject? {
             val fileReader = fileReader ?: throw NoDocumentException()
             val objects = objects ?: throw NoDocumentException()
             val obj = objects["${reference.obj} ${reference.gen}"] ?: return null
 
-            if (obj.compressed) {
+            return if (obj.compressed) {
                 val objStmEntry = objects["${obj.objStm} 0"]
                 val objStm = objStmEntry?.pos?.let { fileReader.getObjectStream(it) }
-                return objStm?.getObject(obj.index)
+                val objBytes = objStm?.extractObjectBytes(obj.index)
+                stringBuilder.clear().append(objBytes).toPDFObject(reference.obj, reference.gen)
             } else {
                 val content = fileReader.getIndirectObject(obj.pos).extractContent()
                 if (content.isEmpty() || content.containedEqualsWith('n', 'u', 'l', 'l')) return null

@@ -24,27 +24,6 @@ internal class Dictionary(private val entries: HashMap<String, PDFObject?>) : PD
     }
 }
 
-internal fun String.toDictionary(resolveReferences: Boolean = false): Dictionary {
-    val entries = HashMap<String, PDFObject?>()
-    var s = this
-    while (true) {
-        s = s.substringAfter("/", "")
-        if (s == "") break
-        val key = s.split(regex = "[()<>\\[\\]{}/% ]".toRegex())[0]
-        s = s.substringAfter(key).trim()
-
-        val value = when {
-            s.startsEnclosed() -> s.extractEnclosedObject()
-            s.startsWith("/") -> "/${s.substringAfter("/").substringBefore("/")
-                .substringBefore(">>").trim()}"
-            else -> s.substringBefore("/").substringBefore(">>").trim()
-        }
-        s = s.substringAfter(value)
-        entries[key] = value.toPDFObject(resolveReferences)
-    }
-    return Dictionary(entries)
-}
-
 internal fun StringBuilder.toDictionary(
     secondary: StringBuilder,
     obj: Int,

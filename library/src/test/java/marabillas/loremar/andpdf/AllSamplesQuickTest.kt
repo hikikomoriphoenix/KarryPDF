@@ -89,7 +89,7 @@ class AllSamplesQuickTest {
     @Test
     fun testOneSample() {
         forceHideLogs = true
-        val pdfFilename = "artificial-intelligence-agent-behaviour-i.pdf"
+        val pdfFilename = "ColorfulText.pdf"
         print("Testing library on $pdfFilename...")
         val path = javaClass.classLoader.getResource("$samplesDir$pdfFilename").path
         val file = RandomAccessFile(path, "r")
@@ -119,8 +119,8 @@ class AllSamplesQuickTest {
         forceHideLogs = false
         filterErrorLogs = true
 
-        val pdfFilename = "artificial-intelligence-agent-behaviour-i.pdf"
-        val pageNum = 192
+        val pdfFilename = "ColorfulText.pdf"
+        val pageNum = 0
         print("Testing library on $pdfFilename at page $pageNum")
         val path = javaClass.classLoader.getResource("$samplesDir$pdfFilename").path
         val file = RandomAccessFile(path, "r")

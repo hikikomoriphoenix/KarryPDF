@@ -1,5 +1,6 @@
 package marabillas.loremar.andpdf
 
+import marabillas.loremar.andpdf.document.XRefStream
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test

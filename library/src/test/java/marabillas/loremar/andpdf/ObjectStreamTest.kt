@@ -1,5 +1,6 @@
 package marabillas.loremar.andpdf
 
+import marabillas.loremar.andpdf.document.ObjectStream
 import marabillas.loremar.andpdf.objects.Dictionary
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat

@@ -1,6 +1,6 @@
 package marabillas.loremar.andpdf.objects
 
-import marabillas.loremar.andpdf.PDFFileReader
+import marabillas.loremar.andpdf.document.PDFFileReader
 import marabillas.loremar.andpdf.encryption.Decryptor
 import marabillas.loremar.andpdf.filters.DecoderFactory
 import java.io.RandomAccessFile

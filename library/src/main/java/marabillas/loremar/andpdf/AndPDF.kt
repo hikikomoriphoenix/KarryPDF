@@ -5,6 +5,8 @@ import marabillas.loremar.andpdf.contents.ContentStreamParser
 import marabillas.loremar.andpdf.contents.PageContent
 import marabillas.loremar.andpdf.contents.PageContentAdapter
 import marabillas.loremar.andpdf.contents.XObjectsResolver
+import marabillas.loremar.andpdf.document.PDFFileReader
+import marabillas.loremar.andpdf.document.XRefEntry
 import marabillas.loremar.andpdf.encryption.Decryptor
 import marabillas.loremar.andpdf.exceptions.InvalidDocumentException
 import marabillas.loremar.andpdf.exceptions.InvalidStreamException

@@ -1,5 +1,6 @@
 package marabillas.loremar.andpdf
 
+import marabillas.loremar.andpdf.document.PDFFileReader
 import marabillas.loremar.andpdf.objects.*
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.CoreMatchers.startsWith

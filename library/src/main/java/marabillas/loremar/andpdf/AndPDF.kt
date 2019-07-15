@@ -37,6 +37,9 @@ class AndPDF(file: RandomAccessFile, password: String = "") {
             showAndPDFLogs = true
         }
 
+        Decryptor.instance = null
+        PDFObjectAdapter.referenceResolver = referenceResolver
+
         TimeCounter.reset()
 
         val fileReader = PDFFileReader(file)

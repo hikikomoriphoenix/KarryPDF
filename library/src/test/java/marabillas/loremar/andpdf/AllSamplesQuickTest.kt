@@ -1,6 +1,6 @@
 package marabillas.loremar.andpdf
 
-import marabillas.loremar.andpdf.utils.filterErrorLogs
+import marabillas.loremar.andpdf.utils.MemoryProfiler
 import marabillas.loremar.andpdf.utils.forceHideLogs
 import marabillas.loremar.andpdf.utils.loge
 import org.junit.Assert
@@ -27,6 +27,8 @@ class AllSamplesQuickTest {
         getAllSamples()
         samples.forEach { pdfFilename ->
             test(pdfFilename)
+            System.gc()
+            MemoryProfiler.Static.printCurrentMemory()
         }
         if (numFails > 0) Assert.fail("Library failed in $numFails/${samples.size} samples")
     }
@@ -53,6 +55,7 @@ class AllSamplesQuickTest {
             var numExceptions = 0
             repeat(numPages) { pageNum ->
                 val success = executeGetPageContents(pdf, pageNum)
+                System.gc()
                 if (!success) numExceptions++
             }
             if (numExceptions == 0)

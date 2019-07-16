@@ -5,12 +5,13 @@ import marabillas.loremar.andpdf.contents.ContentStreamParser
 import marabillas.loremar.andpdf.contents.PageContent
 import marabillas.loremar.andpdf.contents.PageContentAdapter
 import marabillas.loremar.andpdf.contents.XObjectsResolver
+import marabillas.loremar.andpdf.document.AndPDFContext
 import marabillas.loremar.andpdf.document.PDFFileReader
-import marabillas.loremar.andpdf.document.XRefEntry
 import marabillas.loremar.andpdf.encryption.Decryptor
 import marabillas.loremar.andpdf.exceptions.InvalidDocumentException
 import marabillas.loremar.andpdf.exceptions.InvalidStreamException
 import marabillas.loremar.andpdf.exceptions.NoDocumentException
+import marabillas.loremar.andpdf.exceptions.NoReferenceResolverException
 import marabillas.loremar.andpdf.font.Font
 import marabillas.loremar.andpdf.font.FontDecoder
 import marabillas.loremar.andpdf.font.FontMappings
@@ -21,33 +22,22 @@ import marabillas.loremar.andpdf.utils.exts.containedEqualsWith
 import java.io.RandomAccessFile
 
 class AndPDF(file: RandomAccessFile, password: String = "") {
-    private var fileReader: PDFFileReader? = null
-    private var objects: HashMap<String, XRefEntry>? = null
+    private val context = AndPDFContext()
     internal val pages: ArrayList<Reference> = ArrayList()
-    private val referenceResolver = ReferenceResolverImpl()
-
-    internal var size: Int? = null
-        get() = field ?: throw NoDocumentException()
-
-    internal var documentCatalog: Dictionary? = null
-        get() = field ?: throw NoDocumentException()
-
+    internal var size: Int? = null; get() = field ?: throw NoDocumentException()
+    internal var documentCatalog: Dictionary? = null; get() = field ?: throw NoDocumentException()
     internal var info: Dictionary? = null
 
     init {
+        TimeCounter.reset()
         if (BuildConfig.DEBUG && !forceHideLogs) {
             showAndPDFLogs = true
         }
 
-        Decryptor.instance = null
-        PDFObjectAdapter.referenceResolver = referenceResolver
-
-        TimeCounter.reset()
-
-        val fileReader = PDFFileReader(file)
-        this.fileReader = fileReader
-
-        objects = if (fileReader.isLinearized()) {
+        context.referenceResolver = ReferenceResolverImpl()
+        val fileReader = PDFFileReader(context, file)
+        context.fileReader = fileReader
+        context.objects = if (fileReader.isLinearized()) {
             logd("Detected linearized PDF document")
             val startXRef = fileReader.getStartXRefPositionLinearized()
             fileReader.getXRefData(startXRef)
@@ -63,7 +53,7 @@ class AndPDF(file: RandomAccessFile, password: String = "") {
         val id = trailerEntries["ID"] as PDFArray?
         val encrypt = trailerEntries["Encrypt"] as Dictionary?
         if (encrypt is Dictionary) {
-            Decryptor.instance = Decryptor(encrypt, id, password)
+            context.decryptor = Decryptor(encrypt, id, password)
         }
 
         val pageTree = (documentCatalog?.resolveReferences()?.get("Pages") ?: throw InvalidDocumentException(
@@ -78,25 +68,25 @@ class AndPDF(file: RandomAccessFile, password: String = "") {
         private val stringBuilder = StringBuilder()
 
         override fun resolveReference(reference: Reference): PDFObject? {
-            val fileReader = fileReader ?: throw NoDocumentException()
-            val objects = objects ?: throw NoDocumentException()
+            val fileReader = context.fileReader ?: throw NoDocumentException()
+            val objects = context.objects ?: throw NoDocumentException()
             val obj = objects["${reference.obj} ${reference.gen}"] ?: return null
 
             return if (obj.compressed) {
                 val objStmEntry = objects["${obj.objStm} 0"]
                 val objStm = objStmEntry?.pos?.let { fileReader.getObjectStream(it) }
                 val objBytes = objStm?.extractObjectBytes(obj.index)
-                stringBuilder.clear().append(objBytes).toPDFObject(reference.obj, reference.gen)
+                stringBuilder.clear().append(objBytes).toPDFObject(context, reference.obj, reference.gen)
             } else {
                 val content = fileReader.getIndirectObject(obj.pos).extractContent()
                 if (content.isEmpty() || content.containedEqualsWith('n', 'u', 'l', 'l')) return null
-                return content.toPDFObject(reference.obj, reference.gen, false) ?: reference
+                return content.toPDFObject(context, reference.obj, reference.gen, false) ?: reference
             }
         }
 
         override fun resolveReferenceToStream(reference: Reference): Stream? {
-            val fileReader = fileReader ?: throw NoDocumentException()
-            val objects = objects ?: throw NoDocumentException()
+            val fileReader = context.fileReader ?: throw NoDocumentException()
+            val objects = context.objects ?: throw NoDocumentException()
             val obj = objects["${reference.obj} ${reference.gen}"]
             val pos = obj?.pos ?: return null
             return fileReader.getStream(pos)
@@ -143,7 +133,7 @@ class AndPDF(file: RandomAccessFile, password: String = "") {
         val fKeys = fontsDic?.getKeys()
         fKeys?.forEach { key ->
             val font = fontsDic[key] as Dictionary
-            fonts[key] = Font(font, referenceResolver)
+            fonts[key] = Font(font, context.referenceResolver ?: throw NoReferenceResolverException())
         }
 
         // Get XObjects
@@ -178,18 +168,18 @@ class AndPDF(file: RandomAccessFile, password: String = "") {
         try {
             TimeCounter.reset()
             val ref = content as Reference
-            val stream = referenceResolver.resolveReferenceToStream(ref)
+            val stream = context.referenceResolver?.resolveReferenceToStream(ref)
             stream?.let {
                 TimeCounter.reset()
                 val data = it.decodeEncodedStream()
                 logd("Stream.decodeEncodedStream -> ${TimeCounter.getTimeElapsed()} ms")
 
                 TimeCounter.reset()
-                val pageObjs = ContentStreamParser().parse(String(data), ref.obj, ref.gen)
+                val pageObjs = ContentStreamParser(context).parse(String(data), ref.obj, ref.gen)
                 logd("ContentStreamParser.parse -> ${TimeCounter.getTimeElapsed()} ms")
 
                 TimeCounter.reset()
-                FontDecoder(pageObjs, fonts).decodeEncoded()
+                FontDecoder(context, pageObjs, fonts).decodeEncoded()
                 logd("FontDecoder.decodeEncoded -> ${TimeCounter.getTimeElapsed()} ms")
 
                 TimeCounter.reset()
@@ -210,7 +200,7 @@ class AndPDF(file: RandomAccessFile, password: String = "") {
         val xObjMap = HashMap<String, Stream>()
         xKeys.forEach { xKey ->
             val xObjRef = xObjectDic[xKey] as Reference
-            val xObj = referenceResolver.resolveReferenceToStream(xObjRef)
+            val xObj = context.referenceResolver?.resolveReferenceToStream(xObjRef)
             xObj?.let {
                 xObjMap[xKey] = it
             }

@@ -1,5 +1,6 @@
 package marabillas.loremar.andpdf.objects
 
+import marabillas.loremar.andpdf.document.AndPDFContext
 import marabillas.loremar.andpdf.utils.exts.indexOfClosingChar
 import marabillas.loremar.andpdf.utils.exts.isEnclosingAt
 import marabillas.loremar.andpdf.utils.exts.isWhiteSpaceAt
@@ -25,6 +26,7 @@ internal class Dictionary(private val entries: HashMap<String, PDFObject?>) : PD
 }
 
 internal fun StringBuilder.toDictionary(
+    context: AndPDFContext,
     secondary: StringBuilder,
     obj: Int,
     gen: Int,
@@ -84,7 +86,8 @@ internal fun StringBuilder.toDictionary(
         }
 
         // Add entry
-        entries[this.substring(keyIndex, keyIndex + keyLength)] = secondary.toPDFObject(obj, gen, resolveReferences)
+        entries[this.substring(keyIndex, keyIndex + keyLength)] =
+            secondary.toPDFObject(context, obj, gen, resolveReferences)
 
         i++
     }

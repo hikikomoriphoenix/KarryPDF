@@ -16,7 +16,11 @@ import java.nio.channels.Channels
  * @param file  PDF file containing the stream.
  * @param start offset position where beginning of the cross reference stream's object is located.
  */
-internal class XRefStream(private val file: RandomAccessFile, private val start: Long) : Stream(file, start) {
+internal class XRefStream(
+    private val context: AndPDFContext,
+    private val file: RandomAccessFile,
+    private val start: Long
+) : Stream(context, file, start) {
     var entries = HashMap<String, XRefEntry>()
 
     fun parse(): HashMap<String, XRefEntry> {
@@ -85,7 +89,7 @@ internal class XRefStream(private val file: RandomAccessFile, private val start:
         val prev = dictionary["Prev"] as Numeric?
         if (prev != null) {
             logd("Prev = ${prev.value.toLong()}")
-            val data = PDFFileReader(file).getXRefData(prev.value.toLong())
+            val data = PDFFileReader(context, file).getXRefData(prev.value.toLong())
             data.putAll(entries)
             entries = data
         }

@@ -60,8 +60,4 @@ internal class Decryptor(dictionary: Dictionary, idArray: PDFArray?, password: S
         digestedKey.copyInto(finalKey, 0, 0, length)
         return finalKey
     }
-
-    companion object {
-        var instance: Decryptor? = null
-    }
 }

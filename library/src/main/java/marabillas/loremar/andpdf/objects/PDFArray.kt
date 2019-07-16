@@ -1,5 +1,6 @@
 package marabillas.loremar.andpdf.objects
 
+import marabillas.loremar.andpdf.document.AndPDFContext
 import marabillas.loremar.andpdf.utils.exts.*
 
 internal class PDFArray(val array: ArrayList<PDFObject?>) : PDFObject, Iterable<PDFObject?> {
@@ -32,6 +33,7 @@ internal class PDFArray(val array: ArrayList<PDFObject?>) : PDFObject, Iterable<
 }
 
 internal fun StringBuilder.toPDFArray(
+    context: AndPDFContext,
     secondary: StringBuilder,
     obj: Int,
     gen: Int,
@@ -92,7 +94,7 @@ internal fun StringBuilder.toPDFArray(
         secondary.clear()
         secondary.append(this, entryIndex, i)
         secondary.trimEndOfContainedChars()
-        array.add(secondary.toPDFObject(obj, gen, resolveReferences))
+        array.add(secondary.toPDFObject(context, obj, gen, resolveReferences))
         secondary.clear()
     }
 

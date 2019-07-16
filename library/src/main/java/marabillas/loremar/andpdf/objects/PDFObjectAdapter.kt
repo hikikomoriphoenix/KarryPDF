@@ -1,5 +1,6 @@
 package marabillas.loremar.andpdf.objects
 
+import marabillas.loremar.andpdf.document.AndPDFContext
 import marabillas.loremar.andpdf.exceptions.NoReferenceResolverException
 import marabillas.loremar.andpdf.utils.exts.containedEqualsWith
 import marabillas.loremar.andpdf.utils.exts.isEnclosedWith
@@ -7,11 +8,16 @@ import marabillas.loremar.andpdf.utils.exts.trimContainedChars
 
 internal class PDFObjectAdapter {
     companion object {
-        var referenceResolver: ReferenceResolver? = null
         private val NUMERIC_PATTERN = "-?\\d*.?\\d+".toRegex()
         private var auxiliaryStringBuilder = StringBuilder()
 
-        fun getPDFObject(sb: StringBuilder, resolveReferences: Boolean = false, obj: Int, gen: Int): PDFObject? {
+        fun getPDFObject(
+            context: AndPDFContext,
+            sb: StringBuilder,
+            resolveReferences: Boolean = false,
+            obj: Int,
+            gen: Int
+        ): PDFObject? {
             sb.trimContainedChars()
 
             if (sb == auxiliaryStringBuilder) {
@@ -24,18 +30,24 @@ internal class PDFObjectAdapter {
                 NUMERIC_PATTERN.matches(sb) -> sb.toNumeric()
                 sb.isEnclosedWith('(', ')') -> sb.toPDFString()
                 sb.isEnclosedWith(arrayOf('<', '<'), arrayOf('>', '>')) ->
-                    sb.toDictionary(auxiliaryStringBuilder, obj, gen, resolveReferences)
+                    sb.toDictionary(context, auxiliaryStringBuilder, obj, gen, resolveReferences)
                 sb.isEnclosedWith('<', '>') -> sb.toPDFString()
                 sb.startsWith("/") -> sb.toName()
-                sb.isEnclosedWith('[', ']') -> sb.toPDFArray(auxiliaryStringBuilder, obj, gen, resolveReferences)
+                sb.isEnclosedWith('[', ']') -> sb.toPDFArray(
+                    context,
+                    auxiliaryStringBuilder,
+                    obj,
+                    gen,
+                    resolveReferences
+                )
                 Reference.REGEX.matches(sb) -> {
                     if (resolveReferences) {
-                        if (referenceResolver == null)
+                        if (context.referenceResolver == null)
                             throw NoReferenceResolverException()
                         else
-                            sb.toReference(auxiliaryStringBuilder).resolve(referenceResolver)
+                            sb.toReference(context, auxiliaryStringBuilder).resolve(context.referenceResolver)
                     } else {
-                        sb.toReference(auxiliaryStringBuilder)
+                        sb.toReference(context, auxiliaryStringBuilder)
                     }
                 }
 
@@ -45,6 +57,11 @@ internal class PDFObjectAdapter {
     }
 }
 
-internal fun StringBuilder.toPDFObject(obj: Int, gen: Int, resolveReferences: Boolean = false): PDFObject? {
-    return PDFObjectAdapter.getPDFObject(this, resolveReferences, obj, gen)
+internal fun StringBuilder.toPDFObject(
+    context: AndPDFContext,
+    obj: Int,
+    gen: Int,
+    resolveReferences: Boolean = false
+): PDFObject? {
+    return PDFObjectAdapter.getPDFObject(context, this, resolveReferences, obj, gen)
 }

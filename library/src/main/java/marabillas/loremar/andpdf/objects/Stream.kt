@@ -1,12 +1,13 @@
 package marabillas.loremar.andpdf.objects
 
-import marabillas.loremar.andpdf.document.PDFFileReader
-import marabillas.loremar.andpdf.encryption.Decryptor
+import marabillas.loremar.andpdf.document.AndPDFContext
+import marabillas.loremar.andpdf.exceptions.NoDocumentException
 import marabillas.loremar.andpdf.filters.DecoderFactory
 import java.io.RandomAccessFile
 
-internal open class Stream(file: RandomAccessFile, start: Long) : Indirect(file, start) {
-    val dictionary = PDFFileReader(file).getDictionary(start, obj ?: -1, 0)
+internal open class Stream(private val context: AndPDFContext, file: RandomAccessFile, start: Long) :
+    Indirect(file, start) {
+    val dictionary = context.fileReader?.getDictionary(start, obj ?: -1, 0) ?: throw NoDocumentException()
     var streamData = byteArrayOf()
         private set
 
@@ -28,7 +29,7 @@ internal open class Stream(file: RandomAccessFile, start: Long) : Indirect(file,
         val filterObj = dictionary["Filter"]
 
         var data = streamData
-        data = Decryptor.instance?.decrypt(data, obj as Int, gen) ?: data
+        data = context.decryptor?.decrypt(data, obj as Int, gen) ?: data
         when (filterObj) {
             is PDFArray -> for (filterEntry in filterObj) {
                 if (filterEntry is Name) {

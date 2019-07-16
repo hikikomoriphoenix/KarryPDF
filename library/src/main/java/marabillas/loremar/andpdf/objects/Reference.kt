@@ -1,33 +1,34 @@
 package marabillas.loremar.andpdf.objects
 
+import marabillas.loremar.andpdf.document.AndPDFContext
 import marabillas.loremar.andpdf.utils.exts.toInt
 
 
-internal class Reference(val obj: Int, val gen: Int) : PDFObject {
+internal class Reference(private val context: AndPDFContext, val obj: Int, val gen: Int) : PDFObject {
     companion object {
         val REGEX = "^\\d+ \\d+ R\$".toRegex()
     }
 
-    fun resolve(referenceResolver: ReferenceResolver? = PDFObjectAdapter.referenceResolver): PDFObject? {
+    fun resolve(referenceResolver: ReferenceResolver? = context.referenceResolver): PDFObject? {
         return referenceResolver?.resolveReference(this)
     }
 
-    fun resolveToStream(referenceResolver: ReferenceResolver? = PDFObjectAdapter.referenceResolver): Stream? {
+    fun resolveToStream(referenceResolver: ReferenceResolver? = context.referenceResolver): Stream? {
         return referenceResolver?.resolveReferenceToStream(this)
     }
 }
 
-internal fun String.toReference(): Reference {
+internal fun String.toReference(context: AndPDFContext): Reference {
     if (!(Reference.REGEX.matches(this))) throw IllegalArgumentException(
         "Given string does not match format for an indirect object reference"
     )
 
     val obj = this.substringBefore(' ').toInt()
     val gen = this.substringAfter(' ').substringBefore(' ').toInt()
-    return Reference(obj, gen)
+    return Reference(context, obj, gen)
 }
 
-internal fun StringBuilder.toReference(secondary: StringBuilder): Reference {
+internal fun StringBuilder.toReference(context: AndPDFContext, secondary: StringBuilder): Reference {
     if (!(Reference.REGEX.matches(this))) throw IllegalArgumentException(
         "Given string does not match format for an indirect object reference"
     )
@@ -43,5 +44,5 @@ internal fun StringBuilder.toReference(secondary: StringBuilder): Reference {
     val gen = secondary.toInt()
     secondary.clear()
 
-    return Reference(obj, gen)
+    return Reference(context, obj, gen)
 }

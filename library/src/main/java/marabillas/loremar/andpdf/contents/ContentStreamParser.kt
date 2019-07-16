@@ -3,6 +3,7 @@ package marabillas.loremar.andpdf.contents
 import marabillas.loremar.andpdf.contents.image.ImageObjectParser
 import marabillas.loremar.andpdf.contents.text.TextObject
 import marabillas.loremar.andpdf.contents.text.TextObjectParser
+import marabillas.loremar.andpdf.document.AndPDFContext
 import marabillas.loremar.andpdf.exceptions.UnsupportedPDFElementException
 import marabillas.loremar.andpdf.objects.toName
 import marabillas.loremar.andpdf.utils.exts.indexOfClosingChar
@@ -14,7 +15,7 @@ import marabillas.loremar.andpdf.utils.loge
 import java.util.*
 import kotlin.collections.ArrayList
 
-internal class ContentStreamParser {
+internal class ContentStreamParser(private val context: AndPDFContext) {
     private val sb = StringBuilder()
     private val token = StringBuilder()
 
@@ -36,8 +37,8 @@ internal class ContentStreamParser {
             logd("ContentStreamParser.parse begins")
             //logd("stream->$streamData")
             val pageObjects = ArrayList<PageObject>()
-            val textObjectParser = TextObjectParser(obj, gen)
-            val imageObjectParser = ImageObjectParser(obj, gen)
+            val textObjectParser = TextObjectParser(context, obj, gen)
+            val imageObjectParser = ImageObjectParser(context, obj, gen)
             val tf = StringBuilder()
             var i = 0
 

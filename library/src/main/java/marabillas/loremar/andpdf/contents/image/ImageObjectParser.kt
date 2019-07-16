@@ -1,11 +1,12 @@
 package marabillas.loremar.andpdf.contents.image
 
+import marabillas.loremar.andpdf.document.AndPDFContext
 import marabillas.loremar.andpdf.objects.Dictionary
 import marabillas.loremar.andpdf.objects.toDictionary
 import marabillas.loremar.andpdf.utils.exts.trimContainedChars
 import java.nio.CharBuffer
 
-internal class ImageObjectParser(private val obj: Int, private val gen: Int) {
+internal class ImageObjectParser(private val context: AndPDFContext, private val obj: Int, private val gen: Int) {
     private val ID = "ID"
     private val DIC_OPENING = "<<"
     private val DIC_CLOSING = ">>"
@@ -33,7 +34,7 @@ internal class ImageObjectParser(private val obj: Int, private val gen: Int) {
             .append(s, startIndex, idIndex)
             .insert(0, DIC_OPENING)
             .append(DIC_CLOSING)
-            .toDictionary(miniSB, obj, gen)
+            .toDictionary(context, miniSB, obj, gen)
         val eiIndex = s.indexOf(
             EI,
             (idIndex + 2) + (section.length - 4)

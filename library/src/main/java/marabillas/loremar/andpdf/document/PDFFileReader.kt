@@ -7,7 +7,7 @@ import java.io.RandomAccessFile
 /**
  * This class facilitates reading in a pdf file.
  */
-internal class PDFFileReader(private val file: RandomAccessFile) {
+internal class PDFFileReader(private val context: AndPDFContext, private val file: RandomAccessFile) {
     private var startXRefPos: Long? = null
     private var trailerPos: Long? = null
     private var isLinearized: Boolean? = null
@@ -24,7 +24,7 @@ internal class PDFFileReader(private val file: RandomAccessFile) {
                 s = file.readLine()
             }
             val indObj = getIndirectObject(beginning)
-            val firstObj = indObj.extractContent().toPDFObject(indObj.obj ?: -1, indObj.gen)
+            val firstObj = indObj.extractContent().toPDFObject(context, indObj.obj ?: -1, indObj.gen)
             if (firstObj is Dictionary) {
                 val linearized = firstObj["Linearized"]
                 if (linearized != null) {
@@ -148,7 +148,7 @@ internal class PDFFileReader(private val file: RandomAccessFile) {
             data = parseOtherXRefInTrailer(file.filePointer, data)
             data
         } else {
-            XRefStream(file, pos).parse()
+            XRefStream(context, file, pos).parse()
         }
     }
 
@@ -267,7 +267,7 @@ internal class PDFFileReader(private val file: RandomAccessFile) {
             createTrailerHashMap(dictionary)
         } else {
             // Get trailer entries from XRefStream dictionary
-            val xrefStm = XRefStream(file, getStartXRefPosition())
+            val xrefStm = XRefStream(context, file, getStartXRefPosition())
             if (resolveReferences) xrefStm.dictionary.resolveReferences()
             createTrailerHashMap(xrefStm.dictionary)
         }
@@ -293,7 +293,7 @@ internal class PDFFileReader(private val file: RandomAccessFile) {
         file.seek(pos)
         goToDictionaryStart()
         extractDictionary()
-        return stringBuilder.toPDFObject(obj, gen, resolveReferences) as Dictionary
+        return stringBuilder.toPDFObject(context, obj, gen, resolveReferences) as Dictionary
     }
 
     private fun goToDictionaryStart() {
@@ -336,10 +336,10 @@ internal class PDFFileReader(private val file: RandomAccessFile) {
     }
 
     fun getObjectStream(pos: Long): ObjectStream {
-        return ObjectStream(file, pos)
+        return ObjectStream(context, file, pos)
     }
 
     fun getStream(pos: Long): Stream {
-        return Stream(file, pos)
+        return Stream(context, file, pos)
     }
 }

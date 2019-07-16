@@ -1,5 +1,6 @@
 package marabillas.loremar.andpdf
 
+import marabillas.loremar.andpdf.document.AndPDFContext
 import marabillas.loremar.andpdf.document.XRefStream
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
@@ -12,7 +13,7 @@ class XRefStreamTest {
         val path = javaClass.classLoader.getResource("samplepdf1.4compressed.pdf").path
         val file = RandomAccessFile(path, "r")
         println("File Length = ${file.length()}")
-        val streamObj = XRefStream(file, 96733)
+        val streamObj = XRefStream(AndPDFContext(), file, 96733)
         streamObj.decodeEncodedStream()
         val entries = streamObj.parse()
         entries.forEach {

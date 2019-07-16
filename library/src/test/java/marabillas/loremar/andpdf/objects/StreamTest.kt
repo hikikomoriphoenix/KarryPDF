@@ -1,5 +1,6 @@
 package marabillas.loremar.andpdf.objects
 
+import marabillas.loremar.andpdf.document.AndPDFContext
 import org.hamcrest.CoreMatchers.`is`
 import org.junit.Assert.assertThat
 import org.junit.Test
@@ -11,7 +12,7 @@ class StreamTest {
     fun testDecodeEncodedStream() {
         val path1 = javaClass.classLoader.getResource("samplepdf1.4.pdf").path
         val file1 = RandomAccessFile(path1, "r")
-        val streamObj = Stream(file1, 42603)
+        val streamObj = Stream(AndPDFContext(), file1, 42603)
         val stream = streamObj.decodeEncodedStream()
         val path2 = javaClass.classLoader.getResource("samplepdf1.4expectedtext.txt").path
         val file2 = File(path2)

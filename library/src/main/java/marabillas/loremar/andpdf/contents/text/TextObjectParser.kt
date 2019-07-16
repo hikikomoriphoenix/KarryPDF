@@ -1,12 +1,13 @@
 package marabillas.loremar.andpdf.contents.text
 
 import marabillas.loremar.andpdf.contents.CmykToRgbConverter
+import marabillas.loremar.andpdf.document.AndPDFContext
 import marabillas.loremar.andpdf.objects.PDFObject
 import marabillas.loremar.andpdf.objects.toPDFObject
 import marabillas.loremar.andpdf.objects.toPDFString
 import marabillas.loremar.andpdf.utils.exts.*
 
-internal class TextObjectParser(private val obj: Int, private val gen: Int) {
+internal class TextObjectParser(private val context: AndPDFContext, private val obj: Int, private val gen: Int) {
     private val operandsIndices = IntArray(6)
     private val operand = StringBuilder()
     private var pos = 0
@@ -111,7 +112,7 @@ internal class TextObjectParser(private val obj: Int, private val gen: Int) {
                         tjEnd = pos - 1
                     operand.clear().append(s, operandsIndices[2], tjEnd)
                     // TODO Support Tw(Word Spacing) and Tc(Character Spacing)
-                    addTextElement(textObj, operand.toPDFObject(obj, gen) ?: "()".toPDFString(), ctm)
+                    addTextElement(textObj, operand.toPDFObject(context, obj, gen) ?: "()".toPDFString(), ctm)
                     operandsCount = 0
                 } else if (s[pos] == '\'') {
                     // Perform T*
@@ -157,7 +158,7 @@ internal class TextObjectParser(private val obj: Int, private val gen: Int) {
         if (s.isUnEnclosingAt(tjEnd))
             tjEnd = pos - 1
         operand.clear().append(s, operandsIndices[0], tjEnd)
-        addTextElement(textObj, operand.toPDFObject(obj, gen) ?: "()".toPDFString(), ctm)
+        addTextElement(textObj, operand.toPDFObject(context, obj, gen) ?: "()".toPDFString(), ctm)
     }
 
     private fun addTextElement(textObj: TextObject, tj: PDFObject, ctm: FloatArray) {

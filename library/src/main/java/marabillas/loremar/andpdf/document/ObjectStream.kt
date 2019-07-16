@@ -4,7 +4,8 @@ import marabillas.loremar.andpdf.objects.Numeric
 import marabillas.loremar.andpdf.objects.Stream
 import java.io.RandomAccessFile
 
-internal class ObjectStream(file: RandomAccessFile, start: Long) : Stream(file, start) {
+internal class ObjectStream(context: AndPDFContext, file: RandomAccessFile, start: Long) :
+    Stream(context, file, start) {
     fun extractObjectBytes(index: Int): ByteArray? {
         val n = dictionary["N"] as Numeric
         if (index < n.value.toInt()) {

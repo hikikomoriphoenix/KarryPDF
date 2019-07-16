@@ -1,5 +1,6 @@
 package marabillas.loremar.andpdf
 
+import marabillas.loremar.andpdf.document.AndPDFContext
 import marabillas.loremar.andpdf.document.PDFFileReader
 import marabillas.loremar.andpdf.objects.*
 import org.hamcrest.CoreMatchers.`is`
@@ -16,7 +17,7 @@ class PDFFileReaderTest {
     fun testGetLastXRefData() {
         val path = javaClass.classLoader.getResource("sample.pdf").path
         val file = RandomAccessFile(path, "r")
-        val reader = PDFFileReader(file)
+        val reader = PDFFileReader(AndPDFContext(), file)
         val xref = reader.getLastXRefData()
 
         val obj0 = xref["0 65535"]
@@ -35,7 +36,7 @@ class PDFFileReaderTest {
     fun testGetLastXRefDataFromCompressedPDF() {
         val path = javaClass.classLoader.getResource("samplepdf1.4compressed.pdf").path
         val file = RandomAccessFile(path, "r")
-        val reader = PDFFileReader(file)
+        val reader = PDFFileReader(AndPDFContext(), file)
         val xref = reader.getLastXRefData()
         xref.forEach {
             if (it.value.compressed)
@@ -51,14 +52,14 @@ class PDFFileReaderTest {
     fun testGetTrailerPosition() {
         var path = javaClass.classLoader.getResource("samplepdf1.4compressed.pdf").path
         var file = RandomAccessFile(path, "r")
-        var reader = PDFFileReader(file)
+        var reader = PDFFileReader(AndPDFContext(), file)
         var trailerPos = reader.getTrailerPosition()
         assertNull(trailerPos)
         println("Testing samplepdf1.4compressed.pdf not having trailer -> success.")
 
         path = javaClass.classLoader.getResource("samplepdf1.4.pdf").path
         file = RandomAccessFile(path, "r")
-        reader = PDFFileReader(file)
+        reader = PDFFileReader(AndPDFContext(), file)
         trailerPos = reader.getTrailerPosition()
         if (trailerPos != null) {
             file.seek(trailerPos)
@@ -74,8 +75,9 @@ class PDFFileReaderTest {
     fun testGetTrailerEntries() {
         var path = javaClass.classLoader.getResource("samplepdf1.4.pdf").path
         var file = RandomAccessFile(path, "r")
-        var reader = PDFFileReader(file)
-        PDFObjectAdapter.referenceResolver = object : ReferenceResolver {
+        val context = AndPDFContext()
+        var reader = PDFFileReader(context, file)
+        context.referenceResolver = object : ReferenceResolver {
             override fun resolveReferenceToStream(reference: Reference): Stream? {
                 TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
             }
@@ -90,7 +92,7 @@ class PDFFileReaderTest {
 
         path = javaClass.classLoader.getResource("samplepdf1.4compressed.pdf").path
         file = RandomAccessFile(path, "r")
-        reader = PDFFileReader(file)
+        reader = PDFFileReader(context, file)
         entries = reader.getTrailerEntries()
         assertTrue(entries["Size"] is Numeric)
         println("Size entry in trailer for samplepdf1.4compressed.pdf is ${(entries["Size"] as Numeric).value.toInt()}")

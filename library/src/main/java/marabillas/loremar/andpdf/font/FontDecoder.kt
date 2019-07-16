@@ -3,9 +3,14 @@ package marabillas.loremar.andpdf.font
 import marabillas.loremar.andpdf.contents.PageObject
 import marabillas.loremar.andpdf.contents.text.TextElement
 import marabillas.loremar.andpdf.contents.text.TextObject
+import marabillas.loremar.andpdf.document.AndPDFContext
 import marabillas.loremar.andpdf.objects.*
 
-internal class FontDecoder(private val pageObjects: ArrayList<PageObject>, private val fonts: HashMap<String, Font>) {
+internal class FontDecoder(
+    private val context: AndPDFContext,
+    private val pageObjects: ArrayList<PageObject>,
+    private val fonts: HashMap<String, Font>
+) {
     private val mainSB = StringBuilder()
     private val secondarySB = StringBuilder()
 
@@ -40,7 +45,7 @@ internal class FontDecoder(private val pageObjects: ArrayList<PageObject>, priva
                                 }
                             }
                             mainSB.append(']')
-                            newTj = mainSB.toPDFArray(secondarySB.clear(), -1, 0)
+                            newTj = mainSB.toPDFArray(context, secondarySB.clear(), -1, 0)
                         }
                         is PDFString -> {
                             if (cmap != null) {

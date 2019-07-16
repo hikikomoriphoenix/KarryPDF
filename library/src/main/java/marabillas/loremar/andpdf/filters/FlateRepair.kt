@@ -17,7 +17,7 @@ class FlateRepair(private val corruptedData: ByteArray) {
 
             val success = inflate()
             if (success) {
-                repairedData = corruptedData.copyOfRange(pointer, corruptedData.size)
+                repairedData = corruptedData.copyOfRange(pointer - 2, corruptedData.size)
                 break
             }
 

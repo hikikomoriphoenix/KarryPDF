@@ -70,7 +70,6 @@ internal class XObjectsResolver(
         } else if (filter is Name) {
             val decoder = DecoderFactory().getDecoder(filter.value, encodedDic)
             decoded = decoder.decode(decoded)
-            decoded = decoder.decode(decoded)
             return if (filter.value == "DCTDecode") {
                 handleDCTDecode(decoded, decodeParms)
             } else {

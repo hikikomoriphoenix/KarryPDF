@@ -1,52 +1,48 @@
 package marabillas.loremar.andpdf.filters
 
-import java.util.zip.DataFormatException
-import java.util.zip.Inflater
+import marabillas.loremar.andpdf.objects.Dictionary
 
-class FlateRepair(private val corruptedData: ByteArray) {
-    private var pointer = 2
-
-    private val dstBuffer = ByteArray(1024)
-    private var repairedData = byteArrayOf()
-    private val inflater = Inflater(true)
+internal class FlateRepair(private val corruptedData: ByteArray, decodeParams: Dictionary?) {
+    private val headerOffsets = mutableListOf<Int>()
+    private val uncompressedResults = mutableListOf<ByteArray>()
+    private val decoder = Flate(decodeParams, true)
 
     fun repair(): ByteArray {
-        while (pointer < corruptedData.size - 4) {
-            val len = dstLength()
-            setInputToInflater(len)
+        locateHeaders()
 
-            val success = inflate()
-            if (success) {
-                repairedData = corruptedData.copyOfRange(pointer - 2, corruptedData.size)
-                break
+        tryDecompressWithEachHeader()
+
+        return getLargestUncompressedResult()
+    }
+
+    private fun locateHeaders() {
+        corruptedData.forEachIndexed { i, byte ->
+            if (byte == 0x78.toByte() && i + 1 < corruptedData.size) {
+                val second = corruptedData[i + 1]
+                if (second == 0x01.toByte()
+                    || second == 0x9c.toByte()
+                    || second == 0xda.toByte()
+                    || second == 0x5e.toByte()
+                )
+                    headerOffsets.add(i)
             }
-
-            inflater.reset()
-            pointer++
         }
-        inflater.end()
-
-        return repairedData
     }
 
-    private fun dstLength(): Int {
-        var len = 2048
-        if (corruptedData.size - pointer < len)
-            len = corruptedData.size - pointer
-
-        return len
-    }
-
-    private fun setInputToInflater(len: Int) {
-        inflater.setInput(corruptedData, pointer, len)
-    }
-
-    private fun inflate(): Boolean {
-        return try {
-            val read = inflater.inflate(dstBuffer)
-            read > 0
-        } catch (e: DataFormatException) {
-            false
+    private fun tryDecompressWithEachHeader() {
+        headerOffsets.forEach { offset ->
+            val compressed = corruptedData.copyOfRange(offset, corruptedData.size)
+            val uncompressed = decoder.decode(compressed)
+            uncompressedResults.add(uncompressed)
         }
+    }
+
+    private fun getLargestUncompressedResult(): ByteArray {
+        var largest = byteArrayOf()
+        uncompressedResults.forEach { uncompressed ->
+            if (uncompressed.size > largest.size)
+                largest = uncompressed
+        }
+        return largest
     }
 }

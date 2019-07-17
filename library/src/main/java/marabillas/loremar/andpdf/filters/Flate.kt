@@ -21,7 +21,7 @@ import java.util.zip.Inflater
  * In case this class does not work, try using BitmapFactory.decode() in android to create bitmap from given compressed
  * data.
  */
-internal class Flate(decodeParams: Dictionary?) : Decoder {
+internal class Flate(private val decodeParams: Dictionary?, private val repairing: Boolean = false) : Decoder {
     private val predictor: Int = (decodeParams?.get("Predictor") as Numeric?)?.value?.toInt() ?: 1
     private val bitsPerComponent: Int = (decodeParams?.get("BitsPerComponent") as Numeric?)?.value?.toInt() ?: 8
     private val columns: Int = (decodeParams?.get("Columns") as Numeric?)?.value?.toInt() ?: 1
@@ -87,7 +87,9 @@ internal class Flate(decodeParams: Dictionary?) : Decoder {
     }
 
     private fun handleCorruptedStream(corrupted: ByteArray): ByteArray {
-        val repaired = FlateRepair(corrupted).repair()
+        if (repairing) return byteArrayOf()
+
+        val repaired = FlateRepair(corrupted, decodeParams).repair()
         if (repaired.isNotEmpty()) {
             return decode(repaired)
         } else {

@@ -28,7 +28,7 @@ internal open class Indirect(private val file: RandomAccessFile, private val sta
     private fun extractNextNumber(): Int {
         Inst.stringBuilder.clear()
         var c = nextDigit()
-        while (c != ' ') {
+        while (c.isDigit()) {
             Inst.stringBuilder.append(c)
             c = file.readByte().toChar()
         }

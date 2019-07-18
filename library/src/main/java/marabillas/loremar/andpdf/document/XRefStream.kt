@@ -117,8 +117,14 @@ internal class XRefStream(
                 entry.inUse = false
             }
             1 -> {
-                entry.pos = second
-                entry.gen = third
+                if (second < 0) {
+                    entry.compressed = true
+                    entry.objStm = -second.toInt()
+                    entry.gen = third
+                } else {
+                    entry.pos = second
+                    entry.gen = third
+                }
             }
             2 -> {
                 entry.gen = 0

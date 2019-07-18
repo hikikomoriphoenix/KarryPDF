@@ -72,11 +72,15 @@ class AndPDF(file: RandomAccessFile, password: String = "") {
             val objects = context.objects ?: throw NoDocumentException()
             val obj = objects["${reference.obj} ${reference.gen}"] ?: return null
 
-            return if (obj.compressed) {
+            if (obj.compressed) {
                 val objStmEntry = objects["${obj.objStm} 0"]
                 val objStm = objStmEntry?.pos?.let { fileReader.getObjectStream(it) }
-                val objBytes = objStm?.extractObjectBytes(obj.index)
-                stringBuilder.clear().append(objBytes).toPDFObject(context, reference.obj, reference.gen)
+                if (obj.index != -1) {
+                    val objBytes = objStm?.extractObjectBytes(obj.index)
+                    return stringBuilder.clear().append(objBytes).toPDFObject(context, reference.obj, reference.gen)
+                } else {
+                    TODO("Getting objects from object stream using object number is not implemented")
+                }
             } else {
                 val content = fileReader.getIndirectObject(obj.pos).extractContent()
                 if (content.isEmpty() || content.containedEqualsWith('n', 'u', 'l', 'l')) return null

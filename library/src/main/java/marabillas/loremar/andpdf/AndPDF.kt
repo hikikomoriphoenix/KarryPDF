@@ -30,7 +30,14 @@ class AndPDF(private val file: RandomAccessFile, password: String = "") {
     internal var size: Int? = null; get() = field ?: throw NoDocumentException()
     internal var documentCatalog: Dictionary? = null; get() = field ?: throw NoDocumentException()
     internal var info: Dictionary? = null
+
     private var topDownReferences: HashMap<String, XRefEntry>? = null
+        get() {
+            if (field == null) {
+                field = TopDownParser(file).parseObjects()
+            }
+            return field
+        }
 
     init {
         TimeCounter.reset()
@@ -79,8 +86,6 @@ class AndPDF(private val file: RandomAccessFile, password: String = "") {
             if (objEntry.compressed) {
                 var objStmEntry = objects["${objEntry.objStm} 0"]
                 if (objStmEntry == null || objStmEntry.pos < 0L) {
-                    if (topDownReferences == null)
-                        topDownReferences = TopDownParser(file).parseObjects()
                     objStmEntry = topDownReferences?.get("${objEntry.objStm} 0")
                 }
 
@@ -100,8 +105,6 @@ class AndPDF(private val file: RandomAccessFile, password: String = "") {
                 }
             } else {
                 if (objEntry.pos < 0L) {
-                    if (topDownReferences == null)
-                        topDownReferences = TopDownParser(file).parseObjects()
                     objEntry = topDownReferences?.get("${objEntry.obj} ${objEntry.gen}") ?: return null
                 }
 
@@ -115,8 +118,16 @@ class AndPDF(private val file: RandomAccessFile, password: String = "") {
             val fileReader = context.fileReader ?: throw NoDocumentException()
             val objects = context.objects ?: throw NoDocumentException()
             val obj = objects["${reference.obj} ${reference.gen}"]
-            val pos = obj?.pos ?: return null
-            return fileReader.getStream(pos)
+            return if (obj != null) {
+                if (obj.pos < 0) {
+                    val objEntry = topDownReferences?.get("${reference.obj} ${reference.gen}")
+                    objEntry?.pos?.let { fileReader.getStream(it) }
+                } else {
+                    fileReader.getStream(obj.pos)
+                }
+            } else {
+                null
+            }
         }
     }
 

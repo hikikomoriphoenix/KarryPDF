@@ -1,11 +1,14 @@
 package marabillas.loremar.andpdf.utils
 
+import kotlin.math.abs
+import kotlin.math.log10
+
 internal fun octalToDecimal(octal: Int): Int {
     var num = octal
     var result = 0
 
     // Count digits
-    var n = (Math.log10(octal.toDouble()) + 1).toInt()
+    var n = octal.length()
 
     while (true) {
         // Divisor allows handling of first digit
@@ -51,10 +54,17 @@ internal fun wholeNumToFractional(num: Int): Float {
     if (num == 0) return 0f
 
     // Count digits
-    val n = (Math.log10(num.toDouble()) + 1).toInt()
+    val n = num.length()
 
     // Get the divisor required to convert the number to the nth place
     val divisor = Math.pow(10.0, n.toDouble()).toFloat()
 
     return num.toFloat() / divisor
+}
+
+internal fun Int.length(): Int {
+    return when (this) {
+        0 -> 1
+        else -> log10(abs(toDouble())).toInt() + 1
+    }
 }

@@ -1,5 +1,6 @@
 package marabillas.loremar.andpdf.document
 
+import marabillas.loremar.andpdf.exceptions.InvalidDocumentException
 import marabillas.loremar.andpdf.objects.*
 import marabillas.loremar.andpdf.utils.logd
 import java.io.RandomAccessFile
@@ -111,16 +112,85 @@ internal class PDFFileReader(private val context: AndPDFContext, private val fil
                             s = file.readLine()
                             if (!s.startsWith("%")) {
                                 startXRefPos = s.toLong()
-                                return startXRefPos as Long
+                                return getValidXRefPos(startXRefPos as Long)
                             }
                         }
                     }
                     p = file.filePointer
                 }
-            } else return startXRefPos as Long
+            } else return getValidXRefPos(startXRefPos as Long)
         } else {
-            return getStartXRefPositionLinearized()
+            return getValidXRefPos(getStartXRefPositionLinearized())
         }
+    }
+
+    private fun getValidXRefPos(pos: Long): Long {
+        file.seek(pos)
+        var isXrefStream = false
+        var foundXref = false
+        while (file.filePointer + 3 < file.length()) {
+            var c = file.readByte().toChar()
+            if (c == 'X' || c == 'x') {
+                isXrefStream = c == 'X'
+                c = file.readByte().toChar()
+                if (c == 'R' || c == 'r') {
+                    c = file.readByte().toChar()
+                    if (c == 'e') {
+                        c = file.readByte().toChar()
+                        if (c == 'f') {
+                            foundXref = true
+                            break
+                        }
+                    }
+                }
+            }
+        }
+
+        return if (!foundXref)
+            throw InvalidDocumentException("Can not find valid cross reference table")
+        else {
+            if (isXrefStream) {
+                findStartOfXRefStream(file.filePointer)
+            } else {
+                file.filePointer - 4
+            }
+        }
+    }
+
+    private fun findStartOfXRefStream(start: Long): Long {
+        file.seek(start)
+        while (file.filePointer >= 0) {
+            var c = file.readByte().toChar()
+            if (c == 'o') {
+                c = file.readByte().toChar()
+                if (c == 'b') {
+                    c = file.readByte().toChar()
+                    if (c == 'j') {
+                        file.seek(file.filePointer - 4)
+                        c = file.readByte().toChar()
+                        while (!c.isDigit()) {
+                            file.seek(file.filePointer - 2)
+                            c = file.readByte().toChar()
+                        }
+                        while (c.isDigit()) {
+                            file.seek(file.filePointer - 2)
+                            c = file.readByte().toChar()
+                        }
+                        while (!c.isDigit()) {
+                            file.seek(file.filePointer - 2)
+                            c = file.readByte().toChar()
+                        }
+                        while (c.isDigit()) {
+                            file.seek(file.filePointer - 2)
+                            c = file.readByte().toChar()
+                        }
+                        return file.filePointer
+                    }
+                }
+            }
+        }
+
+        throw InvalidDocumentException("Cant find start of cross reference stream")
     }
 
     /**

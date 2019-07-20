@@ -2,6 +2,7 @@ package marabillas.loremar.andpdf.objects
 
 import marabillas.loremar.andpdf.exceptions.IndirectObjectMismatchException
 import marabillas.loremar.andpdf.utils.exts.toInt
+import marabillas.loremar.andpdf.utils.length
 import java.io.RandomAccessFile
 
 /**
@@ -12,7 +13,7 @@ import java.io.RandomAccessFile
  */
 internal open class Indirect(
     private val file: RandomAccessFile,
-    private val start: Long,
+    private var start: Long,
     reference: Reference? = null
 ) {
     var obj: Int? = null
@@ -27,6 +28,7 @@ internal open class Indirect(
     init {
         file.seek(start)
         obj = extractNextNumber()
+        start = file.filePointer - 1 - (obj as Int).length()
         gen = extractNextNumber()
 
         if (reference != null) {

@@ -5,8 +5,13 @@ import marabillas.loremar.andpdf.exceptions.NoDocumentException
 import marabillas.loremar.andpdf.filters.DecoderFactory
 import java.io.RandomAccessFile
 
-internal open class Stream(private val context: AndPDFContext, file: RandomAccessFile, start: Long) :
-    Indirect(file, start) {
+internal open class Stream(
+    private val context: AndPDFContext,
+    file: RandomAccessFile,
+    start: Long,
+    reference: Reference? = null
+) :
+    Indirect(file, start, reference) {
     val dictionary = context.fileReader?.getDictionary(start, obj ?: -1, 0) ?: throw NoDocumentException()
     var streamData = byteArrayOf()
         private set

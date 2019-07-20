@@ -1,11 +1,12 @@
 package marabillas.loremar.andpdf.document
 
 import marabillas.loremar.andpdf.objects.Numeric
+import marabillas.loremar.andpdf.objects.Reference
 import marabillas.loremar.andpdf.objects.Stream
 import java.io.RandomAccessFile
 
-internal class ObjectStream(context: AndPDFContext, file: RandomAccessFile, start: Long) :
-    Stream(context, file, start) {
+internal class ObjectStream(context: AndPDFContext, file: RandomAccessFile, start: Long, reference: Reference? = null) :
+    Stream(context, file, start, reference) {
     fun extractObjectBytes(index: Int): ByteArray? {
         val n = dictionary["N"] as Numeric
         if (index < n.value.toInt()) {

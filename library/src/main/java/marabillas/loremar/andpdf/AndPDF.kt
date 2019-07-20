@@ -10,10 +10,7 @@ import marabillas.loremar.andpdf.document.PDFFileReader
 import marabillas.loremar.andpdf.document.TopDownParser
 import marabillas.loremar.andpdf.document.XRefEntry
 import marabillas.loremar.andpdf.encryption.Decryptor
-import marabillas.loremar.andpdf.exceptions.InvalidDocumentException
-import marabillas.loremar.andpdf.exceptions.InvalidStreamException
-import marabillas.loremar.andpdf.exceptions.NoDocumentException
-import marabillas.loremar.andpdf.exceptions.NoReferenceResolverException
+import marabillas.loremar.andpdf.exceptions.*
 import marabillas.loremar.andpdf.font.Font
 import marabillas.loremar.andpdf.font.FontDecoder
 import marabillas.loremar.andpdf.font.FontMappings
@@ -90,7 +87,17 @@ class AndPDF(private val file: RandomAccessFile, password: String = "") {
                 }
 
                 return if (objStmEntry != null) {
-                    val objStm = fileReader.getObjectStream(objStmEntry.pos)
+                    val objStm = try {
+                        fileReader.getObjectStream(objStmEntry.pos, Reference(context, objEntry.objStm, 0))
+                    } catch (e: IndirectObjectMismatchException) {
+                        val pos = topDownReferences?.get("${objEntry.objStm} 0")?.pos
+                        if (pos != null) {
+                            fileReader.getObjectStream(pos)
+                        } else {
+                            return null
+                        }
+                    }
+
                     if (objEntry.index != -1) {
                         val objBytes = objStm.extractObjectBytes(objEntry.index)
                         stringBuilder.clear().appendBytes(objBytes ?: byteArrayOf())
@@ -108,7 +115,16 @@ class AndPDF(private val file: RandomAccessFile, password: String = "") {
                     objEntry = topDownReferences?.get("${objEntry.obj} ${objEntry.gen}") ?: return null
                 }
 
-                val content = fileReader.getIndirectObject(objEntry.pos).extractContent()
+                val content = try {
+                    fileReader.getIndirectObject(objEntry.pos, reference).extractContent()
+                } catch (e: IndirectObjectMismatchException) {
+                    val pos = topDownReferences?.get("${objEntry.obj} ${objEntry.gen}")?.pos
+                    if (pos != null) {
+                        fileReader.getIndirectObject(pos, reference).extractContent()
+                    } else {
+                        StringBuilder()
+                    }
+                }
                 if (content.isEmpty() || content.containedEqualsWith('n', 'u', 'l', 'l')) return null
                 return content.toPDFObject(context, reference.obj, reference.gen, false) ?: reference
             }
@@ -121,9 +137,18 @@ class AndPDF(private val file: RandomAccessFile, password: String = "") {
             return if (obj != null) {
                 if (obj.pos < 0) {
                     val objEntry = topDownReferences?.get("${reference.obj} ${reference.gen}")
-                    objEntry?.pos?.let { fileReader.getStream(it) }
+                    objEntry?.pos?.let { fileReader.getStream(it, reference) }
                 } else {
-                    fileReader.getStream(obj.pos)
+                    try {
+                        fileReader.getStream(obj.pos, reference)
+                    } catch (e: IndirectObjectMismatchException) {
+                        val pos = topDownReferences?.get("${reference.obj} ${reference.gen}")?.pos
+                        if (pos != null) {
+                            fileReader.getStream(pos)
+                        } else {
+                            return null
+                        }
+                    }
                 }
             } else {
                 null

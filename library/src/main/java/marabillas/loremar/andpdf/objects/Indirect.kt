@@ -1,5 +1,6 @@
 package marabillas.loremar.andpdf.objects
 
+import marabillas.loremar.andpdf.exceptions.IndirectObjectMismatchException
 import marabillas.loremar.andpdf.utils.exts.toInt
 import java.io.RandomAccessFile
 
@@ -9,7 +10,11 @@ import java.io.RandomAccessFile
  * @param file PDF file
  * @param start offset position where the beginning of the indirect object is located
  */
-internal open class Indirect(private val file: RandomAccessFile, private val start: Long) {
+internal open class Indirect(
+    private val file: RandomAccessFile,
+    private val start: Long,
+    reference: Reference? = null
+) {
     var obj: Int? = null
         private set
     var gen: Int = 0
@@ -23,6 +28,10 @@ internal open class Indirect(private val file: RandomAccessFile, private val sta
         file.seek(start)
         obj = extractNextNumber()
         gen = extractNextNumber()
+
+        if (reference != null) {
+            if (reference.obj != obj) throw IndirectObjectMismatchException()
+        }
     }
 
     private fun extractNextNumber(): Int {

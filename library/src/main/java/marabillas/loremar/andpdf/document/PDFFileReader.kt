@@ -355,8 +355,8 @@ internal class PDFFileReader(private val context: AndPDFContext, private val fil
         )
     }
 
-    fun getIndirectObject(pos: Long): Indirect {
-        return Indirect(file, pos)
+    fun getIndirectObject(pos: Long, reference: Reference? = null): Indirect {
+        return Indirect(file, pos, reference)
     }
 
     fun getDictionary(pos: Long, obj: Int, gen: Int, resolveReferences: Boolean = false): Dictionary {
@@ -405,11 +405,11 @@ internal class PDFFileReader(private val context: AndPDFContext, private val fil
         }
     }
 
-    fun getObjectStream(pos: Long): ObjectStream {
-        return ObjectStream(context, file, pos)
+    fun getObjectStream(pos: Long, reference: Reference? = null): ObjectStream {
+        return ObjectStream(context, file, pos, reference)
     }
 
-    fun getStream(pos: Long): Stream {
-        return Stream(context, file, pos)
+    fun getStream(pos: Long, reference: Reference? = null): Stream {
+        return Stream(context, file, pos, reference)
     }
 }

@@ -74,7 +74,7 @@ class AllSamplesQuickTest {
         return try {
             AndPDF(file)
         } catch (e: Exception) {
-            System.err.println("Exception on loading $filename: ${e.message}")
+            loge("Exception on loading $filename: ${e.message}", e)
             null
         }
     }
@@ -92,7 +92,7 @@ class AllSamplesQuickTest {
     @Test
     fun testOneSample() {
         forceHideLogs = true
-        val pdfFilename = "ColorfulText.pdf"
+        val pdfFilename = "icc32.pdf"
         print("Testing library on $pdfFilename...")
         val path = javaClass.classLoader.getResource("$samplesDir$pdfFilename").path
         val file = RandomAccessFile(path, "r")
@@ -102,10 +102,11 @@ class AllSamplesQuickTest {
             var numExceptions = 0
             repeat(numPages) { pageNum ->
                 val success = executeGetPageContents(pdf, pageNum)
+                MemoryProfiler.Static.printCurrentMemory()
                 if (success) {
                     println("Test page $pageNum...success")
                 } else {
-                    System.err.println("Testpage $pageNum...fail")
+                    System.err.println("Test page $pageNum...fail")
                     numExceptions++
                 }
             }
@@ -120,10 +121,9 @@ class AllSamplesQuickTest {
     @Test
     fun testOnePage() {
         forceHideLogs = false
-        filterErrorLogs = true
 
-        val pdfFilename = "ColorfulText.pdf"
-        val pageNum = 0
+        val pdfFilename = "icc32.pdf"
+        val pageNum = 3
         print("Testing library on $pdfFilename at page $pageNum")
         val path = javaClass.classLoader.getResource("$samplesDir$pdfFilename").path
         val file = RandomAccessFile(path, "r")

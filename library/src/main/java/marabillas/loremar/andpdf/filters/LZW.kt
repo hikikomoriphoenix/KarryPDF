@@ -1,30 +1,31 @@
 package marabillas.loremar.andpdf.filters
 
+import marabillas.loremar.andpdf.exceptions.InvalidStreamException
 import marabillas.loremar.andpdf.objects.Dictionary
 import marabillas.loremar.andpdf.objects.Numeric
 import java.io.ByteArrayOutputStream
-import java.io.IOException
+import java.io.OutputStream
+import kotlin.math.min
 
 /**
  * Class for LZWDecode filter.
- * In case this class does not work, try using BitmapFactory.decode() in android to create bitmap from given compressed
- * data.
  */
 internal class LZW(decodeParams: Dictionary?) : Decoder {
     private val predictor: Int = (decodeParams?.get("Predictor") as Numeric?)?.value?.toInt() ?: 1
     private val bitsPerComponent: Int = (decodeParams?.get("BitsPerComponent") as Numeric?)?.value?.toInt() ?: 8
     private val columns: Int = (decodeParams?.get("Columns") as Numeric?)?.value?.toInt() ?: 1
     private var earlyChange: Int = (decodeParams?.get("EarlyChange") as Numeric?)?.value?.toInt() ?: 1
-    private var colors: Int = Math.min((decodeParams?.get("Colors") as Numeric?)?.value?.toInt() ?: 1, 32)
+    private var colors: Int = min((decodeParams?.get("Colors") as Numeric?)?.value?.toInt() ?: 1, 32)
 
-    private var lzwTable = ArrayList<ByteArray>()
-
-    constructor() : this(null)
-
-    companion object {
-        private const val CLEAR_TABLE = 256L
-        private const val EOD = 257L
-    }
+    private val codeTable = HashMap<BitArray, ByteArray>()
+    private val clearTableMarker = bitArrayOf(true, false, false, false, false, false, false, false, false)
+    private val endOfDataMarker = bitArrayOf(true, false, false, false, false, false, false, false, true)
+    private var ptr = 0
+    private var maxSize = 9
+    private var chunkSize = 9
+    private var codeValue: ByteArray? = null
+    private var prevValue: ByteArray? = null
+    private var prevCode = endOfDataMarker
 
     init {
         if (earlyChange != 0 && earlyChange != 1) {
@@ -33,9 +34,8 @@ internal class LZW(decodeParams: Dictionary?) : Decoder {
     }
 
     override fun decode(encoded: ByteArray): ByteArray {
+        val bitArray = encoded.toBitArray()
         val out = ByteArrayOutputStream()
-        val inputStream = encoded.inputStream()
-        val input = MemoryCacheImageInputStream(inputStream)
 
         val predictedOut = Predictor(
             predictor = predictor,
@@ -45,88 +45,107 @@ internal class LZW(decodeParams: Dictionary?) : Decoder {
             bytes = encoded
         ).wrapPredictor(out)
 
-        var size = 8
-        var next: Long
-        var prev = -1L
-        createLZWTable()
+        resetCodeTable()
+        ptr = 0
+        maxSize = 9
+        prevCode = endOfDataMarker
+        codeValue = null
+        prevValue = null
         while (true) {
-            next = input.readBits(size)
-            if (next == EOD) break
-            when (next) {
-                CLEAR_TABLE -> {
-                    size = 9
-                    createLZWTable()
-                    prev = -1L
-                }
-                else -> {
-                    when {
-                        next < lzwTable.size -> {
-                            var bytes = lzwTable[next.toInt()]
-                            val first = bytes[0]
-                            predictedOut.write(bytes)
-                            if (prev != -1L) {
-                                checkIndexBounds(prev, input)
-                                bytes = lzwTable[prev.toInt()]
-                                val newBytes = bytes.copyOf(bytes.size + 1)
-                                newBytes[bytes.size] = first
-                                lzwTable.add(newBytes)
-                            }
-                        }
-                        else -> {
-                            if (prev != -1L) {
-                                checkIndexBounds(prev, input)
-                                val bytes = lzwTable[prev.toInt()]
-                                val newBytes = bytes.copyOf(bytes.size + 1)
-                                newBytes[bytes.size] = bytes[0]
-                                predictedOut.write(newBytes)
-                                lzwTable.add(newBytes)
-                            }
-                        }
-                    }
+            evaluateForCodeLengthChange()
+            if (ptr + chunkSize > bitArray.size()) break
 
-                    size = calculateNextCodeSize()
-                    prev = next
-                }
+            val code = bitArray.subArray(ptr, ptr + chunkSize)
+
+            if (code == endOfDataMarker) {
+                break
+            } else if (code == clearTableMarker) {
+                resetCodeTable()
+                maxSize = 9
+                chunkSize = 9
+                ptr += chunkSize
+                prevCode = endOfDataMarker
+                prevValue = null
+            } else {
+                decode(code, predictedOut)
             }
         }
 
         return out.toByteArray()
     }
 
-    @Throws(IOException::class)
-    private fun checkIndexBounds(index: Long, input: MemoryCacheImageInputStream) {
-        if (index < 0) {
-            throw IOException(
-                "negative array index: " + index + " near offset "
-                        + input.streamPosition
-            )
+    private fun decode(code: BitArray, predictedOut: OutputStream) {
+        codeValue = codeTable[code]
+        if (codeValue != null) {
+            prevValue?.let { pv ->
+                val newValue = ByteArray(pv.size + 1)
+                pv.forEachIndexed { i, byte ->
+                    if (byte.toChar() != '\r') {
+                        newValue[i] = byte
+                    } else {
+                        newValue[i] = '\n'.toByte()
+                    }
+                }
+                if (codeValue!!.first().toChar() == '\r') {
+                    codeValue!![0] = '\n'.toByte()
+                }
+                newValue[newValue.lastIndex] = codeValue!!.first()
+                codeTable[prevCode.next()] = newValue
+                prevCode = prevCode.next()
+            }
+        } else if (prevCode.next() == code && prevValue != null) {
+            val newValue = ByteArray(prevValue!!.size + 1)
+            prevValue!!.forEachIndexed { i, byte ->
+                newValue[i] = byte
+            }
+            newValue[newValue.lastIndex] = prevValue!!.first()
+            codeTable[code] = newValue
+            codeValue = newValue
+            prevCode = code
+        } else if (chunkSize > 9 && !code[0]) {
+            ptr++
+            chunkSize--
+            return
+        } else {
+            throw InvalidStreamException("Exception on LZW decoding: Cant find code in table", null)
         }
-        if (index >= lzwTable.size) {
-            throw IOException(
-                ("array index overflow: " + index +
-                        " >= " + lzwTable.size + " near offset "
-                        + input.streamPosition)
-            )
+
+        codeValue?.forEach { byte ->
+            var c = byte.toChar()
+            if (c == '\r') {
+                c = '\n'
+            }
+            predictedOut.write(c.toInt() and 0xff)
         }
+
+        ptr += chunkSize
+        prevValue = codeValue
+        chunkSize = maxSize
     }
 
-    private fun createLZWTable() {
-        lzwTable = ArrayList(4096)
-        for (i in 0 until 256) {
-            val byte = (i and 0xFF).toByte()
-            val array = arrayOf(byte)
-            lzwTable.add(array.toByteArray())
+    private fun resetCodeTable() {
+        codeTable.clear()
+        for (i in 0..255) {
+            val byte = i.toByte()
+            val bitArray = byte.toBitArray()
+            codeTable[bitArray] = byteArrayOf(byte)
         }
 
-        repeat(2) { lzwTable.add(ByteArray(0)) }
+        codeTable[clearTableMarker] = byteArrayOf()
+        codeTable[endOfDataMarker] = byteArrayOf()
     }
 
-    private fun calculateNextCodeSize(): Int {
-        return when {
-            lzwTable.size >= 2048 - earlyChange -> 12
-            lzwTable.size >= 1024 - earlyChange -> 11
-            lzwTable.size >= 512 - earlyChange -> 10
-            else -> 8
+    private fun evaluateForCodeLengthChange() {
+        if (earlyChange == 1) {
+            if (prevCode.next().next().size() > maxSize) {
+                maxSize++
+                chunkSize = maxSize
+            }
+        } else {
+            if (prevCode.next().size() > maxSize) {
+                maxSize++
+                chunkSize = maxSize
+            }
         }
     }
 }

@@ -13,7 +13,12 @@ internal class TopDownParser(private val file: RandomAccessFile) {
                 if (c == 'b') {
                     c = file.readByte().toChar()
                     if (c == 'j') {
-                        extractObj(objects)
+                        if (verifyObj()) {
+                            extractObj(objects)
+                        } else {
+                            file.seek(file.filePointer + 3)
+                            continue
+                        }
                     }
                 }
             }
@@ -21,9 +26,15 @@ internal class TopDownParser(private val file: RandomAccessFile) {
         return objects
     }
 
-    private fun extractObj(objects: HashMap<String, XRefEntry>) {
-        val continuePosition = file.filePointer
+    private fun verifyObj(): Boolean {
         file.seek(file.filePointer - 4)
+        val c = file.readByte().toChar()
+        return c == ' '
+    }
+
+    private fun extractObj(objects: HashMap<String, XRefEntry>) {
+        val continuePosition = file.filePointer + 3
+        file.seek(file.filePointer - 1)
 
         var skipSpace = skipSpace(continuePosition)
         if (!skipSpace) return

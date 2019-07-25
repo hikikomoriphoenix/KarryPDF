@@ -31,6 +31,8 @@ internal open class Indirect(
         start = file.filePointer - 1 - (obj as Int).length()
         gen = extractNextNumber()
 
+        validateObj()
+
         if (reference != null) {
             if (reference.obj != obj) throw IndirectObjectMismatchException()
         }
@@ -53,6 +55,25 @@ internal open class Indirect(
             c = file.readByte().toChar()
         }
         return c
+    }
+
+    private fun validateObj() {
+        file.seek(file.filePointer - 1)
+        while (true) {
+            val c = file.readByte().toChar()
+            if (c != ' ') {
+                if (c != 'o') {
+                    throw IndirectObjectMismatchException()
+                } else {
+                    break
+                }
+            }
+        }
+        val b = file.readByte().toChar()
+        val j = file.readByte().toChar()
+        if (b != 'b' || j != 'j') {
+            throw IndirectObjectMismatchException()
+        }
     }
 
     fun extractContent(): StringBuilder {

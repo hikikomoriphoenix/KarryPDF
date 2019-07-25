@@ -23,6 +23,15 @@ internal class Dictionary(private val entries: HashMap<String, PDFObject?>) : PD
             }
         return this
     }
+
+    override fun toString(): String {
+        val sb = StringBuilder("dictionary {\n")
+        for (entry in entries) {
+            sb.append("${entry.key}->${entry.value}\n")
+        }
+        sb.append("}")
+        return sb.toString()
+    }
 }
 
 internal fun StringBuilder.toDictionary(

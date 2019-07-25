@@ -16,6 +16,10 @@ internal class Reference(private val context: AndPDFContext, val obj: Int, val g
     fun resolveToStream(referenceResolver: ReferenceResolver? = context.referenceResolver): Stream? {
         return referenceResolver?.resolveReferenceToStream(this)
     }
+
+    override fun toString(): String {
+        return "$obj $gen R"
+    }
 }
 
 internal fun String.toReference(context: AndPDFContext): Reference {

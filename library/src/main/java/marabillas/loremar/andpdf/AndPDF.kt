@@ -31,7 +31,7 @@ class AndPDF(private val file: RandomAccessFile, password: String = "") {
     private var topDownReferences: HashMap<String, XRefEntry>? = null
         get() {
             if (field == null) {
-                field = TopDownParser(file).parseObjects()
+                field = TopDownParser(context, file).parseObjects()
             }
             return field
         }

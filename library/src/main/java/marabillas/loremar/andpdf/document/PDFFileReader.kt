@@ -160,6 +160,7 @@ internal class PDFFileReader(private val context: AndPDFContext, private val fil
     private fun findStartOfXRefStream(start: Long): Long {
         file.seek(start)
         while (file.filePointer >= 0) {
+            file.seek(file.filePointer - 2)
             var c = file.readByte().toChar()
             if (c == 'o') {
                 c = file.readByte().toChar()
@@ -185,7 +186,11 @@ internal class PDFFileReader(private val context: AndPDFContext, private val fil
                             c = file.readByte().toChar()
                         }
                         return file.filePointer
+                    } else {
+                        file.seek(file.filePointer - 4)
                     }
+                } else {
+                    file.seek(file.filePointer - 3)
                 }
             }
         }

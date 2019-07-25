@@ -2,6 +2,7 @@ package marabillas.loremar.andpdf.document
 
 import marabillas.loremar.andpdf.objects.Numeric
 import marabillas.loremar.andpdf.objects.Reference
+import marabillas.loremar.andpdf.objects.toPDFObject
 import marabillas.loremar.andpdf.utils.logd
 import java.io.RandomAccessFile
 
@@ -40,7 +41,7 @@ internal class TopDownParser(private val context: AndPDFContext, private val fil
                                     val continuePos = file.filePointer
                                     if (!isEndStream()) {
                                         file.seek(continuePos)
-                                        skipStream()
+                                        skipStream(objects)
                                     } else {
                                         file.seek(continuePos)
                                     }
@@ -117,13 +118,22 @@ internal class TopDownParser(private val context: AndPDFContext, private val fil
         }
     }
 
-    private fun skipStream() {
+    private fun skipStream(objects: HashMap<String, XRefEntry>) {
         lastAdded?.let { lastAdded ->
             val continuePos = file.filePointer
             val streamDic = context.fileReader?.getDictionary(lastAdded.pos, lastAdded.obj, lastAdded.gen)
             var length = streamDic?.get("Length")
             if (length is Reference) {
-                length = length.resolve()
+                val lengthObj = length.obj
+                val lengthGen = length.gen
+                length = context.referenceResolver?.resolveReference(Reference(context, lengthObj, lengthGen), false)
+                if (length == null) {
+                    val lengthPos = objects["$lengthObj $lengthGen"]?.pos
+                    if (lengthPos != null) {
+                        length = context.fileReader?.getIndirectObject(lengthPos)?.extractContent()
+                            ?.toPDFObject(context, lengthObj, lengthGen)
+                    }
+                }
             }
             if (length is Numeric) {
                 file.seek(continuePos + length.value.toLong())

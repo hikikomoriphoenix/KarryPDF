@@ -75,14 +75,14 @@ class AndPDF(private val file: RandomAccessFile, password: String = "") {
     private inner class ReferenceResolverImpl : ReferenceResolver {
         private val stringBuilder = StringBuilder()
 
-        override fun resolveReference(reference: Reference): PDFObject? {
+        override fun resolveReference(reference: Reference, checkTopDownReferences: Boolean): PDFObject? {
             val fileReader = context.fileReader ?: throw NoDocumentException()
             val objects = context.objects ?: throw NoDocumentException()
             var objEntry = objects["${reference.obj} ${reference.gen}"] ?: return null
 
             if (objEntry.compressed) {
                 var objStmEntry = objects["${objEntry.objStm} 0"]
-                if (objStmEntry == null || objStmEntry.pos < 0L) {
+                if ((objStmEntry == null || objStmEntry.pos < 0L) && checkTopDownReferences) {
                     objStmEntry = topDownReferences?.get("${objEntry.objStm} 0")
                 }
 
@@ -90,6 +90,7 @@ class AndPDF(private val file: RandomAccessFile, password: String = "") {
                     val objStm = try {
                         fileReader.getObjectStream(objStmEntry.pos, Reference(context, objEntry.objStm, 0))
                     } catch (e: IndirectObjectMismatchException) {
+                        if (!checkTopDownReferences) return null
                         val pos = topDownReferences?.get("${objEntry.objStm} 0")?.pos
                         if (pos != null) {
                             fileReader.getObjectStream(pos)
@@ -111,16 +112,21 @@ class AndPDF(private val file: RandomAccessFile, password: String = "") {
                     null
                 }
             } else {
-                if (objEntry.pos < 0L) {
+                if (objEntry.pos < 0L && checkTopDownReferences) {
                     objEntry = topDownReferences?.get("${objEntry.obj} ${objEntry.gen}") ?: return null
                 }
 
                 val content = try {
                     fileReader.getIndirectObject(objEntry.pos, reference).extractContent()
                 } catch (e: IndirectObjectMismatchException) {
-                    val pos = topDownReferences?.get("${objEntry.obj} ${objEntry.gen}")?.pos
-                    if (pos != null) {
-                        fileReader.getIndirectObject(pos, reference).extractContent()
+                    if (checkTopDownReferences) {
+
+                        val pos = topDownReferences?.get("${objEntry.obj} ${objEntry.gen}")?.pos
+                        if (pos != null) {
+                            fileReader.getIndirectObject(pos, reference).extractContent()
+                        } else {
+                            StringBuilder()
+                        }
                     } else {
                         StringBuilder()
                     }

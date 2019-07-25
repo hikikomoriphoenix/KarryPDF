@@ -82,7 +82,7 @@ class PDFFileReaderTest {
                 TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
             }
 
-            override fun resolveReference(reference: Reference): PDFObject? {
+            override fun resolveReference(reference: Reference, checkTopDownReferences: Boolean): PDFObject? {
                 return null
             }
         }

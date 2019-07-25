@@ -83,6 +83,7 @@ internal class TextObjectParser(private val context: AndPDFContext, private val 
                         }
                     } else if (s[pos] == 'f') {
                         tf.clear().append(s, operandsIndices[0] + 1/* Exclude (/) delimiter */, pos - 2)
+                        tf.cleanTF()
                     } else if (s[pos] == 'D') {
                         positionText(s)
                         tl = -td[1]
@@ -215,5 +216,22 @@ internal class TextObjectParser(private val context: AndPDFContext, private val 
         }
 
         rgb = CmykToRgbConverter.inst.convert(cmyk)
+    }
+
+    private fun StringBuilder.cleanTF() {
+        var i = 0
+        while (i < this.length) {
+            if (this.isWhiteSpaceAt(i)) {
+                while (i < this.length) {
+                    if (this.isWhiteSpaceAt(i)) {
+                        this.deleteCharAt(i)
+                    } else {
+                        this.insert(i, ' ')
+                        break
+                    }
+                }
+            }
+            i++
+        }
     }
 }

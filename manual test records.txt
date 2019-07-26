@@ -2,8 +2,8 @@ Title: Pro Git Second Edition
 Author/Publisher: Scott Chacon and Ben Straub
 File: progit.pdf
 Issues:
-- Very slow performance
 - Font colors not shown
+- missing images
 
 Title: Heartfulness Magazine Issue 10
 Author/Publisher: heartfulness.org
@@ -29,8 +29,7 @@ Author/Publisher: William John Teahan
 File: artificial-intelligence-agent-behaviour-i.pdf
 Issues:
 - very minor issues with character spacing
-- Error at page 81, 133 up until 192, Flate decoding fails
-- NumberFormatException at page 193
+- paragraphs not arranged correctly, pages 81, 82, and probably more
 
 Title: Bridging gender gaps?
 Author/Publisher: Leonardo Gasparini, Mariana Marchionni
@@ -55,7 +54,7 @@ Issues:
 
 Title: Players Unleashed! Modding the Sims and the Culture of Gaming
 Author/Publisher: Tanja Sihvonen
-File: Players-Unleashed-Open-Access
+File: Players-Unleashed-Open-Access.pdf
 Issues: 
 - Missing characters at the top of page. Affected pages: page 11 above
 - missing images

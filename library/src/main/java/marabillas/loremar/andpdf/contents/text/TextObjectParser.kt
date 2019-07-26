@@ -4,7 +4,6 @@ import marabillas.loremar.andpdf.contents.CmykToRgbConverter
 import marabillas.loremar.andpdf.document.AndPDFContext
 import marabillas.loremar.andpdf.objects.PDFObject
 import marabillas.loremar.andpdf.objects.toPDFObject
-import marabillas.loremar.andpdf.objects.toPDFString
 import marabillas.loremar.andpdf.utils.exts.*
 
 internal class TextObjectParser(private val context: AndPDFContext, private val obj: Int, private val gen: Int) {
@@ -113,7 +112,10 @@ internal class TextObjectParser(private val context: AndPDFContext, private val 
                         tjEnd = pos - 1
                     operand.clear().append(s, operandsIndices[2], tjEnd)
                     // TODO Support Tw(Word Spacing) and Tc(Character Spacing)
-                    addTextElement(textObj, operand.toPDFObject(context, obj, gen) ?: "()".toPDFString(), ctm)
+                    val tjObject = operand.toPDFObject(context, obj, gen)
+                    if (tjObject != null) {
+                        addTextElement(textObj, tjObject, ctm)
+                    }
                     operandsCount = 0
                 } else if (s[pos] == '\'') {
                     // Perform T*
@@ -155,11 +157,17 @@ internal class TextObjectParser(private val context: AndPDFContext, private val 
     }
 
     private fun showText(pos: Int, s: StringBuilder, textObj: TextObject, ctm: FloatArray) {
-        var tjEnd = pos - 2
-        if (s.isUnEnclosingAt(tjEnd))
-            tjEnd = pos - 1
+        var tjEnd = pos
+        while (tjEnd > operandsIndices[0]) {
+            if (s.isUnEnclosingAt(tjEnd - 1))
+                break
+            tjEnd--
+        }
         operand.clear().append(s, operandsIndices[0], tjEnd)
-        addTextElement(textObj, operand.toPDFObject(context, obj, gen) ?: "()".toPDFString(), ctm)
+        val tjObject = operand.toPDFObject(context, obj, gen)
+        if (tjObject != null) {
+            addTextElement(textObj, tjObject, ctm)
+        }
     }
 
     private fun addTextElement(textObj: TextObject, tj: PDFObject, ctm: FloatArray) {

@@ -182,6 +182,7 @@ class AndPDF(private val file: RandomAccessFile, password: String = "") {
 
         val contentsList = ArrayList<PageContent>()
         val pageDic = pages[pageNum].resolve() as Dictionary
+        pageDic.resolveReferences()
 
         // Attempt to get ActualText
         val structParents = pageDic["StructParents"]
@@ -191,8 +192,12 @@ class AndPDF(private val file: RandomAccessFile, password: String = "") {
             logd("No StructParents")
         }
 
-        pageDic.resolveReferences()
-        val resources = pageDic["Resources"] as Dictionary
+        val resources = try {
+            (pageDic["Resources"] as Dictionary?) ?: getPageResourcesFromAncestors(pageDic)
+        } catch (e: InvalidDocumentException) {
+            loge("Blank Page")
+            return ArrayList()
+        }
         resources.resolveReferences()
 
         // Get all fonts and CMaps required for this page
@@ -275,6 +280,16 @@ class AndPDF(private val file: RandomAccessFile, password: String = "") {
             }
         }
         return xObjMap
+    }
+
+    private fun getPageResourcesFromAncestors(pageDic: Dictionary): Dictionary {
+        val parent = pageDic["Parent"]
+        if (parent is Dictionary) {
+            parent.resolveReferences()
+            return parent["Resources"] as Dictionary? ?: getPageResourcesFromAncestors(parent)
+        } else {
+            throw InvalidDocumentException("Page dictionary is missing a Resources Entry")
+        }
     }
 
     /**

@@ -1,5 +1,6 @@
 package marabillas.loremar.andpdf.font.ttf
 
+import marabillas.loremar.andpdf.exceptions.font.InvalidTTFCMapException
 import marabillas.loremar.andpdf.utils.exts.set
 
 internal class TTFCMap12(data: ByteArray, pos: Long) : TTFCMapDefault(data, pos) {
@@ -11,6 +12,9 @@ internal class TTFCMap12(data: ByteArray, pos: Long) : TTFCMapDefault(data, pos)
             checkIfLocationIsWithinTableLength(start.toInt() + 8)
             val startCharCode = TTFParser.getUInt32At(data, start.toInt())
             val endCharCode = TTFParser.getUInt32At(data, start.toInt() + 4)
+            if (endCharCode > 200000) {
+                throw InvalidTTFCMapException("Last character code exceeds beyond expected total number of character codes")
+            }
             val startGlyphCode = TTFParser.getUInt32At(data, start.toInt() + 8)
             for (k in startCharCode..endCharCode) {
                 val offset = k - startCharCode

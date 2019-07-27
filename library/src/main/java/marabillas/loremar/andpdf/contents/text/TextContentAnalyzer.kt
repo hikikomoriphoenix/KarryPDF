@@ -330,9 +330,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                             textObj.forEach {
                                 var dty = -it.td[1]
                                 if (textObj.first() == it) dty = 0f
-                                sb.clear().append(it.tf, it.tf.indexOf(' ') + 1, it.tf.length)
-                                val fSize = sb.toDouble().toFloat() * textObj.scaleY
-                                sortGroup(it, dty, fSize)
+                                sortGroup(it, dty, textObj)
                             }
                         }
                         // If in the same column of previous TextObject
@@ -344,9 +342,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                                 if (textObj.first() == it)
                                     dty = 0f
 
-                                sb.clear().append(it.tf, it.tf.indexOf(' ') + 1, it.tf.length)
-                                val fSize = sb.toDouble().toFloat() * textObj.scaleY
-                                sortGroup(it, dty, fSize)
+                                sortGroup(it, dty, textObj)
                             }
                         }
                         else -> {
@@ -377,9 +373,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                             textObj.forEach {
                                 var dty = -it.td[1]
                                 if (textObj.first() == it) dty = 0f
-                                sb.clear().append(it.tf, it.tf.indexOf(' ') + 1, it.tf.length)
-                                val fSize = sb.toDouble().toFloat() * textObj.scaleY
-                                sortGroup(it, dty, fSize)
+                                sortGroup(it, dty, textObj)
                             }
                         }
                     }
@@ -391,19 +385,22 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                     textObj.forEach {
                         var dty = -it.td[1]
                         var xPos = textObj.td[0]
+                        var xPosPrev = textObj.td[0]
 
                         if (textObj.first() == it) dty = 0f
-                        else xPos += (it.td[0] * textObj.scaleX)
+                        else {
+                            xPosPrev = xPos
+                            xPos += (it.td[0] * textObj.scaleX)
+                        }
 
-                        sb.clear().append(it.tf, it.tf.indexOf(' ') + 1, it.tf.length)
-                        val fSize = sb.toDouble().toFloat() * textObj.scaleY
-                        sortGroup(it, dty, fSize, xPos)
+                        sortGroup(it, dty, textObj, xPos, xPosPrev)
                     }
                 }
                 else -> {
                     textObj.forEach {
                         var dty = -it.td[1]
                         var xPos = textObj.td[0]
+                        var xPosPrev = textObj.td[0]
                         if (textObj.first() == it) {
                             dty = if (prevTextObj == null)
                                 0f
@@ -416,13 +413,11 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                                 yOfLast - it.td[1]
                             }
                         } else {
+                            xPosPrev = xPos
                             xPos += (it.td[0] * textObj.scaleX)
                         }
 
-                        sb.clear().append(it.tf, it.tf.indexOf(' ') + 1, it.tf.length)
-                        val fSize = sb.toDouble().toFloat() * textObj.scaleY
-
-                        sortGroup(it, dty, fSize, xPos)
+                        sortGroup(it, dty, textObj, xPos, xPosPrev)
                     }
                 }
             }
@@ -456,16 +451,26 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         }
     }
 
-    private fun sortGroup(textElement: TextElement, dty: Float, fSize: Float, xPos: Float = 0f) {
+    private fun sortGroup(
+        textElement: TextElement,
+        dty: Float,
+        textObj: TextObject,
+        xPos: Float = 0f,
+        xPosPrev: Float = 0f
+    ) {
+        sb.clear().append(textElement.tf, textElement.tf.indexOf(' ') + 1, textElement.tf.length)
+        val fSize = sb.toDouble().toFloat()
+
         when {
             currTextGroup.size() == 0 -> newLine(textElement, xPos)
             sameLine(dty) -> {
                 if (
                     (currLine.last().tj as PDFString).value.last() != ' ' // If last TextElement does not end with space
-                    || (textElement.tj as PDFString).value.first() != ' ' // If new TextElement does not start with space
+                    && (textElement.tj as PDFString).value.first() != ' ' // If new TextElement does not start with space
+                    && areSpaceSeparated(textElement, xPos, xPosPrev, textObj, fSize)
                 ) {
                     // Put space between last TextElement and new TextElement
-                    sb.clear().append(' ').append((textElement.tj as PDFString).value)
+                    sb.clear().append(' ').append(textElement.tj.value)
                     sb.insert(0, '(').append(')')
                     val te = TextElement(
                         tf = textElement.tf,
@@ -480,8 +485,27 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                     currLine.add(textElement)
                 }
             }
-            near(dty, fSize) -> newLine(textElement, xPos)
+            near(dty, fSize * textObj.scaleY) -> newLine(textElement, xPos)
             else -> newTextGroup(textElement, xPos)
+        }
+    }
+
+    private fun areSpaceSeparated(
+        textElement: TextElement,
+        xPos: Float,
+        xPosPrev: Float,
+        textObj: TextObject,
+        fSize: Float
+    ): Boolean {
+        val font = fonts[textElement.fontResource]
+        if (font != null) {
+            // Get width of space or 'i'
+            val spaceWidth = ((font.widths[32] ?: font.widths[105] ?: return true) / 1000) * fSize * textObj.scaleX
+
+            val lastCharPosition = xPosPrev + currLine.last().width
+            return xPos - lastCharPosition >= spaceWidth
+        } else {
+            return true
         }
     }
 

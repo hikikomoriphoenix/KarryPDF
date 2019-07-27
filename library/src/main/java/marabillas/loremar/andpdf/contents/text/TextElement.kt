@@ -12,4 +12,5 @@ internal class TextElement internal constructor(
     val rgb: FloatArray = floatArrayOf(-1f, -1f, -1f)
 ) : PageContent {
     var width = 0f
+    val fontResource = tf.substring(0, tf.indexOf(' '))
 }

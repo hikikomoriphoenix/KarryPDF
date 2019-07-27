@@ -69,8 +69,7 @@ internal class TextContentAdapter {
                 val s = SpannableString(sb)
 
                 // Style with typeface
-                sb.clear().append(line[j].tf, 0, line[j].tf.indexOf(' '))
-                val t = fonts[sb.toString()]?.typeface ?: FontMappings[FontName.DEFAULT]
+                val t = fonts[line[j].fontResource]?.typeface ?: FontMappings[FontName.DEFAULT]
                 val span = CustomTypefaceSpan(t)
                 s.setSpan(span, 0, s.length, SpannableString.SPAN_INCLUSIVE_EXCLUSIVE)
 

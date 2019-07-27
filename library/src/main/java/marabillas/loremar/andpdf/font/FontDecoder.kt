@@ -21,9 +21,7 @@ internal class FontDecoder(
             .forEach {
                 val textObject = it as TextObject
                 textObject.forEachIndexed forEachTextElement@{ i, e ->
-                    mainSB.clear()
-                    mainSB.append(e.tf, 0, e.tf.indexOf(' '))
-                    val cmap = fonts[mainSB.toString()]?.cmap
+                    val cmap = fonts[e.fontResource]?.cmap
 
                     var newTj: PDFObject? = null
                     when (e.tj) {

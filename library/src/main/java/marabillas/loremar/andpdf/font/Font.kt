@@ -3,6 +3,7 @@ package marabillas.loremar.andpdf.font
 import android.graphics.Typeface
 import android.support.v4.util.SparseArrayCompat
 import marabillas.loremar.andpdf.exceptions.InvalidStreamException
+import marabillas.loremar.andpdf.font.cff.CFFParser
 import marabillas.loremar.andpdf.font.cmap.*
 import marabillas.loremar.andpdf.font.encoding.*
 import marabillas.loremar.andpdf.font.ttf.TTFParser
@@ -312,7 +313,7 @@ internal class Font(private val dictionary: Dictionary, private val referenceRes
 
         when {
             fontFile3 is Reference -> {
-                getWidthsFromFontFile3(fontType)
+                getWidthsFromFontFile3(fontType, fontDescriptor["FontName"] as Name)
             }
             fontFile1IsEmbedded(fontType) -> {
                 getWidthsFromFontFile1()
@@ -323,16 +324,32 @@ internal class Font(private val dictionary: Dictionary, private val referenceRes
         }
     }
 
-    private fun getWidthsFromFontFile3(fontType: Name) {
-        //TODO("Getting widths from FontFile3 not implemented")
-        /*try {
-            // Implementation for FontFile3
+    private fun getWidthsFromFontFile3(fontType: Name, fontName: Name) {
+        try {
+            val fontProgram = referenceResolver.resolveReferenceToStream(fontFile3 as Reference)
+            val data = fontProgram?.decodeEncodedStream()
+            val subtype = fontProgram?.dictionary?.resolveReferences()?.get("Subtype")
+            if (subtype is Name && data != null) {
+                when {
+                    subtype.value == "Type1C" && (fontType.value == "Type1" || fontType.value == "MMType1") -> {
+                        widths = CFFParser(data, fontName.value).getCharacterWidths(encodingArray, cmap)
+                    }
+                    subtype.value == "CIDFontType0C" && fontType.value == "CIDFontType0" -> {
+                        TODO("CIDFontType0C is not yet implemented")
+                    }
+                    subtype.value == "OpenType" -> {
+                        TODO("OpenType is not yet implemented")
+                    }
+                }
+            } else {
+                throw Exception()
+            }
         } catch (e: Exception) {
             if (fontFile1IsEmbedded(fontType))
                 getWidthsFromFontFile1()
             else if (fontFile2IsEmbedded(fontType))
                 getWidthsFromFontFile2()
-        }*/
+        }
     }
 
     private fun fontFile1IsEmbedded(fontType: Name): Boolean {

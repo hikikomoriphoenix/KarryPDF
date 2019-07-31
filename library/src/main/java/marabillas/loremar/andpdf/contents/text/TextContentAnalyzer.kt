@@ -52,11 +52,9 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         }
 
         // If tj values are arrays resulting from TJ operator, determine from the number values between strings
-        // whether to add space or not while concatenating strings. First to get glyph width for space, get all the
-        // negative numbers and identify the negative number with most occurrences. Rule: If the absolute value of a
-        // negative number is less than 15% of the space width, don't add space. If it is greater than 115%,
-        // then add double space. Otherwise, add space. If number is positive don't add space.
-        // UPDATE: Existing space widths from each font in the fonts array will be used.
+        // whether to add space or not while concatenating strings. A negative value indicates a shift to right adding
+        // space between characters. If the value amounts to a space width, add space while concatenating surrounding
+        // strings.
         handleTJArrays()
 
         // Tables are detected by looking for wide spaces placed on top of each other. These wide spaces serve as

@@ -2,6 +2,7 @@ package marabillas.loremar.andpdf.font.cmap
 
 import android.support.v4.util.SparseArrayCompat
 import marabillas.loremar.andpdf.font.cmap.CMap.Companion.MISSING_CHAR
+import marabillas.loremar.andpdf.utils.exts.convertContentsToHex
 import marabillas.loremar.andpdf.utils.exts.hexFromInt
 import marabillas.loremar.andpdf.utils.exts.hexToInt
 
@@ -206,9 +207,17 @@ internal class ToUnicodeCMap(private var stream: String) : EmbeddedCMap {
     override fun decodeString(encoded: String): String {
         encodedSB.clear().append(encoded)
         decodedSB.clear()
-
         extractActualEncoded(encodedSB)
+        resetVariables()
+        extractEachCodeThatIsInCodeSpaceRangeAndConvertToItsMappedUnicodeValue()
 
+        // Convert to literal string for PDF
+        encodeParentheses(decodedSB)
+        decodedSB.insert(0, '(').append(')')
+        return decodedSB.toString()
+    }
+
+    private fun extractEachCodeThatIsInCodeSpaceRangeAndConvertToItsMappedUnicodeValue() {
         ptr = 0
         while (ptr < encodedSB.length) {
             // Check if next code is within code space range. If not, proceed to its succeeding or, if possible, combine
@@ -287,11 +296,6 @@ internal class ToUnicodeCMap(private var stream: String) : EmbeddedCMap {
                 continue
             }
         }
-
-        // Convert to literal string for PDF
-        encodeParentheses(decodedSB)
-        decodedSB.insert(0, '(').append(')')
-        return decodedSB.toString()
     }
 
     private fun isNextValid(): Boolean {
@@ -350,6 +354,26 @@ internal class ToUnicodeCMap(private var stream: String) : EmbeddedCMap {
     }
 
     override fun charCodeToUnicode(code: Int): Int? {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        encodedSB.clear().hexFromInt(code)
+        decodedSB.clear()
+        resetVariables()
+        extractEachCodeThatIsInCodeSpaceRangeAndConvertToItsMappedUnicodeValue()
+        decodedSB.convertContentsToHex()
+        return decodedSB.hexToInt()
+    }
+
+    private fun resetVariables() {
+        codeLength = 0
+        srcCodeSB.clear()
+        dstCodeSB.clear()
+        ptr = 0
+        end = 0
+        loStart = 0
+        loEnd = 0
+        hiStart = 0
+        hiEnd = 0
+        dstStart = 0
+        dstEnd = 0
+        operator = 0
     }
 }

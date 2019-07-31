@@ -28,21 +28,21 @@ Title: Artificial intelligence - Agent Behaviour
 Author/Publisher: William John Teahan
 File: artificial-intelligence-agent-behaviour-i.pdf
 Issues:
-- very minor issues with character spacing
+- page 11, top part not decoded correctly
+- Sometimes there is missing 'T' in 'The' and missing 'f' in 'often'
 - paragraphs not arranged correctly, pages 81, 82, and probably more
 
 Title: Bridging gender gaps?
 Author/Publisher: Leonardo Gasparini, Mariana Marchionni
 File: Bridging_Gender_Gaps.pdf
 Issues:
-- Innacurate character spacing. Affected pages: All
 - Graphs not rendered. Affected pages: 133, etc.
 
 Title: Automation and Robotics
 Author/Publisher: Dr. Miltiadis A. Boboulos
 File: automation-and-robotics.pdf
 Issues:
-- Innacurate character spacing. Affected pages: All
+- Sometime there are missing 'T' in 'The'
 - missing images
 
 Title: Document Management - Portable Document Format - Part 1: PDF 1.7
@@ -65,4 +65,4 @@ File: artificial-intelligence-agents-and-environments.pdf
 Issues:
 - missing images, Affected pages: 58, 71, 75, etc.
 - Some encoded text is not decoded, Affected pages: 66
-- Innacurate character spacing
+- Missing 'T' in 'The' and missing 'f' in some words, page 8 and probably others

@@ -22,14 +22,13 @@ Author/Publisher: Gabriel Donleavy
 File: an-introduction-to-accounting-theory.pdf
 Issues:
 - missing images
-- missing characters at page 15 and other several pages
+- Some few missing characters in page 12 and more
 
 Title: Artificial intelligence - Agent Behaviour
 Author/Publisher: William John Teahan
 File: artificial-intelligence-agent-behaviour-i.pdf
 Issues:
 - page 11, top part not decoded correctly
-- Sometimes there is missing 'T' in 'The' and missing 'f' in 'often'
 - paragraphs not arranged correctly, pages 81, 82, and probably more
 
 Title: Bridging gender gaps?
@@ -42,21 +41,20 @@ Title: Automation and Robotics
 Author/Publisher: Dr. Miltiadis A. Boboulos
 File: automation-and-robotics.pdf
 Issues:
-- Sometime there are missing 'T' in 'The'
 - missing images
 
 Title: Document Management - Portable Document Format - Part 1: PDF 1.7
 Author/Publisher: Adobe Systems Incorporated
 File: PDF32000_2008.pdf
 Issues:
-- Innacurate character spacing
+- Some few innacurate character spacing
 - Takes a long time to load document
 
 Title: Players Unleashed! Modding the Sims and the Culture of Gaming
 Author/Publisher: Tanja Sihvonen
 File: Players-Unleashed-Open-Access.pdf
 Issues: 
-- Missing characters at the top of page. Affected pages: page 11 above
+- Few missing characters at the top of page. Affected pages: page 11 above
 - missing images
 
 Title: Artificial Intelligence - Agents and Environments
@@ -65,4 +63,19 @@ File: artificial-intelligence-agents-and-environments.pdf
 Issues:
 - missing images, Affected pages: 58, 71, 75, etc.
 - Some encoded text is not decoded, Affected pages: 66
-- Missing 'T' in 'The' and missing 'f' in some words, page 8 and probably others
+
+Title: Supporting the DCT Filters in Postscript Level 2
+Author/Publisher: Adobe Systems Incorporated
+File: 5116.DCT_Filter.pdf
+Issues:
+- misarrangement in page 1
+- character '4' is missing in page 1, page 3, and probably more
+- Words in bold font style are placed in its own line instead of inline with the paragraph
+- characters 'fi' are displayed as '"'
+
+Title: Kotlin Notes For Professionals
+Author/Publisher: GoalKicker.com
+File: KotlinNotesForProfessionals.pdf
+Issues:
+- Missing images in first page and last page
+- 'fi' and sometimes 'f' are not decoded correctly

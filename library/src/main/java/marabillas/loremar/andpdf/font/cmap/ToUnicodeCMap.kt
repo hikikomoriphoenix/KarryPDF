@@ -5,6 +5,7 @@ import marabillas.loremar.andpdf.font.cmap.CMap.Companion.MISSING_CHAR
 import marabillas.loremar.andpdf.utils.exts.convertContentsToHex
 import marabillas.loremar.andpdf.utils.exts.hexFromInt
 import marabillas.loremar.andpdf.utils.exts.hexToInt
+import java.math.BigInteger
 
 /**
  * @param stream The stream contents of this ToUnicodeCMap
@@ -18,6 +19,10 @@ internal class ToUnicodeCMap(private var stream: String) : EmbeddedCMap {
      * A list of single mappings
      */
     private val bfChars = SparseArrayCompat<Int>()
+    /**
+     * Single mappings for codes of more than 7 hex characters
+     */
+    private val bfCharsExtended = HashMap<String, String>()
     /**
      * A list of ranged mappings
      */
@@ -143,15 +148,20 @@ internal class ToUnicodeCMap(private var stream: String) : EmbeddedCMap {
                         dstStart = stream.indexOf('<', cEnd)
                         dstEnd = stream.indexOf('>', dstStart)
 
-                        // Add mapping. Make sure to exclude '<' and '>'
-                        bfChars.put(
-                            srcCodeSB.clear()
-                                .append(stream, cStart + 1, cEnd)
-                                .hexToInt(),
-                            dstCodeSB.clear()
-                                .append(stream, dstStart + 1, dstEnd)
-                                .hexToInt()
-                        )
+                        if (cEnd - cStart <= 8 && dstEnd - dstStart <= 8) {
+                            // Add mapping. Make sure to exclude '<' and '>'
+                            bfChars.put(
+                                srcCodeSB.clear()
+                                    .append(stream, cStart + 1, cEnd)
+                                    .hexToInt(),
+                                dstCodeSB.clear()
+                                    .append(stream, dstStart + 1, dstEnd)
+                                    .hexToInt()
+                            )
+                        } else {
+                            // If code is more than 7 hex characters, save mapping as strings
+                            bfCharsExtended[stream.substring(cStart + 1, cEnd)] = stream.substring(dstStart + 1, dstEnd)
+                        }
 
                         ptr = dstEnd + 1
                         skipWhitespaces()
@@ -246,6 +256,13 @@ internal class ToUnicodeCMap(private var stream: String) : EmbeddedCMap {
                 )
                 continue
             }
+            val dstCode = bfCharsExtended[srcCodeSB.toString()]
+            if (dstCode != null) {
+                convertCodeToCharAndAppend(
+                    dstCodeSB.clear().append(dstCode)
+                )
+                continue
+            }
 
             // Get mapped value within beginbfrange and endbfrange
             try {
@@ -319,9 +336,13 @@ internal class ToUnicodeCMap(private var stream: String) : EmbeddedCMap {
     private fun convertCodeToCharAndAppend(codeSB: StringBuilder) {
         when {
             codeSB.length % 4 != 0 -> {
-                decodedSB.append(
-                    codeSB.hexToInt().toChar()
-                )
+                if (codeSB.length <= 4) {
+                    decodedSB.append(codeSB.hexToInt().toChar())
+                } else {
+                    val bigInt = BigInteger(codeSB.toString(), 16)
+                    val bytes = bigInt.toByteArray()
+                    decodedSB.append(String(bytes))
+                }
             }
             else -> {
                 for (i in 0 until codeSB.length step 4) {

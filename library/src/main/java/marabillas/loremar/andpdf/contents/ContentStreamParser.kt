@@ -1,10 +1,10 @@
 package marabillas.loremar.andpdf.contents
 
+import marabillas.loremar.andpdf.contents.image.ImageObject
 import marabillas.loremar.andpdf.contents.image.ImageObjectParser
 import marabillas.loremar.andpdf.contents.text.TextObject
 import marabillas.loremar.andpdf.contents.text.TextObjectParser
 import marabillas.loremar.andpdf.document.AndPDFContext
-import marabillas.loremar.andpdf.exceptions.UnsupportedPDFElementException
 import marabillas.loremar.andpdf.objects.toName
 import marabillas.loremar.andpdf.utils.exts.indexOfClosingChar
 import marabillas.loremar.andpdf.utils.exts.isEnclosingAt
@@ -149,8 +149,17 @@ internal class ContentStreamParser(private val context: AndPDFContext) {
                     }
                     // BI
                     i + 1 < sb.length && sb[i] == 'B' && sb[i + 1] == 'I' -> {
-                        // TODO parse inline image object
-                        throw UnsupportedPDFElementException("Extraction of inline image objects is not yet supported.")
+                        var x = gsStack.lastElement().cm[4]
+                        var y = gsStack.lastElement().cm[5]
+                        val sx = gsStack.lastElement().cm[0]
+                        val sy = gsStack.lastElement().cm[3]
+                        if (sx < 0)
+                            x = -x
+                        if (sy < 0)
+                            y = -y
+                        val imageObj = ImageObject(x, y)
+
+                        i = imageObjectParser.parse(sb, imageObj, i + 2)
                     }
                 }
             }
@@ -167,7 +176,7 @@ internal class ContentStreamParser(private val context: AndPDFContext) {
         while (i < sb.length) {
             if (
                 (i + 1 < sb.length && sb[i] == 'T' && (sb[i + 1] == 'F' || sb[i + 1] == 'f'))
-                || (sb[i] == 'B' && sb[i + 1] == 'T')
+                || (i + 1 < sb.length && sb[i] == 'B' && sb[i + 1] == 'T')
                 || sb[i] == 'q'
                 || sb[i] == 'Q'
                 || (i + 1 < sb.length && sb[i] == 'c' && sb[i + 1] == 'm')
@@ -176,7 +185,7 @@ internal class ContentStreamParser(private val context: AndPDFContext) {
                 || (i + 1 < sb.length && sb[i] == 'r' && sb[i + 1] == 'g')
                 || sb[i] == 'K'
                 || sb[i] == 'k'
-            // TODO Add BI
+                || (i + 1 < sb.length && sb[i] == 'B' && sb[i + 1] == 'I')
             ) {
                 return i
             } else if (sb.isEnclosingAt(i)) {

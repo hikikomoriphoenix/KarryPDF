@@ -79,3 +79,63 @@ File: KotlinNotesForProfessionals.pdf
 Issues:
 - Missing images in first page and last page
 - 'fi' and sometimes 'f' are not decoded correctly
+
+Title: Project Management
+Author/Publisher: Adrienne Watt
+File: Project-Management.pdf
+Issues:
+- Lacking character spacing in almost every page
+
+Title: Seeing Theory
+Author/Publisher: Devlin Guo, Kunin Xiang
+File: seeing-theory.pdf
+Issues:
+- Text in page 52 is colored blue when it's suppose to be black
+
+Title: The Origin and Evolution of the Genetic Code: 100th Anniversary Year of the Birth of Francis Crick
+Author/Publisher: Koji Tamura
+File: The_Origin_And_Evolution_of_the_Genetic_Code.pdf
+Issues:
+- Innacurate positioning of texts
+- Lacking character spacing beginning in page 12
+
+Title: ToUnicode Mapping File Tutorial
+Author/Publisher: Adobe Systems Incorporated
+File: 5411.ToUnicode.pdf
+Issues:
+- character '4' is missing in page 1, and other pages
+
+Title: Cognitive Science of Religion and Belief Systems
+Author/Publisher: David Cycleback
+File: cognitive-science-of-religion-and-belief-systems.pdf
+Issues:
+- Texts that belong in the same line are not aligned together, starting from page 3
+- some few missing characters in page 16, 18, 21, and probably more
+- missing images
+
+Title: Dealing With Difficult People
+Author/Publisher: Ken Pierce
+File: dealing-with-difficult-people.pdf
+Issues:
+- Texts that belong in the same line are not aligned together, starting from page 3
+- missing images
+
+Title: Elementary Linear Algebra
+Author/Publisher: Kenneth Kuttler
+Issues:
+- missing images
+- missing characters from page 4 to 8
+- lack of character spacing beginning from page 9
+
+Title: Entity Framework Notes for Professionals
+Author/Publisher: GoalKicker.com
+File: EntityFrameworkNotesForProfessionals
+Issues:
+- missing images 1, 31, 94, etc.
+- 'fi' and sometimes 'f' are not decoded correctly
+
+Title: Conquer the Command Line - The Raspberry Pi Terminal Guide
+Author/Publisher: Richard Smedly
+Issues:
+- missing images
+- Bold texts are placed in its own line instead of placed inline within a paragraph

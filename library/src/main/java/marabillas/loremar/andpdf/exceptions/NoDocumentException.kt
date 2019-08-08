@@ -1,3 +1,3 @@
 package marabillas.loremar.andpdf.exceptions
 
-class NoDocumentException : Exception("No document to process. Must call loadDocument() on AndPDF first.")
+class NoDocumentException : Exception("Unable to successfully load a PDF document.")

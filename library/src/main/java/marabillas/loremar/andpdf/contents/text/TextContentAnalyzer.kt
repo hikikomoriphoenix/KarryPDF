@@ -520,10 +520,10 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
             when (val it = contentGroups[i]) {
                 is TextGroup -> checkIfAllLinesEndWithPeriods(it)
                 is Table -> {
-                    for (i in 0 until it.size()) {
-                        for (j in 0 until it[i].size()) {
-                            for (k in 0 until it[i][j].size()) {
-                                val textGroup = it[i][j][k]
+                    for (j in 0 until it.size()) {
+                        for (k in 0 until it[j].size()) {
+                            for (l in 0 until it[j][k].size()) {
+                                val textGroup = it[j][k][l]
                                 checkIfAllLinesEndWithPeriods(textGroup)
                             }
                         }
@@ -724,12 +724,12 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
             when (val it = contentGroups[i]) {
                 is TextGroup -> mergeElementsInTextGroup(it)
                 is Table -> {
-                    for (i in 0 until it.size()) {
-                        val row = it[i]
-                        for (j in 0 until row.size()) {
-                            val cell = row[j]
-                            for (k in 0 until cell.size()) {
-                                val textGroup = cell[k]
+                    for (j in 0 until it.size()) {
+                        val row = it[j]
+                        for (k in 0 until row.size()) {
+                            val cell = row[k]
+                            for (l in 0 until cell.size()) {
+                                val textGroup = cell[l]
                                 mergeElementsInTextGroup(textGroup)
                             }
                         }

@@ -55,7 +55,7 @@ internal class ContentStreamParser(private val context: AndPDFContext) {
                     // K or k
                     sb[i] == 'K' || sb[i] == 'k' -> {
                         val cmyk = getCMYK(i)
-                        gsStack.lastElement().rgb = CmykToRgbConverter.inst.convert(cmyk)
+                        gsStack.lastElement().rgb = CmykToRgbConverter.convert(cmyk)
                         i++
                     }
                     // TF

@@ -223,7 +223,7 @@ internal class TextObjectParser(private val context: AndPDFContext, private val 
                 .toFloat()
         }
 
-        rgb = CmykToRgbConverter.inst.convert(cmyk)
+        rgb = CmykToRgbConverter.convert(cmyk)
     }
 
     private fun StringBuilder.cleanTF() {

@@ -90,7 +90,7 @@ Title: Seeing Theory
 Author/Publisher: Devlin Guo, Kunin Xiang
 File: seeing-theory.pdf
 Issues:
-- Text in page 52 is colored blue when it's suppose to be black
+- Text color stays blue once used in a page
 
 Title: The Origin and Evolution of the Genetic Code: 100th Anniversary Year of the Birth of Francis Crick
 Author/Publisher: Koji Tamura
@@ -122,6 +122,7 @@ Issues:
 
 Title: Elementary Linear Algebra
 Author/Publisher: Kenneth Kuttler
+File: elementary-linear-algebra.pdf
 Issues:
 - missing images
 - missing characters from page 4 to 8
@@ -129,13 +130,15 @@ Issues:
 
 Title: Entity Framework Notes for Professionals
 Author/Publisher: GoalKicker.com
-File: EntityFrameworkNotesForProfessionals
+File: EntityFrameworkNotesForProfessionals.pdf
 Issues:
 - missing images 1, 31, 94, etc.
 - 'fi' and sometimes 'f' are not decoded correctly
 
 Title: Conquer the Command Line - The Raspberry Pi Terminal Guide
 Author/Publisher: Richard Smedly
+File: Essentials_Bash_v2.pdf
 Issues:
 - missing images
 - Bold texts are placed in its own line instead of placed inline within a paragraph
+- missing characters, page 20 and others

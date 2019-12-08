@@ -12,3 +12,4 @@
 /captures
 .externalNativeBuild
 /library/src/test/resources/SamplePDFs/
+/app/libs

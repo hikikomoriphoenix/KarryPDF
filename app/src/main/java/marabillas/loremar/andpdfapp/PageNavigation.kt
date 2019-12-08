@@ -34,7 +34,7 @@ class PageNavigation(private val activity: AppCompatActivity, private val pageVi
         contents?.forEach { content ->
             when (content) {
                 is TextContent -> {
-                    val textView = TextView(activity)
+                    val textView = TextView(activity.baseContext)
                     val params = ViewGroup.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT

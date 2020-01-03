@@ -2,12 +2,12 @@ package marabillas.loremar.andpdfapp
 
 import android.content.Context
 import android.content.DialogInterface
-import android.support.v7.app.AlertDialog
 import android.text.InputType
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.EditText
+import androidx.appcompat.app.AlertDialog
 
 class UserInputDialog(
     context: Context,

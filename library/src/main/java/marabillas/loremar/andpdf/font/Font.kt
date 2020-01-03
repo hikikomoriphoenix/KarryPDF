@@ -1,7 +1,7 @@
 package marabillas.loremar.andpdf.font
 
 import android.graphics.Typeface
-import android.support.v4.util.SparseArrayCompat
+import androidx.collection.SparseArrayCompat
 import marabillas.loremar.andpdf.exceptions.InvalidStreamException
 import marabillas.loremar.andpdf.font.cff.CFFParser
 import marabillas.loremar.andpdf.font.cmap.*

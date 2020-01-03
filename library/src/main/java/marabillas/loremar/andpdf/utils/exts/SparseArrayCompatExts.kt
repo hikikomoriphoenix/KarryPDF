@@ -1,6 +1,6 @@
 package marabillas.loremar.andpdf.utils.exts
 
-import android.support.v4.util.SparseArrayCompat
+import androidx.collection.SparseArrayCompat
 import marabillas.loremar.andpdf.utils.octalToDecimal
 
 internal operator fun <E> SparseArrayCompat<E>.set(key: Int, value: E) {

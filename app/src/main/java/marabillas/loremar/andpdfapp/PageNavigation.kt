@@ -1,12 +1,12 @@
 package marabillas.loremar.andpdfapp
 
 import android.graphics.drawable.BitmapDrawable
-import android.support.v7.app.AppCompatActivity
 import android.text.SpannableStringBuilder
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
 import marabillas.loremar.andpdf.AndPDF
 import marabillas.loremar.andpdf.contents.image.ImageContent
 import marabillas.loremar.andpdf.contents.text.TableContent

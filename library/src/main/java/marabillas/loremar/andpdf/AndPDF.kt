@@ -19,21 +19,34 @@ import marabillas.loremar.andpdf.objects.*
 import marabillas.loremar.andpdf.utils.*
 import java.io.RandomAccessFile
 
-class AndPDF(private val file: RandomAccessFile, password: String = "") {
+class AndPDF(file: RandomAccessFile, password: String = "") {
     private val context = AndPDFContext()
-    internal val pages: ArrayList<Reference> = ArrayList()
+    private val pages: ArrayList<Reference> = ArrayList()
     internal var size: Int? = null; get() = field ?: throw NoDocumentException()
     internal var documentCatalog: Dictionary? = null; get() = field ?: throw NoDocumentException()
     internal var info: Dictionary? = null
 
     init {
         TimeCounter.reset()
+
         if (BuildConfig.DEBUG && !forceHideLogs) {
             showAndPDFLogs = true
         }
 
         val fileReader = PDFFileReader(context, file)
         context.fileReader = fileReader
+
+        parseCrossReferences(fileReader)
+
+        parseTrailer(fileReader, password)
+
+        setupPagesList()
+
+        logd("AndPDF.loadDocument() -> ${TimeCounter.getTimeElapsed()} ms")
+    }
+
+    private fun parseCrossReferences(fileReader: PDFFileReader) {
+        // Parse cross-reference table/streams which hold all references to document's objects.
         context.objects = if (fileReader.isLinearized()) {
             logd("Detected linearized PDF document")
             val startXRef = fileReader.getStartXRefPositionLinearized()
@@ -41,8 +54,10 @@ class AndPDF(private val file: RandomAccessFile, password: String = "") {
         } else {
             fileReader.getLastXRefData()
         }
+    }
 
-        // Process trailer
+    private fun parseTrailer(fileReader: PDFFileReader, password: String) {
+        // Parse trailer. Initialize decryptor if document is encrypted.
         val trailerEntries = fileReader.getTrailerEntries(true)
         size = (trailerEntries["Size"] as Numeric).value.toInt()
         documentCatalog = trailerEntries["Root"] as Dictionary
@@ -52,16 +67,18 @@ class AndPDF(private val file: RandomAccessFile, password: String = "") {
         if (encrypt is Dictionary) {
             context.decryptor = Decryptor(encrypt, id, password)
         }
+    }
 
-        val pageTree = (documentCatalog?.resolveReferences()?.get("Pages") ?: throw InvalidDocumentException(
-            "This document does not have a root page tree."
-        )) as Dictionary
+    private fun setupPagesList() {
+        val pageTree = (
+                documentCatalog?.resolveReferences()?.get("Pages")
+                    ?: throw InvalidDocumentException("This document does not have a root page tree.")
+                ) as Dictionary
         getPageTreeLeafNodes(pageTree)
-
-        logd("AndPDF.loadDocument() -> ${TimeCounter.getTimeElapsed()} ms")
     }
 
     private fun getPageTreeLeafNodes(pageTree: Dictionary) {
+        // Traverse page tree.
         pageTree.resolveReferences()
         val arr = pageTree["Kids"] as PDFArray
         arr.forEach {
@@ -210,7 +227,7 @@ class AndPDF(private val file: RandomAccessFile, password: String = "") {
         documentCatalog?.resolveReferences()
         val structTreeRoot = documentCatalog?.get("StructTreeRoot")
         if (structTreeRoot is Dictionary) {
-
+            TODO()
         }
     }
 }

@@ -1,6 +1,6 @@
 package marabillas.loremar.andpdf.font.ttf
 
-import android.support.v4.util.SparseArrayCompat
+import androidx.collection.SparseArrayCompat
 import marabillas.loremar.andpdf.exceptions.font.InvalidTTFCMapException
 
 abstract class TTFCMapDefault(val data: ByteArray, val pos: Long) : TTFCMap {

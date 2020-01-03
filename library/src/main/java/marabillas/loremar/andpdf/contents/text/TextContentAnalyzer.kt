@@ -1,7 +1,7 @@
 package marabillas.loremar.andpdf.contents.text
 
-import android.support.v4.util.SparseArrayCompat
 import android.util.Log
+import androidx.collection.SparseArrayCompat
 import marabillas.loremar.andpdf.contents.ContentGroup
 import marabillas.loremar.andpdf.font.Font
 import marabillas.loremar.andpdf.objects.Numeric

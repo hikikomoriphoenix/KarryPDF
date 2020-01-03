@@ -1,6 +1,6 @@
 package marabillas.loremar.andpdf.font.cff
 
-import android.support.v4.util.SparseArrayCompat
+import androidx.collection.SparseArrayCompat
 import marabillas.loremar.andpdf.exceptions.font.InvalidCFFException
 import marabillas.loremar.andpdf.font.cmap.CMap
 import marabillas.loremar.andpdf.utils.exts.set

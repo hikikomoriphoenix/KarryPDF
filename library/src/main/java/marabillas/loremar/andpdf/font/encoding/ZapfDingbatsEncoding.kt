@@ -1,6 +1,6 @@
 package marabillas.loremar.andpdf.font.encoding
 
-import android.support.v4.util.SparseArrayCompat
+import androidx.collection.SparseArrayCompat
 import marabillas.loremar.andpdf.utils.exts.copyOf
 import marabillas.loremar.andpdf.utils.exts.octalToDecimalKeys
 import marabillas.loremar.andpdf.utils.exts.set

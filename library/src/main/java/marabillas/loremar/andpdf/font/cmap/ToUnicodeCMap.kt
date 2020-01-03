@@ -1,6 +1,6 @@
 package marabillas.loremar.andpdf.font.cmap
 
-import android.support.v4.util.SparseArrayCompat
+import androidx.collection.SparseArrayCompat
 import marabillas.loremar.andpdf.font.cmap.CMap.Companion.MISSING_CHAR
 import marabillas.loremar.andpdf.utils.exts.convertContentsToHex
 import marabillas.loremar.andpdf.utils.exts.hexFromInt

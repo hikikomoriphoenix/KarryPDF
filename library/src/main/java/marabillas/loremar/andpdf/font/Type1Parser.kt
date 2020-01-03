@@ -1,6 +1,6 @@
 package marabillas.loremar.andpdf.font
 
-import android.support.v4.util.SparseArrayCompat
+import androidx.collection.SparseArrayCompat
 import marabillas.loremar.andpdf.font.cmap.CMap
 import marabillas.loremar.andpdf.font.encoding.MacExpertEncoding
 import marabillas.loremar.andpdf.font.encoding.MacRomanEncoding

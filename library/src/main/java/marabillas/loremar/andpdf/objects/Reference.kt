@@ -1,6 +1,7 @@
 package marabillas.loremar.andpdf.objects
 
 import marabillas.loremar.andpdf.document.AndPDFContext
+import marabillas.loremar.andpdf.document.ReferenceResolver
 import marabillas.loremar.andpdf.utils.exts.toInt
 
 
@@ -9,11 +10,11 @@ internal class Reference(private val context: AndPDFContext, val obj: Int, val g
         val REGEX = "^\\d+ \\d+ R\$".toRegex()
     }
 
-    fun resolve(referenceResolver: ReferenceResolver? = context.referenceResolver): PDFObject? {
+    fun resolve(referenceResolver: ReferenceResolver? = context): PDFObject? {
         return referenceResolver?.resolveReference(this)
     }
 
-    fun resolveToStream(referenceResolver: ReferenceResolver? = context.referenceResolver): Stream? {
+    fun resolveToStream(referenceResolver: ReferenceResolver? = context): Stream? {
         return referenceResolver?.resolveReferenceToStream(this)
     }
 

@@ -1,4 +1,8 @@
-package marabillas.loremar.andpdf.objects
+package marabillas.loremar.andpdf.document
+
+import marabillas.loremar.andpdf.objects.PDFObject
+import marabillas.loremar.andpdf.objects.Reference
+import marabillas.loremar.andpdf.objects.Stream
 
 internal interface ReferenceResolver {
     /**

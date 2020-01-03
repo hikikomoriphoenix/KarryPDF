@@ -7,18 +7,16 @@ import marabillas.loremar.andpdf.contents.PageContentAdapter
 import marabillas.loremar.andpdf.contents.XObjectsResolver
 import marabillas.loremar.andpdf.document.AndPDFContext
 import marabillas.loremar.andpdf.document.PDFFileReader
-import marabillas.loremar.andpdf.document.TopDownParser
-import marabillas.loremar.andpdf.document.XRefEntry
 import marabillas.loremar.andpdf.encryption.Decryptor
-import marabillas.loremar.andpdf.exceptions.*
+import marabillas.loremar.andpdf.exceptions.InvalidDocumentException
+import marabillas.loremar.andpdf.exceptions.InvalidStreamException
+import marabillas.loremar.andpdf.exceptions.NoDocumentException
 import marabillas.loremar.andpdf.font.Font
 import marabillas.loremar.andpdf.font.FontDecoder
 import marabillas.loremar.andpdf.font.FontMappings
 import marabillas.loremar.andpdf.font.FontName
 import marabillas.loremar.andpdf.objects.*
 import marabillas.loremar.andpdf.utils.*
-import marabillas.loremar.andpdf.utils.exts.appendBytes
-import marabillas.loremar.andpdf.utils.exts.containedEqualsWith
 import java.io.RandomAccessFile
 
 class AndPDF(private val file: RandomAccessFile, password: String = "") {
@@ -28,21 +26,12 @@ class AndPDF(private val file: RandomAccessFile, password: String = "") {
     internal var documentCatalog: Dictionary? = null; get() = field ?: throw NoDocumentException()
     internal var info: Dictionary? = null
 
-    private var topDownReferences: HashMap<String, XRefEntry>? = null
-        get() {
-            if (field == null) {
-                field = TopDownParser(context, file).parseObjects()
-            }
-            return field
-        }
-
     init {
         TimeCounter.reset()
         if (BuildConfig.DEBUG && !forceHideLogs) {
             showAndPDFLogs = true
         }
 
-        context.referenceResolver = ReferenceResolverImpl()
         val fileReader = PDFFileReader(context, file)
         context.fileReader = fileReader
         context.objects = if (fileReader.isLinearized()) {
@@ -70,96 +59,6 @@ class AndPDF(private val file: RandomAccessFile, password: String = "") {
         getPageTreeLeafNodes(pageTree)
 
         logd("AndPDF.loadDocument() -> ${TimeCounter.getTimeElapsed()} ms")
-    }
-
-    private inner class ReferenceResolverImpl : ReferenceResolver {
-        private val stringBuilder = StringBuilder()
-
-        override fun resolveReference(reference: Reference, checkTopDownReferences: Boolean): PDFObject? {
-            val fileReader = context.fileReader ?: throw NoDocumentException()
-            val objects = context.objects ?: throw NoDocumentException()
-            var objEntry = objects["${reference.obj} ${reference.gen}"] ?: return null
-
-            if (objEntry.compressed) {
-                var objStmEntry = objects["${objEntry.objStm} 0"]
-                if ((objStmEntry == null || objStmEntry.pos < 0L) && checkTopDownReferences) {
-                    objStmEntry = topDownReferences?.get("${objEntry.objStm} 0")
-                }
-
-                return if (objStmEntry != null) {
-                    val objStm = try {
-                        fileReader.getObjectStream(objStmEntry.pos, Reference(context, objEntry.objStm, 0))
-                    } catch (e: IndirectObjectMismatchException) {
-                        if (!checkTopDownReferences) return null
-                        val pos = topDownReferences?.get("${objEntry.objStm} 0")?.pos
-                        if (pos != null) {
-                            fileReader.getObjectStream(pos)
-                        } else {
-                            return null
-                        }
-                    }
-
-                    if (objEntry.index != -1) {
-                        val objBytes = objStm.extractObjectBytes(objEntry.index)
-                        stringBuilder.clear().appendBytes(objBytes ?: byteArrayOf())
-                            .toPDFObject(context, reference.obj, reference.gen)
-                    } else {
-                        val objBytes = objStm.extractObjectBytesGivenObjectNum(reference.obj)
-                        stringBuilder.clear().appendBytes(objBytes ?: byteArrayOf())
-                            .toPDFObject(context, reference.obj, reference.gen)
-                    }
-                } else {
-                    null
-                }
-            } else {
-                if (objEntry.pos < 0L && checkTopDownReferences) {
-                    objEntry = topDownReferences?.get("${objEntry.obj} ${objEntry.gen}") ?: return null
-                }
-
-                val content = try {
-                    fileReader.getIndirectObject(objEntry.pos, reference).extractContent()
-                } catch (e: IndirectObjectMismatchException) {
-                    if (checkTopDownReferences) {
-
-                        val pos = topDownReferences?.get("${objEntry.obj} ${objEntry.gen}")?.pos
-                        if (pos != null) {
-                            fileReader.getIndirectObject(pos, reference).extractContent()
-                        } else {
-                            StringBuilder()
-                        }
-                    } else {
-                        StringBuilder()
-                    }
-                }
-                if (content.isEmpty() || content.containedEqualsWith('n', 'u', 'l', 'l')) return null
-                return content.toPDFObject(context, reference.obj, reference.gen, false) ?: reference
-            }
-        }
-
-        override fun resolveReferenceToStream(reference: Reference): Stream? {
-            val fileReader = context.fileReader ?: throw NoDocumentException()
-            val objects = context.objects ?: throw NoDocumentException()
-            val obj = objects["${reference.obj} ${reference.gen}"]
-            return if (obj != null) {
-                if (obj.pos < 0) {
-                    val objEntry = topDownReferences?.get("${reference.obj} ${reference.gen}")
-                    objEntry?.pos?.let { fileReader.getStream(it, reference) }
-                } else {
-                    try {
-                        fileReader.getStream(obj.pos, reference)
-                    } catch (e: IndirectObjectMismatchException) {
-                        val pos = topDownReferences?.get("${reference.obj} ${reference.gen}")?.pos
-                        if (pos != null) {
-                            fileReader.getStream(pos)
-                        } else {
-                            return null
-                        }
-                    }
-                }
-            } else {
-                null
-            }
-        }
     }
 
     private fun getPageTreeLeafNodes(pageTree: Dictionary) {
@@ -207,7 +106,7 @@ class AndPDF(private val file: RandomAccessFile, password: String = "") {
         val fKeys = fontsDic?.getKeys()
         fKeys?.forEach { key ->
             val font = fontsDic[key] as Dictionary
-            fonts[key] = Font(font, context.referenceResolver ?: throw NoReferenceResolverException())
+            fonts[key] = Font(font, context)
         }
 
         // Get XObjects
@@ -242,7 +141,7 @@ class AndPDF(private val file: RandomAccessFile, password: String = "") {
         try {
             TimeCounter.reset()
             val ref = content as Reference
-            val stream = context.referenceResolver?.resolveReferenceToStream(ref)
+            val stream = context.resolveReferenceToStream(ref)
             stream?.let {
                 TimeCounter.reset()
                 val data = it.decodeEncodedStream()
@@ -274,7 +173,7 @@ class AndPDF(private val file: RandomAccessFile, password: String = "") {
         val xObjMap = HashMap<String, Stream>()
         xKeys.forEach { xKey ->
             val xObjRef = xObjectDic[xKey] as Reference
-            val xObj = context.referenceResolver?.resolveReferenceToStream(xObjRef)
+            val xObj = context.resolveReferenceToStream(xObjRef)
             xObj?.let {
                 xObjMap[xKey] = it
             }

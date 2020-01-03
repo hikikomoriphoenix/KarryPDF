@@ -126,7 +126,7 @@ internal class TopDownParser(private val context: AndPDFContext, private val fil
             if (length is Reference) {
                 val lengthObj = length.obj
                 val lengthGen = length.gen
-                length = context.referenceResolver?.resolveReference(Reference(context, lengthObj, lengthGen), false)
+                length = context.resolveReference(Reference(context, lengthObj, lengthGen), false)
                 if (length == null) {
                     val lengthPos = objects["$lengthObj $lengthGen"]?.pos
                     if (lengthPos != null) {

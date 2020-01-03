@@ -8,7 +8,7 @@ import java.io.RandomAccessFile
 /**
  * This class facilitates reading in a pdf file.
  */
-internal class PDFFileReader(private val context: AndPDFContext, private val file: RandomAccessFile) {
+internal class PDFFileReader(private val context: AndPDFContext, val file: RandomAccessFile) {
     private var startXRefPos: Long? = null
     private var trailerPos: Long? = null
     private var isLinearized: Boolean? = null

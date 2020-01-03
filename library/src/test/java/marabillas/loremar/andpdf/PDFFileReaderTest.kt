@@ -2,7 +2,7 @@ package marabillas.loremar.andpdf
 
 import marabillas.loremar.andpdf.document.AndPDFContext
 import marabillas.loremar.andpdf.document.PDFFileReader
-import marabillas.loremar.andpdf.objects.*
+import marabillas.loremar.andpdf.objects.Numeric
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.CoreMatchers.startsWith
 import org.hamcrest.MatcherAssert.assertThat
@@ -77,15 +77,6 @@ class PDFFileReaderTest {
         var file = RandomAccessFile(path, "r")
         val context = AndPDFContext()
         var reader = PDFFileReader(context, file)
-        context.referenceResolver = object : ReferenceResolver {
-            override fun resolveReferenceToStream(reference: Reference): Stream? {
-                TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-            }
-
-            override fun resolveReference(reference: Reference, checkTopDownReferences: Boolean): PDFObject? {
-                return null
-            }
-        }
         var entries = reader.getTrailerEntries()
         assertTrue(entries["Size"] is Numeric)
         println("Size entry in trailer for samplepdf1.4.pdf is ${(entries["Size"] as Numeric).value.toInt()}")

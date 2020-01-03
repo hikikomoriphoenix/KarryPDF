@@ -1,7 +1,6 @@
 package marabillas.loremar.andpdf.objects
 
 import marabillas.loremar.andpdf.document.AndPDFContext
-import marabillas.loremar.andpdf.exceptions.NoReferenceResolverException
 import marabillas.loremar.andpdf.utils.exts.containedEqualsWith
 import marabillas.loremar.andpdf.utils.exts.isEnclosedWith
 import marabillas.loremar.andpdf.utils.exts.trimContainedChars
@@ -42,10 +41,7 @@ internal class PDFObjectAdapter {
                 )
                 Reference.REGEX.matches(sb) -> {
                     if (resolveReferences) {
-                        if (context.referenceResolver == null)
-                            throw NoReferenceResolverException()
-                        else
-                            sb.toReference(context, auxiliaryStringBuilder).resolve(context.referenceResolver)
+                        sb.toReference(context, auxiliaryStringBuilder).resolve(context)
                     } else {
                         sb.toReference(context, auxiliaryStringBuilder)
                     }

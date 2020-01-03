@@ -121,7 +121,12 @@ internal class TopDownParser(private val context: AndPDFContext, private val fil
     private fun skipStream(objects: HashMap<String, XRefEntry>) {
         lastAdded?.let { lastAdded ->
             val continuePos = file.filePointer
-            val streamDic = context.fileReader?.getDictionary(lastAdded.pos, lastAdded.obj, lastAdded.gen)
+            val streamDic = context.fileReader?.getDictionary(
+                context,
+                lastAdded.pos,
+                lastAdded.obj,
+                lastAdded.gen
+            )
             var length = streamDic?.get("Length")
             if (length is Reference) {
                 val lengthObj = length.obj
@@ -130,7 +135,8 @@ internal class TopDownParser(private val context: AndPDFContext, private val fil
                 if (length == null) {
                     val lengthPos = objects["$lengthObj $lengthGen"]?.pos
                     if (lengthPos != null) {
-                        length = context.fileReader?.getIndirectObject(lengthPos)?.extractContent()
+                        length = context.fileReader?.getIndirectObject(context, lengthPos)
+                            ?.extractContent()
                             ?.toPDFObject(context, lengthObj, lengthGen)
                     }
                 }

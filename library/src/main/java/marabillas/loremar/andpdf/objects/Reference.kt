@@ -5,7 +5,7 @@ import marabillas.loremar.andpdf.document.ReferenceResolver
 import marabillas.loremar.andpdf.utils.exts.toInt
 
 
-internal class Reference(private val context: AndPDFContext, val obj: Int, val gen: Int) : PDFObject {
+internal class Reference(var context: AndPDFContext, val obj: Int, val gen: Int) : PDFObject {
     companion object {
         val REGEX = "^\\d+ \\d+ R\$".toRegex()
     }

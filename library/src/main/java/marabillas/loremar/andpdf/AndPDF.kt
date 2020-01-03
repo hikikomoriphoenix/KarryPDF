@@ -6,6 +6,7 @@ import marabillas.loremar.andpdf.contents.PageContent
 import marabillas.loremar.andpdf.contents.PageContentAdapter
 import marabillas.loremar.andpdf.contents.XObjectsResolver
 import marabillas.loremar.andpdf.document.AndPDFContext
+import marabillas.loremar.andpdf.document.GetPageContentsContext
 import marabillas.loremar.andpdf.document.PDFFileReader
 import marabillas.loremar.andpdf.encryption.Decryptor
 import marabillas.loremar.andpdf.exceptions.InvalidDocumentException
@@ -33,7 +34,7 @@ class AndPDF(file: RandomAccessFile, password: String = "") {
             showAndPDFLogs = true
         }
 
-        val fileReader = PDFFileReader(context, file)
+        val fileReader = PDFFileReader(file)
         context.fileReader = fileReader
 
         parseCrossReferences(fileReader)
@@ -47,18 +48,18 @@ class AndPDF(file: RandomAccessFile, password: String = "") {
 
     private fun parseCrossReferences(fileReader: PDFFileReader) {
         // Parse cross-reference table/streams which hold all references to document's objects.
-        context.objects = if (fileReader.isLinearized()) {
+        context.objects = if (fileReader.isLinearized(context)) {
             logd("Detected linearized PDF document")
-            val startXRef = fileReader.getStartXRefPositionLinearized()
-            fileReader.getXRefData(startXRef)
+            val startXRef = fileReader.getStartXRefPositionLinearized(context)
+            fileReader.getXRefData(context, startXRef)
         } else {
-            fileReader.getLastXRefData()
+            fileReader.getLastXRefData(context)
         }
     }
 
     private fun parseTrailer(fileReader: PDFFileReader, password: String) {
         // Parse trailer. Initialize decryptor if document is encrypted.
-        val trailerEntries = fileReader.getTrailerEntries(true)
+        val trailerEntries = fileReader.getTrailerEntries(context, true)
         size = (trailerEntries["Size"] as Numeric).value.toInt()
         documentCatalog = trailerEntries["Root"] as Dictionary
         info = trailerEntries["Info"] as Dictionary?
@@ -93,8 +94,10 @@ class AndPDF(file: RandomAccessFile, password: String = "") {
     }
 
     fun getPageContents(pageNum: Int): ArrayList<PageContent> {
-        logd("Getting page $pageNum")
         TimeCounter.reset()
+
+        val getPageContentsContext = GetPageContentsContext(context)
+        pages.forEach { it.context = getPageContentsContext }
 
         val contentsList = ArrayList<PageContent>()
         val pageDic = pages[pageNum].resolve() as Dictionary
@@ -123,14 +126,14 @@ class AndPDF(file: RandomAccessFile, password: String = "") {
         val fKeys = fontsDic?.getKeys()
         fKeys?.forEach { key ->
             val font = fontsDic[key] as Dictionary
-            fonts[key] = Font(font, context)
+            fonts[key] = Font(font, getPageContentsContext)
         }
 
         // Get XObjects
         val xObjectDic = resources["XObject"] as Dictionary?
         var xObjs = HashMap<String, Stream>()
         xObjectDic?.let {
-            xObjs = getXObjects(it)
+            xObjs = getXObjects(getPageContentsContext, it)
         }
 
         val contents = pageDic["Contents"] ?: throw InvalidDocumentException("Missing Contents entry in Page object.")
@@ -139,18 +142,19 @@ class AndPDF(file: RandomAccessFile, password: String = "") {
             contents.asSequence()
                 .filterNotNull()
                 .forEach { content ->
-                    val pageContent = parseContent(content, fonts, xObjs)
+                    val pageContent = parseContent(getPageContentsContext, content, fonts, xObjs)
                     contentsList.addAll(pageContent)
                 }
             contentsList
         } else {
             TimeCounter.reset()
-            return parseContent(contents, fonts, xObjs)
+            return parseContent(getPageContentsContext, contents, fonts, xObjs)
         }
 
     }
 
     private fun parseContent(
+        context: AndPDFContext,
         content: PDFObject,
         fonts: HashMap<String, Font>,
         xObjects: HashMap<String, Stream>
@@ -185,7 +189,10 @@ class AndPDF(file: RandomAccessFile, password: String = "") {
         }
     }
 
-    private fun getXObjects(xObjectDic: Dictionary): HashMap<String, Stream> {
+    private fun getXObjects(
+        context: AndPDFContext,
+        xObjectDic: Dictionary
+    ): HashMap<String, Stream> {
         val xKeys = xObjectDic.getKeys()
         val xObjMap = HashMap<String, Stream>()
         xKeys.forEach { xKey ->

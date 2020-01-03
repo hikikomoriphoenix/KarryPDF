@@ -8,53 +8,65 @@ import java.io.RandomAccessFile
 /**
  * This class facilitates reading in a pdf file.
  */
-internal class PDFFileReader(private val context: AndPDFContext, val file: RandomAccessFile) {
+internal class PDFFileReader(val file: RandomAccessFile) {
     private var startXRefPos: Long? = null
     private var trailerPos: Long? = null
     private var isLinearized: Boolean? = null
 
-    private val stringBuilder = StringBuilder()
+    companion object {
+        private val stringBuilders: MutableMap<AndPDFContext.Session, StringBuilder> =
+            mutableMapOf()
 
-    fun isLinearized(): Boolean {
-        if (isLinearized == null) {
-            file.seek(0)
-            var s = file.readLine()
-            var beginning = file.filePointer
-            while (s.startsWith('%')) {
-                beginning = file.filePointer
-                s = file.readLine()
-            }
-            val indObj = getIndirectObject(beginning)
-            val firstObj = indObj.extractContent().toPDFObject(context, indObj.obj ?: -1, indObj.gen)
-            if (firstObj is Dictionary) {
-                val linearized = firstObj["Linearized"]
-                if (linearized != null) {
-                    isLinearized = true
-                    return true
-                }
-            }
-            isLinearized = false
-            return false
-        } else {
-            return isLinearized as Boolean
+        fun notifyNewSession(session: AndPDFContext.Session) {
+            stringBuilders[session] = StringBuilder()
         }
     }
 
-    fun getStartXRefPositionLinearized(): Long {
-        if (isLinearized()) {
-            file.seek(0)
-            var s = file.readLine()
-            while (!s.contains("endobj"))
-                s = file.readLine()
-            var beginning = file.filePointer
-            s = file.readLine()
-            while (s.isBlank() || s.startsWith('%')) {
-                beginning = file.filePointer
-                s = file.readLine()
+    fun isLinearized(context: AndPDFContext): Boolean {
+        synchronized(file) {
+            return if (isLinearized == null) {
+                file.seek(0)
+                var s = file.readLine()
+                var beginning = file.filePointer
+                while (s.startsWith('%')) {
+                    beginning = file.filePointer
+                    s = file.readLine()
+                }
+                val indObj = getIndirectObject(context, beginning)
+                val firstObj =
+                    indObj.extractContent().toPDFObject(context, indObj.obj ?: -1, indObj.gen)
+                if (firstObj is Dictionary) {
+                    val linearized = firstObj["Linearized"]
+                    if (linearized != null) {
+                        isLinearized = true
+                        return true
+                    }
+                }
+                isLinearized = false
+                false
+            } else {
+                isLinearized as Boolean
             }
-            return beginning
-        } else {
-            throw IllegalStateException("PDF document is not linearized")
+        }
+    }
+
+    fun getStartXRefPositionLinearized(context: AndPDFContext): Long {
+        synchronized(file) {
+            return if (isLinearized(context)) {
+                file.seek(0)
+                var s = file.readLine()
+                while (!s.contains("endobj"))
+                    s = file.readLine()
+                var beginning = file.filePointer
+                s = file.readLine()
+                while (s.isBlank() || s.startsWith('%')) {
+                    beginning = file.filePointer
+                    s = file.readLine()
+                }
+                beginning
+            } else {
+                throw IllegalStateException("PDF document is not linearized")
+            }
         }
     }
 
@@ -70,7 +82,7 @@ internal class PDFFileReader(private val context: AndPDFContext, val file: Rando
      *
      * @throws IllegalArgumentException If position is not within beginning and end of file.
      */
-    fun readContainingLine(position: Long): String {
+    private fun readContainingLine(position: Long): String {
         if (position < 0 || position > file.length() - 1) throw IllegalArgumentException()
 
         var nonLineBreakFound = false
@@ -99,8 +111,8 @@ internal class PDFFileReader(private val context: AndPDFContext, val file: Rando
     /**
      * Get the offset position of the cross reference section.
      */
-    fun getStartXRefPosition(): Long {
-        if (!isLinearized()) {
+    private fun getStartXRefPosition(context: AndPDFContext): Long {
+        if (!isLinearized(context)) {
             if (startXRefPos == null) {
                 var p = file.length() - 1
                 while (true) {
@@ -120,7 +132,7 @@ internal class PDFFileReader(private val context: AndPDFContext, val file: Rando
                 }
             } else return getValidXRefPos(startXRefPos as Long)
         } else {
-            return getValidXRefPos(getStartXRefPositionLinearized())
+            return getValidXRefPos(getStartXRefPositionLinearized(context))
         }
     }
 
@@ -203,9 +215,11 @@ internal class PDFFileReader(private val context: AndPDFContext, val file: Rando
      *
      * @return a map of cross reference entries
      */
-    fun getLastXRefData(): HashMap<String, XRefEntry> {
-        val startXRef = getStartXRefPosition()
-        return getXRefData(startXRef)
+    fun getLastXRefData(context: AndPDFContext): HashMap<String, XRefEntry> {
+        synchronized(file) {
+            val startXRef = getStartXRefPosition(context)
+            return getXRefData(context, startXRef)
+        }
     }
 
     /**
@@ -215,15 +229,17 @@ internal class PDFFileReader(private val context: AndPDFContext, val file: Rando
      *
      * @return a map of cross reference entries
      */
-    fun getXRefData(pos: Long): HashMap<String, XRefEntry> {
-        file.seek(pos)
-        val s = file.readLine()
-        return if (s.contains("xref")) {
-            var data = parseXRefSection()
-            data = parseOtherXRefInTrailer(file.filePointer, data)
-            data
-        } else {
-            XRefStream(context, file, pos).parse()
+    fun getXRefData(context: AndPDFContext, pos: Long): HashMap<String, XRefEntry> {
+        synchronized(file) {
+            file.seek(pos)
+            val s = file.readLine()
+            return if (s.contains("xref")) {
+                var data = parseXRefSection()
+                data = parseOtherXRefInTrailer(context, file.filePointer, data)
+                data
+            } else {
+                XRefStream(context, file, pos).parse()
+            }
         }
     }
 
@@ -272,6 +288,7 @@ internal class PDFFileReader(private val context: AndPDFContext, val file: Rando
     }
 
     private fun parseOtherXRefInTrailer(
+        context: AndPDFContext,
         endXRefPos: Long,
         xRefEntries: HashMap<String, XRefEntry>
     ): HashMap<String, XRefEntry> {
@@ -284,13 +301,13 @@ internal class PDFFileReader(private val context: AndPDFContext, val file: Rando
             s = file.readLine()
         } while (!s.startsWith("trailer"))
 
-        val trailer = getDictionary(p, -1, 0, false)
+        val trailer = getDictionary(context, p, -1, 0, false)
 
         // Parse any existing cross reference stream
         val xRefStm = trailer["XRefStm"] as Numeric?
         if (xRefStm != null) {
             logd("XRefStm = ${xRefStm.value.toLong()}")
-            val data = getXRefData((xRefStm.value.toLong()))
+            val data = getXRefData(context, (xRefStm.value.toLong()))
             data.putAll(entries)
             entries = data
         }
@@ -299,7 +316,7 @@ internal class PDFFileReader(private val context: AndPDFContext, val file: Rando
         val prev = trailer["Prev"] as Numeric?
         if (prev != null) {
             logd("Prev = ${prev.value.toLong()}")
-            val data = getXRefData(prev.value.toLong())
+            val data = getXRefData(context, prev.value.toLong())
             data.putAll(entries)
             entries = data
         }
@@ -312,39 +329,46 @@ internal class PDFFileReader(private val context: AndPDFContext, val file: Rando
      * @return position or null if PDF document does not have a trailer and that trailer entries are merged into a
      * cross reference stream instead.
      */
-    fun getTrailerPosition(): Long? {
-        return if (trailerPos == null) {
-            val startXRef = getStartXRefPosition()
-            file.seek(startXRef)
-            var s = file.readLine()
-            if (s.contains("xref")) {
-                parseXRefSection()
-                var p: Long
-                do {
-                    p = file.filePointer
-                    s = file.readLine()
-                } while (!s.startsWith("trailer"))
-                p
+    fun getTrailerPosition(context: AndPDFContext): Long? {
+        synchronized(file) {
+            return if (trailerPos == null) {
+                val startXRef = getStartXRefPosition(context)
+                file.seek(startXRef)
+                var s = file.readLine()
+                if (s.contains("xref")) {
+                    parseXRefSection()
+                    var p: Long
+                    do {
+                        p = file.filePointer
+                        s = file.readLine()
+                    } while (!s.startsWith("trailer"))
+                    p
+                } else {
+                    null
+                }
             } else {
-                null
+                trailerPos
             }
-        } else {
-            trailerPos
         }
     }
 
-    fun getTrailerEntries(resolveReferences: Boolean = true): HashMap<String, PDFObject?> {
-        val trailerPos = getTrailerPosition()
-        return if (trailerPos != null) {
-            file.seek(trailerPos)
-            val dictionary = getDictionary(file.filePointer, -1, 0, resolveReferences)
-            if (resolveReferences) dictionary.resolveReferences()
-            createTrailerHashMap(dictionary)
-        } else {
-            // Get trailer entries from XRefStream dictionary
-            val xrefStm = XRefStream(context, file, getStartXRefPosition())
-            if (resolveReferences) xrefStm.dictionary.resolveReferences()
-            createTrailerHashMap(xrefStm.dictionary)
+    fun getTrailerEntries(
+        context: AndPDFContext,
+        resolveReferences: Boolean = true
+    ): HashMap<String, PDFObject?> {
+        synchronized(file) {
+            val trailerPos = getTrailerPosition(context)
+            return if (trailerPos != null) {
+                file.seek(trailerPos)
+                val dictionary = getDictionary(context, file.filePointer, -1, 0, resolveReferences)
+                if (resolveReferences) dictionary.resolveReferences()
+                createTrailerHashMap(dictionary)
+            } else {
+                // Get trailer entries from XRefStream dictionary
+                val xrefStm = XRefStream(context, file, getStartXRefPosition(context))
+                if (resolveReferences) xrefStm.dictionary.resolveReferences()
+                createTrailerHashMap(xrefStm.dictionary)
+            }
         }
     }
 
@@ -360,15 +384,30 @@ internal class PDFFileReader(private val context: AndPDFContext, val file: Rando
         )
     }
 
-    fun getIndirectObject(pos: Long, reference: Reference? = null): Indirect {
-        return Indirect(file, pos, reference)
+    fun getIndirectObject(
+        context: AndPDFContext,
+        pos: Long,
+        reference: Reference? = null
+    ): Indirect {
+        synchronized(file) {
+            return Indirect(file, pos, reference)
+        }
     }
 
-    fun getDictionary(pos: Long, obj: Int, gen: Int, resolveReferences: Boolean = false): Dictionary {
-        file.seek(pos)
-        goToDictionaryStart()
-        extractDictionary()
-        return stringBuilder.toPDFObject(context, obj, gen, resolveReferences) as Dictionary
+    fun getDictionary(
+        context: AndPDFContext,
+        pos: Long,
+        obj: Int,
+        gen: Int,
+        resolveReferences: Boolean = false
+    ): Dictionary {
+        synchronized(file) {
+            file.seek(pos)
+            goToDictionaryStart()
+            val stringBuilder = stringBuilders[context.session] ?: StringBuilder()
+            extractDictionary(stringBuilder)
+            return stringBuilder.toPDFObject(context, obj, gen, resolveReferences) as Dictionary
+        }
     }
 
     private fun goToDictionaryStart() {
@@ -392,7 +431,7 @@ internal class PDFFileReader(private val context: AndPDFContext, val file: Rando
         }
     }
 
-    private fun extractDictionary() {
+    private fun extractDictionary(stringBuilder: StringBuilder) {
         stringBuilder.clear().append("<<")
         var unbalance = 1
         while (unbalance != 0) {
@@ -410,11 +449,19 @@ internal class PDFFileReader(private val context: AndPDFContext, val file: Rando
         }
     }
 
-    fun getObjectStream(pos: Long, reference: Reference? = null): ObjectStream {
-        return ObjectStream(context, file, pos, reference)
+    fun getObjectStream(
+        context: AndPDFContext,
+        pos: Long,
+        reference: Reference? = null
+    ): ObjectStream {
+        synchronized(file) {
+            return ObjectStream(context, file, pos, reference)
+        }
     }
 
-    fun getStream(pos: Long, reference: Reference? = null): Stream {
-        return Stream(context, file, pos, reference)
+    fun getStream(context: AndPDFContext, pos: Long, reference: Reference? = null): Stream {
+        synchronized(file) {
+            return Stream(context, file, pos, reference)
+        }
     }
 }

@@ -122,7 +122,7 @@ class AllSamplesQuickTest {
     fun testOnePage() {
         forceHideLogs = false
 
-        val pdfFilename = "icc32.pdf"
+        val pdfFilename = "artificial-intelligence-agent-behaviour-i.pdf"
         val pageNum = 3
         print("Testing library on $pdfFilename at page $pageNum")
         val path = javaClass.classLoader.getResource("$samplesDir$pdfFilename").path

@@ -12,7 +12,8 @@ internal open class Stream(
     reference: Reference? = null
 ) :
     Indirect(file, start, reference) {
-    val dictionary = context.fileReader?.getDictionary(start, obj ?: -1, 0) ?: throw NoDocumentException()
+    val dictionary = context.fileReader?.getDictionary(context, start, obj ?: -1, 0)
+        ?: throw NoDocumentException()
     var streamData = byteArrayOf()
         private set
 

@@ -17,8 +17,8 @@ class PDFFileReaderTest {
     fun testGetLastXRefData() {
         val path = javaClass.classLoader.getResource("sample.pdf").path
         val file = RandomAccessFile(path, "r")
-        val reader = PDFFileReader(AndPDFContext(), file)
-        val xref = reader.getLastXRefData()
+        val reader = PDFFileReader(file)
+        val xref = reader.getLastXRefData(AndPDFContext())
 
         val obj0 = xref["0 65535"]
         assertThat(obj0?.obj, `is`(0))
@@ -36,8 +36,8 @@ class PDFFileReaderTest {
     fun testGetLastXRefDataFromCompressedPDF() {
         val path = javaClass.classLoader.getResource("samplepdf1.4compressed.pdf").path
         val file = RandomAccessFile(path, "r")
-        val reader = PDFFileReader(AndPDFContext(), file)
-        val xref = reader.getLastXRefData()
+        val reader = PDFFileReader(file)
+        val xref = reader.getLastXRefData(AndPDFContext())
         xref.forEach {
             if (it.value.compressed)
                 println("Compressed-> obj:${it.value.obj} objStm:${it.value.objStm} index:${it.value.index}")
@@ -52,15 +52,15 @@ class PDFFileReaderTest {
     fun testGetTrailerPosition() {
         var path = javaClass.classLoader.getResource("samplepdf1.4compressed.pdf").path
         var file = RandomAccessFile(path, "r")
-        var reader = PDFFileReader(AndPDFContext(), file)
-        var trailerPos = reader.getTrailerPosition()
+        var reader = PDFFileReader(file)
+        var trailerPos = reader.getTrailerPosition(AndPDFContext())
         assertNull(trailerPos)
         println("Testing samplepdf1.4compressed.pdf not having trailer -> success.")
 
         path = javaClass.classLoader.getResource("samplepdf1.4.pdf").path
         file = RandomAccessFile(path, "r")
-        reader = PDFFileReader(AndPDFContext(), file)
-        trailerPos = reader.getTrailerPosition()
+        reader = PDFFileReader(file)
+        trailerPos = reader.getTrailerPosition(AndPDFContext())
         if (trailerPos != null) {
             file.seek(trailerPos)
             val s = file.readLine()
@@ -76,15 +76,15 @@ class PDFFileReaderTest {
         var path = javaClass.classLoader.getResource("samplepdf1.4.pdf").path
         var file = RandomAccessFile(path, "r")
         val context = AndPDFContext()
-        var reader = PDFFileReader(context, file)
-        var entries = reader.getTrailerEntries()
+        var reader = PDFFileReader(file)
+        var entries = reader.getTrailerEntries(AndPDFContext())
         assertTrue(entries["Size"] is Numeric)
         println("Size entry in trailer for samplepdf1.4.pdf is ${(entries["Size"] as Numeric).value.toInt()}")
 
         path = javaClass.classLoader.getResource("samplepdf1.4compressed.pdf").path
         file = RandomAccessFile(path, "r")
-        reader = PDFFileReader(context, file)
-        entries = reader.getTrailerEntries()
+        reader = PDFFileReader(file)
+        entries = reader.getTrailerEntries(AndPDFContext())
         assertTrue(entries["Size"] is Numeric)
         println("Size entry in trailer for samplepdf1.4compressed.pdf is ${(entries["Size"] as Numeric).value.toInt()}")
     }

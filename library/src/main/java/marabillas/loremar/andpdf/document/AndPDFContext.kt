@@ -3,28 +3,50 @@ package marabillas.loremar.andpdf.document
 import marabillas.loremar.andpdf.encryption.Decryptor
 import marabillas.loremar.andpdf.exceptions.IndirectObjectMismatchException
 import marabillas.loremar.andpdf.exceptions.NoDocumentException
-import marabillas.loremar.andpdf.objects.PDFObject
-import marabillas.loremar.andpdf.objects.Reference
-import marabillas.loremar.andpdf.objects.Stream
-import marabillas.loremar.andpdf.objects.toPDFObject
+import marabillas.loremar.andpdf.objects.*
 import marabillas.loremar.andpdf.utils.exts.appendBytes
 import marabillas.loremar.andpdf.utils.exts.containedEqualsWith
 
-internal class AndPDFContext : ReferenceResolver {
+internal open class AndPDFContext : ReferenceResolver {
     var fileReader: PDFFileReader? = null
     var objects: HashMap<String, XRefEntry>? = null
     var decryptor: Decryptor? = null
+    var session = object : Session() {}
+        protected set
+
+    init {
+        if (javaClass.superclass != AndPDFContext::class.java) {
+            PDFObjectAdapter.notifyNewSession(session)
+            PDFFileReader.notifyNewSession(session)
+        }
+    }
 
     private val stringBuilder = StringBuilder()
-    private var topDownReferences: HashMap<String, XRefEntry>? = null
+
+    open var topDownReferences: HashMap<String, XRefEntry>?
         get() {
-            if (field == null) {
-                field = fileReader?.let {
-                    TopDownParser(this, it.file).parseObjects()
+            if (topDownReferencesAvailable)
+                return _topDownReferences
+
+            return fileReader?.file?.let {
+                synchronized(it) {
+                    if (_topDownReferences == null) {
+                        _topDownReferences =
+                            TopDownParser(this, it).parseObjects()
+                        _topDownReferences
+                    } else {
+                        _topDownReferences
+                    }
                 }
             }
-            return field
         }
+        set(value) {
+            _topDownReferences = value
+        }
+
+    val topDownReferencesAvailable: Boolean get() = _topDownReferences != null
+
+    private var _topDownReferences: HashMap<String, XRefEntry>? = null
 
     override fun resolveReference(
         reference: Reference,
@@ -42,12 +64,16 @@ internal class AndPDFContext : ReferenceResolver {
 
             return if (objStmEntry != null) {
                 val objStm = try {
-                    fileReader.getObjectStream(objStmEntry.pos, Reference(this, objEntry.objStm, 0))
+                    fileReader.getObjectStream(
+                        this,
+                        objStmEntry.pos,
+                        Reference(this, objEntry.objStm, 0)
+                    )
                 } catch (e: IndirectObjectMismatchException) {
                     if (!checkTopDownReferences) return null
                     val pos = topDownReferences?.get("${objEntry.objStm} 0")?.pos
                     if (pos != null) {
-                        fileReader.getObjectStream(pos)
+                        fileReader.getObjectStream(this, pos)
                     } else {
                         return null
                     }
@@ -71,13 +97,13 @@ internal class AndPDFContext : ReferenceResolver {
             }
 
             val content = try {
-                fileReader.getIndirectObject(objEntry.pos, reference).extractContent()
+                fileReader.getIndirectObject(this, objEntry.pos, reference).extractContent()
             } catch (e: IndirectObjectMismatchException) {
                 if (checkTopDownReferences) {
 
                     val pos = topDownReferences?.get("${objEntry.obj} ${objEntry.gen}")?.pos
                     if (pos != null) {
-                        fileReader.getIndirectObject(pos, reference).extractContent()
+                        fileReader.getIndirectObject(this, pos, reference).extractContent()
                     } else {
                         StringBuilder()
                     }
@@ -97,14 +123,14 @@ internal class AndPDFContext : ReferenceResolver {
         return if (obj != null) {
             if (obj.pos < 0) {
                 val objEntry = topDownReferences?.get("${reference.obj} ${reference.gen}")
-                objEntry?.pos?.let { fileReader.getStream(it, reference) }
+                objEntry?.pos?.let { fileReader.getStream(this, it, reference) }
             } else {
                 try {
-                    fileReader.getStream(obj.pos, reference)
+                    fileReader.getStream(this, obj.pos, reference)
                 } catch (e: IndirectObjectMismatchException) {
                     val pos = topDownReferences?.get("${reference.obj} ${reference.gen}")?.pos
                     if (pos != null) {
-                        fileReader.getStream(pos)
+                        fileReader.getStream(this, pos)
                     } else {
                         return null
                     }
@@ -114,4 +140,6 @@ internal class AndPDFContext : ReferenceResolver {
             null
         }
     }
+
+    abstract inner class Session
 }

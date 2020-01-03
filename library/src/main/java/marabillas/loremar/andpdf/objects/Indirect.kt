@@ -21,32 +21,30 @@ internal open class Indirect(
     var gen: Int = 0
         private set
 
-    private object Inst {
-        val stringBuilder = StringBuilder()
-    }
-
     init {
-        file.seek(start)
-        obj = extractNextNumber()
-        start = file.filePointer - 1 - (obj as Int).length()
-        gen = extractNextNumber()
+        synchronized(file) {
+            file.seek(start)
+            obj = extractNextNumber()
+            start = file.filePointer - 1 - (obj as Int).length()
+            gen = extractNextNumber()
 
-        validateObj()
+            validateObj()
 
-        if (reference != null) {
-            if (reference.obj != obj) throw IndirectObjectMismatchException()
+            if (reference != null) {
+                if (reference.obj != obj) throw IndirectObjectMismatchException()
+            }
         }
     }
 
     private fun extractNextNumber(): Int {
-        Inst.stringBuilder.clear()
+        stringBuilder.clear()
         var c = nextDigit()
         while (c.isDigit()) {
-            Inst.stringBuilder.append(c)
+            stringBuilder.append(c)
             c = file.readByte().toChar()
         }
 
-        return Inst.stringBuilder.toInt()
+        return stringBuilder.toInt()
     }
 
     private fun nextDigit(): Char {
@@ -77,18 +75,25 @@ internal open class Indirect(
     }
 
     fun extractContent(): StringBuilder {
-        file.seek(start)
-        val sb = StringBuilder()
-        while (true) {
-            val s = " ${file.readLine()}"
-            if (s.endsWith("stream", true)) return sb.clear().append("pdf_stream_content")
-            sb.append(s)
-            if (s.contains("endobj", true)) break
+        synchronized(file) {
+            file.seek(start)
+            val sb = StringBuilder()
+            while (true) {
+                val s = " ${file.readLine()}"
+                if (s.endsWith("stream", true)) return sb.clear()
+                    .append("pdf_stream_content")
+                sb.append(s)
+                if (s.contains("endobj", true)) break
+            }
+            val objIndex = sb.indexOf("obj")
+            val endobjIndex = sb.lastIndexOf("endobj")
+            sb.delete(endobjIndex, sb.length)
+            sb.delete(0, objIndex + 3)
+            return sb
         }
-        val objIndex = sb.indexOf("obj")
-        val endobjIndex = sb.lastIndexOf("endobj")
-        sb.delete(endobjIndex, sb.length)
-        sb.delete(0, objIndex + 3)
-        return sb
+    }
+
+    companion object {
+        val stringBuilder = StringBuilder()
     }
 }

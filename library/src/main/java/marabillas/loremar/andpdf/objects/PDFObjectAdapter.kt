@@ -8,7 +8,12 @@ import marabillas.loremar.andpdf.utils.exts.trimContainedChars
 internal class PDFObjectAdapter {
     companion object {
         private val NUMERIC_PATTERN = "-?\\d*.?\\d+".toRegex()
-        private var auxiliaryStringBuilder = StringBuilder()
+        private val auxiliaryStringBuilders: MutableMap<AndPDFContext.Session, StringBuilder> =
+            mutableMapOf()
+
+        fun notifyNewSession(session: AndPDFContext.Session) {
+            auxiliaryStringBuilders[session] = StringBuilder()
+        }
 
         fun getPDFObject(
             context: AndPDFContext,
@@ -19,8 +24,8 @@ internal class PDFObjectAdapter {
         ): PDFObject? {
             sb.trimContainedChars()
 
-            if (sb == auxiliaryStringBuilder) {
-                auxiliaryStringBuilder = StringBuilder()
+            if (sb == auxiliaryStringBuilders[context.session]) {
+                auxiliaryStringBuilders[context.session] = StringBuilder()
             }
 
             return when {
@@ -29,21 +34,38 @@ internal class PDFObjectAdapter {
                 NUMERIC_PATTERN.matches(sb) -> sb.toNumeric()
                 sb.isEnclosedWith('(', ')') -> sb.toPDFString()
                 sb.isEnclosedWith(arrayOf('<', '<'), arrayOf('>', '>')) ->
-                    sb.toDictionary(context, auxiliaryStringBuilder, obj, gen, resolveReferences)
+                    auxiliaryStringBuilders[context.session]?.let {
+                        sb.toDictionary(
+                            context,
+                            it, obj, gen, resolveReferences
+                        )
+                    }
                 sb.isEnclosedWith('<', '>') -> sb.toPDFString()
                 sb.startsWith("/") -> sb.toName()
-                sb.isEnclosedWith('[', ']') -> sb.toPDFArray(
-                    context,
-                    auxiliaryStringBuilder,
-                    obj,
-                    gen,
-                    resolveReferences
-                )
+                sb.isEnclosedWith('[', ']') -> auxiliaryStringBuilders[context.session]?.let {
+                    sb.toPDFArray(
+                        context,
+                        it,
+                        obj,
+                        gen,
+                        resolveReferences
+                    )
+                }
                 Reference.REGEX.matches(sb) -> {
                     if (resolveReferences) {
-                        sb.toReference(context, auxiliaryStringBuilder).resolve(context)
+                        auxiliaryStringBuilders[context.session]?.let {
+                            sb.toReference(
+                                context,
+                                it
+                            ).resolve(context)
+                        }
                     } else {
-                        sb.toReference(context, auxiliaryStringBuilder)
+                        auxiliaryStringBuilders[context.session]?.let {
+                            sb.toReference(
+                                context,
+                                it
+                            )
+                        }
                     }
                 }
 

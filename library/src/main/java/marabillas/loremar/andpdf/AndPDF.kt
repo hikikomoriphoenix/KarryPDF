@@ -93,7 +93,7 @@ class AndPDF(file: RandomAccessFile, password: String = "") {
         }
     }
 
-    fun getPageContents(pageNum: Int): ArrayList<PageContent> {
+    fun getPageContents(pageNum: Int): List<PageContent> {
         TimeCounter.reset()
 
         val getPageContentsContext = GetPageContentsContext(context)

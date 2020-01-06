@@ -7,6 +7,7 @@ import marabillas.loremar.andpdf.contents.PageContentAdapter
 import marabillas.loremar.andpdf.contents.XObjectsResolver
 import marabillas.loremar.andpdf.document.AndPDFContext
 import marabillas.loremar.andpdf.document.GetPageContentsContext
+import marabillas.loremar.andpdf.document.OutlineItem
 import marabillas.loremar.andpdf.document.PDFFileReader
 import marabillas.loremar.andpdf.encryption.Decryptor
 import marabillas.loremar.andpdf.exceptions.InvalidDocumentException
@@ -228,6 +229,93 @@ class AndPDF(file: RandomAccessFile, password: String = "") {
 
     fun getTotalPages(): Int {
         return pages.size
+    }
+
+    fun getDocumentOutline(): List<OutlineItem> {
+        documentCatalog?.resolveReferences()
+        val outlineDic = documentCatalog?.get("Outlines") as Dictionary?
+        return outlineDic?.let { getOutlineItems(it) } ?: listOf()
+    }
+
+    private fun getOutlineItems(outlineDic: Dictionary): List<OutlineItem> {
+        val first = outlineDic["First"]
+        val last = outlineDic["Last"]
+        val list = mutableListOf<OutlineItem>()
+
+        if (first is Reference && last is Reference) {
+            var curr = first
+            while (curr is Reference) {
+                val currDic = curr.resolve() as Dictionary?
+                val subItems = currDic?.let { getOutlineItems(it) }
+
+                val next = currDic?.get("Next")
+                currDic?.resolveReferences()
+
+                val obj = curr.obj
+                val gen = curr.gen
+                val title = (currDic?.get("Title") as PDFString?)?.value?.let {
+                    context.decryptor?.decrypt(it.toByteArray(), obj, gen)
+                }
+
+                val dest = currDic?.get("Dest")
+                val a = currDic?.get("A")
+                var pageIndex = -1
+                if (dest is PDFArray || dest is Name)
+                    pageIndex = dest.getDestinationPageIndex()
+                else if (a is Dictionary) {
+                    a.resolveReferences()
+                    val actionType = a["S"]
+                    if (actionType is Name && actionType.value == "GoTo")
+                        pageIndex = a["D"]?.getDestinationPageIndex() ?: -1
+                }
+
+                val item = OutlineItem(
+                    title = title?.let { String(it) } ?: "",
+                    pageIndex = pageIndex,
+                    subItems = subItems ?: listOf()
+                )
+                list.add(item)
+
+                if (curr.toString() == last.toString())
+                    break
+
+                curr = next
+            }
+        }
+
+        return list
+    }
+
+    private fun PDFObject.getDestinationPageIndex(): Int {
+        if (this is PDFArray) {
+            return getPageIndex()
+        } else if (this is Name) {
+            val names = documentCatalog?.get("Names")
+            val dests = documentCatalog?.get("Dests")
+            if (names is Dictionary) {
+                // TODO("Requires traversing name tree to get destinations")
+            } else if (dests is Dictionary) {
+                dests.resolveReferences()
+                val d = dests[value]
+                if (d is PDFArray) {
+                    return d.getPageIndex()
+                } else if (d is Dictionary) {
+                    d.resolveReferences()
+                    val dValue = d["D"]
+                    if (dValue is PDFArray)
+                        return dValue.getPageIndex()
+                }
+            }
+        }
+        return -1
+    }
+
+    private fun PDFArray.getPageIndex(): Int {
+        val page = get(0)
+        return if (page is Reference) {
+            pages.indexOfFirst { it.toString() == page.toString() }
+        } else
+            -1
     }
 
     private fun parseStructureTree() {

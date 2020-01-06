@@ -253,8 +253,9 @@ class AndPDF(file: RandomAccessFile, password: String = "") {
 
                 val obj = curr.obj
                 val gen = curr.gen
-                val title = (currDic?.get("Title") as PDFString?)?.value?.let {
-                    context.decryptor?.decrypt(it.toByteArray(), obj, gen)
+
+                val title = (currDic?.get("Title") as PDFString?)?.run {
+                    context.decryptor?.decrypt(this, obj, gen) ?: value
                 }
 
                 val dest = currDic?.get("Dest")
@@ -270,7 +271,7 @@ class AndPDF(file: RandomAccessFile, password: String = "") {
                 }
 
                 val item = OutlineItem(
-                    title = title?.let { String(it) } ?: "",
+                    title = title ?: "",
                     pageIndex = pageIndex,
                     subItems = subItems ?: listOf()
                 )

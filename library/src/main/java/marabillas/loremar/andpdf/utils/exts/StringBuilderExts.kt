@@ -1,5 +1,7 @@
 package marabillas.loremar.andpdf.utils.exts
 
+import marabillas.loremar.andpdf.filters.ASCIIHex
+
 internal fun StringBuilder.trimContainedChars() {
     while (this.startsWith(' ') || this.startsWith('\n') || this.startsWith('\r')) {
         this.delete(0, 1)
@@ -291,6 +293,22 @@ internal fun StringBuilder.hexFromInt(int: Int): StringBuilder {
     }
     remainders.clear()
     return this
+}
+
+internal fun StringBuilder.hexToBytes(): ByteArray {
+    val bytes = mutableListOf<Byte>()
+    var i = 0
+    while (i < length) {
+        val first = this[i].toLowerCase()
+        val second: Char = if (i + 1 < length)
+            this[i + 1].toLowerCase()
+        else
+            '0'
+        ASCIIHex.hexToByteMap[first]?.get(second)
+            ?.let { bytes.add(it) }
+        i += 2
+    }
+    return bytes.toByteArray()
 }
 
 internal fun StringBuilder.appendBytes(bytes: ByteArray, start: Int = 0, end: Int = bytes.size): StringBuilder {

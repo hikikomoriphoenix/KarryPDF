@@ -10,7 +10,7 @@ import java.io.RandomAccessFile
 @Config(manifest = Config.NONE)
 class GetOutlineTest {
     private val samplesDir = "SamplePDFs/"
-    private val pdfFilename = "fundamentals-of-chemistry.pdf"
+    private val pdfFilename = "PDF32000_2008.pdf"
 
     @Test
     fun test() {

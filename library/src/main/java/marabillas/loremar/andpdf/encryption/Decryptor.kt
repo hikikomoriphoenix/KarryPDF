@@ -3,6 +3,8 @@ package marabillas.loremar.andpdf.encryption
 import marabillas.loremar.andpdf.objects.Dictionary
 import marabillas.loremar.andpdf.objects.Name
 import marabillas.loremar.andpdf.objects.PDFArray
+import marabillas.loremar.andpdf.objects.PDFString
+import marabillas.loremar.andpdf.utils.exts.hexToBytes
 import java.security.MessageDigest
 import kotlin.math.min
 
@@ -59,5 +61,16 @@ internal class Decryptor(dictionary: Dictionary, idArray: PDFArray?, password: S
         val finalKey = ByteArray(length)
         digestedKey.copyInto(finalKey, 0, 0, length)
         return finalKey
+    }
+
+    fun decrypt(pdfString: PDFString, obj: Int, gen: Int): String? {
+        return pdfString.original.run {
+            if (startsWith('<')) {
+                StringBuilder(substring(1, lastIndex)).hexToBytes()
+            } else
+                null
+        }?.run {
+            String(decrypt(this, obj, gen))
+        }
     }
 }

@@ -1,6 +1,7 @@
 package marabillas.loremar.andpdf.objects
 
 import marabillas.loremar.andpdf.filters.DecoderFactory
+import marabillas.loremar.andpdf.utils.exts.hexToBytes
 import marabillas.loremar.andpdf.utils.exts.resolveEscapedSequences
 import java.math.BigInteger
 
@@ -20,6 +21,15 @@ internal class PDFString(val original: String, val value: String) : Any(), PDFOb
     operator fun plus(other: String): String {
         return value + other
     }
+
+    val textString: String
+        get() {
+            return if (original.startsWith('<') && original.substring(1, 5).equals("FEFF", true)) {
+                val bytes = StringBuilder(original.substring(1, original.lastIndex)).hexToBytes()
+                String(bytes, Charsets.UTF_16BE)
+            } else
+                value
+        }
 }
 
 internal fun String.toPDFString(): PDFString {

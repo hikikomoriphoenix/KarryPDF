@@ -70,7 +70,11 @@ internal class Decryptor(dictionary: Dictionary, idArray: PDFArray?, password: S
             } else
                 null
         }?.run {
-            String(decrypt(this, obj, gen))
+            val decrypted = decrypt(this, obj, gen)
+            if (decrypted[0] == 254.toByte() && decrypted[1] == 255.toByte())
+                String(decrypted, Charsets.UTF_16BE)
+            else
+                String(decrypted)
         }
     }
 }

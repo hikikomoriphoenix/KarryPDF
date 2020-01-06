@@ -255,7 +255,7 @@ class AndPDF(file: RandomAccessFile, password: String = "") {
                 val gen = curr.gen
 
                 val title = (currDic?.get("Title") as PDFString?)?.run {
-                    context.decryptor?.decrypt(this, obj, gen) ?: value
+                    context.decryptor?.decrypt(this, obj, gen) ?: textString
                 }
 
                 val dest = currDic?.get("Dest")

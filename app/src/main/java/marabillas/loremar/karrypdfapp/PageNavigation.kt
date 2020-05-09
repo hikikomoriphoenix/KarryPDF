@@ -7,13 +7,13 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import marabillas.loremar.andpdf.AndPDF
-import marabillas.loremar.andpdf.contents.image.ImageContent
-import marabillas.loremar.andpdf.contents.text.TableContent
-import marabillas.loremar.andpdf.contents.text.TextContent
+import marabillas.loremar.karrypdf.KarryPDF
+import marabillas.loremar.karrypdf.contents.image.ImageContent
+import marabillas.loremar.karrypdf.contents.text.TableContent
+import marabillas.loremar.karrypdf.contents.text.TextContent
 
 class PageNavigation(private val activity: AppCompatActivity, private val pageView: LinearLayout) {
-    var document: AndPDF? = null
+    var document: KarryPDF? = null
         set(value) {
             field = value
             numPages = field?.getTotalPages() ?: 0

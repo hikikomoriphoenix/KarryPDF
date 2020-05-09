@@ -4,7 +4,7 @@ import android.os.Bundle
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import marabillas.loremar.andpdf.AndPDF
+import marabillas.loremar.karrypdf.KarryPDF
 import java.io.RandomAccessFile
 
 class MainActivity : AppCompatActivity() {
@@ -21,7 +21,7 @@ class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         val file = RandomAccessFile("${filesDir.path}/seeing-theory.pdf", "r")
-        val parser = AndPDF(file)
+        val parser = KarryPDF(file)
 
         // Get views
         val pageView = findViewById<LinearLayout>(R.id.pageview)

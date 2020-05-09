@@ -46,7 +46,7 @@ internal class AGLCMap(private val codeToNameArray: SparseArrayCompat<String>) :
         private val stringBuilder = StringBuilder()
 
         init {
-            val stream = javaClass.classLoader.getResourceAsStream("res/raw/glyphlist.txt")
+            val stream = javaClass.classLoader?.getResourceAsStream("res/raw/glyphlist.txt")
             var isComment = false
 
             if (stream != null) {

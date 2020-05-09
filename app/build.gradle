@@ -7,7 +7,7 @@ android {
 
 
     defaultConfig {
-        applicationId "marabillas.loremar.andpdfapp"
+        applicationId "marabillas.loremar.karrypdfapp"
         minSdkVersion 19
         targetSdkVersion 28
         versionCode 1

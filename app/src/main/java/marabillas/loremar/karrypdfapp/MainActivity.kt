@@ -20,7 +20,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        val file = RandomAccessFile("${filesDir.path}/seeing-theory.pdf", "r")
+        val file = RandomAccessFile("${filesDir.path}/Project-Management.pdf", "r")
         val parser = KarryPDF(file)
 
         // Get views

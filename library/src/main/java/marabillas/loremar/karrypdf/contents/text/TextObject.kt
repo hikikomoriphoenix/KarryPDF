@@ -27,6 +27,10 @@ internal class TextObject : PageObject {
         return elements.first()
     }
 
+    fun last(): TextElement {
+        return elements.last()
+    }
+
     fun add(textElement: TextElement) {
         elements.add(textElement)
     }

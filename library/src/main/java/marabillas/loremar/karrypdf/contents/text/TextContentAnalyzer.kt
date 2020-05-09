@@ -409,10 +409,10 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                     }
                 }
                 else -> {
+                    var xPos = textObj.td[0]
+                    var xPosPrev = prevTextObj?.td?.get(0) ?: xPos
                     textObj.forEach {
                         var dty = -it.td[1]
-                        var xPos = textObj.td[0]
-                        var xPosPrev = textObj.td[0]
                         if (textObj.first() == it) {
                             dty = if (prevTextObj == null)
                                 0f
@@ -423,6 +423,11 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                                         yOfLast += e.td[1]
                                 }
                                 yOfLast - it.td[1]
+                            }
+                            prevTextObj?.forEach { prevTextObjElem ->
+                                if (prevTextObj.first() != prevTextObjElem) {
+                                    xPosPrev += (prevTextObjElem.td[0] * prevTextObj.scaleX)
+                                }
                             }
                         } else {
                             xPosPrev = xPos

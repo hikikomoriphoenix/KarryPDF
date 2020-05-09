@@ -11,7 +11,7 @@ import java.io.RandomAccessFile
 class KarryPDFTest {
     @Test
     fun testLoadDocument() {
-        val path = javaClass.classLoader.getResource("samplepdf1.4.pdf").path
+        val path = javaClass.classLoader?.getResource("samplepdf1.4.pdf")?.path
         val file = RandomAccessFile(path, "r")
         val parser = KarryPDF(file)
         assertThat(parser.size, `is`(20))

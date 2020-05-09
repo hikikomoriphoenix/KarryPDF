@@ -19,7 +19,7 @@ class MultiThreadedGetPageContentsTest {
     fun test() {
         forceHideLogs = true
         println("Testing getPageContents when used multiple times simultaneously in different threads.")
-        val path = javaClass.classLoader.getResource("$samplesDir$pdfFilename").path
+        val path = javaClass.classLoader?.getResource("$samplesDir$pdfFilename")?.path
         val file = RandomAccessFile(path, "r")
         val pdf = KarryPDF(file)
 

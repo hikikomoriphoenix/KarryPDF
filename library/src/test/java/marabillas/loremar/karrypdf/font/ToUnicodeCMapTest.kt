@@ -8,8 +8,8 @@ import java.io.File
 class ToUnicodeCMapTest {
     @Test
     fun testDecodeString() {
-        val path = javaClass.classLoader.getResource("ToUnicodeTestFile")
-        val file = File(path.toURI())
+        val path = javaClass.classLoader?.getResource("ToUnicodeTestFile")
+        val file = File(path?.toURI())
         val cmapSrc = file.readText()
         val map = ToUnicodeCMap(cmapSrc).parse()
         val encoded = "<011F2023EFB3EFB4EFB5FBB3FBD3>"

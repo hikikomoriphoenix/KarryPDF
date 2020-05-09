@@ -11,9 +11,9 @@ import java.io.FileInputStream
 class TTFParserTest {
     @Test
     fun testGetCharacterWidths() {
-        val file1 = File(javaClass.classLoader.getResource("fonts/FontAwesome.ttf").path)
-        val file2 = File(javaClass.classLoader.getResource("fonts/DroidSans.ttf").path)
-        val file3 = File(javaClass.classLoader.getResource("fonts/tahoma.ttf").path)
+        val file1 = File(javaClass.classLoader?.getResource("fonts/FontAwesome.ttf")?.path)
+        val file2 = File(javaClass.classLoader?.getResource("fonts/DroidSans.ttf")?.path)
+        val file3 = File(javaClass.classLoader?.getResource("fonts/tahoma.ttf")?.path)
 
         println("Testing FontAwesome.ttf")
         var input = FileInputStream(file1)

@@ -8,7 +8,7 @@ import java.io.RandomAccessFile
 class IndirectTest {
     @Test
     fun testIndirect() {
-        val path = javaClass.classLoader.getResource("samplepdf1.4.pdf").path
+        val path = javaClass.classLoader?.getResource("samplepdf1.4.pdf")?.path
         val file = RandomAccessFile(path, "r")
         val obj = Indirect(file, 99032L)
         val content = obj.extractContent()

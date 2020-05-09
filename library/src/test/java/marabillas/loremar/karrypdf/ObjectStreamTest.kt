@@ -11,7 +11,7 @@ import java.io.RandomAccessFile
 class ObjectStreamTest {
     @Test
     fun testObjectStream() {
-        val path = javaClass.classLoader.getResource("samplepdf1.4compressed.pdf").path
+        val path = javaClass.classLoader?.getResource("samplepdf1.4compressed.pdf")?.path
         val file = RandomAccessFile(path, "r")
         val objStm = ObjectStream(
             KarryPDFContext(),

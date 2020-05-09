@@ -14,7 +14,7 @@ class GetOutlineTest {
 
     @Test
     fun test() {
-        val path = javaClass.classLoader.getResource("$samplesDir$pdfFilename").path
+        val path = javaClass.classLoader?.getResource("$samplesDir$pdfFilename")?.path
         val file = RandomAccessFile(path, "r")
         val pdf = KarryPDF(file)
 

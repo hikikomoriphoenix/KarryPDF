@@ -10,7 +10,7 @@ import java.io.RandomAccessFile
 class XRefStreamTest {
     @Test
     fun testXRefStream() {
-        val path = javaClass.classLoader.getResource("samplepdf1.4compressed.pdf").path
+        val path = javaClass.classLoader?.getResource("samplepdf1.4compressed.pdf")?.path
         val file = RandomAccessFile(path, "r")
         println("File Length = ${file.length()}")
         val streamObj = XRefStream(

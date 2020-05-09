@@ -34,9 +34,10 @@ class AllSamplesQuickTest {
     }
 
     private fun getAllSamples() {
-        val directoryReader = javaClass.classLoader.getResourceAsStream(samplesDir).bufferedReader()
+        val directoryReader =
+            javaClass.classLoader?.getResourceAsStream(samplesDir)?.bufferedReader()
         while (true) {
-            val line = directoryReader.readLine()
+            val line = directoryReader?.readLine()
             if (line != null) {
                 samples.add(line)
             } else {
@@ -47,7 +48,7 @@ class AllSamplesQuickTest {
 
     private fun test(pdfFilename: String) {
         print("Testing library on $pdfFilename...")
-        val path = javaClass.classLoader.getResource("$samplesDir$pdfFilename").path
+        val path = javaClass.classLoader?.getResource("$samplesDir$pdfFilename")?.path
         val file = RandomAccessFile(path, "r")
         val pdf = loadDocument(file, pdfFilename)
         if (pdf != null) {
@@ -94,7 +95,7 @@ class AllSamplesQuickTest {
         forceHideLogs = true
         val pdfFilename = "icc32.pdf"
         print("Testing library on $pdfFilename...")
-        val path = javaClass.classLoader.getResource("$samplesDir$pdfFilename").path
+        val path = javaClass.classLoader?.getResource("$samplesDir$pdfFilename")?.path
         val file = RandomAccessFile(path, "r")
         val pdf = loadDocument(file, pdfFilename)
         if (pdf != null) {
@@ -125,7 +126,7 @@ class AllSamplesQuickTest {
         val pdfFilename = "seeing-theory.pdf"
         val pageNum = 0
         print("Testing library on $pdfFilename at page $pageNum")
-        val path = javaClass.classLoader.getResource("$samplesDir$pdfFilename").path
+        val path = javaClass.classLoader?.getResource("$samplesDir$pdfFilename")?.path
         val file = RandomAccessFile(path, "r")
         val pdf = loadDocument(file, pdfFilename)
 

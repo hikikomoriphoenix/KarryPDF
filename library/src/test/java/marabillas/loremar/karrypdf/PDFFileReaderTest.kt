@@ -15,7 +15,7 @@ import java.io.RandomAccessFile
 class PDFFileReaderTest {
     @Test
     fun testGetLastXRefData() {
-        val path = javaClass.classLoader.getResource("sample.pdf").path
+        val path = javaClass.classLoader?.getResource("sample.pdf")?.path
         val file = RandomAccessFile(path, "r")
         val reader = PDFFileReader(file)
         val xref = reader.getLastXRefData(KarryPDFContext())
@@ -34,7 +34,7 @@ class PDFFileReaderTest {
 
     @Test
     fun testGetLastXRefDataFromCompressedPDF() {
-        val path = javaClass.classLoader.getResource("samplepdf1.4compressed.pdf").path
+        val path = javaClass.classLoader?.getResource("samplepdf1.4compressed.pdf")?.path
         val file = RandomAccessFile(path, "r")
         val reader = PDFFileReader(file)
         val xref = reader.getLastXRefData(KarryPDFContext())
@@ -50,14 +50,14 @@ class PDFFileReaderTest {
 
     @Test
     fun testGetTrailerPosition() {
-        var path = javaClass.classLoader.getResource("samplepdf1.4compressed.pdf").path
+        var path = javaClass.classLoader?.getResource("samplepdf1.4compressed.pdf")?.path
         var file = RandomAccessFile(path, "r")
         var reader = PDFFileReader(file)
         var trailerPos = reader.getTrailerPosition(KarryPDFContext())
         assertNull(trailerPos)
         println("Testing samplepdf1.4compressed.pdf not having trailer -> success.")
 
-        path = javaClass.classLoader.getResource("samplepdf1.4.pdf").path
+        path = javaClass.classLoader?.getResource("samplepdf1.4.pdf")?.path
         file = RandomAccessFile(path, "r")
         reader = PDFFileReader(file)
         trailerPos = reader.getTrailerPosition(KarryPDFContext())
@@ -73,7 +73,7 @@ class PDFFileReaderTest {
 
     @Test
     fun testGetTrailerEntries() {
-        var path = javaClass.classLoader.getResource("samplepdf1.4.pdf").path
+        var path = javaClass.classLoader?.getResource("samplepdf1.4.pdf")?.path
         var file = RandomAccessFile(path, "r")
         val context = KarryPDFContext()
         var reader = PDFFileReader(file)
@@ -81,7 +81,7 @@ class PDFFileReaderTest {
         assertTrue(entries["Size"] is Numeric)
         println("Size entry in trailer for samplepdf1.4.pdf is ${(entries["Size"] as Numeric).value.toInt()}")
 
-        path = javaClass.classLoader.getResource("samplepdf1.4compressed.pdf").path
+        path = javaClass.classLoader?.getResource("samplepdf1.4compressed.pdf")?.path
         file = RandomAccessFile(path, "r")
         reader = PDFFileReader(file)
         entries = reader.getTrailerEntries(KarryPDFContext())

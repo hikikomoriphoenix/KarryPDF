@@ -10,11 +10,11 @@ import java.io.RandomAccessFile
 class StreamTest {
     @Test
     fun testDecodeEncodedStream() {
-        val path1 = javaClass.classLoader.getResource("samplepdf1.4.pdf").path
+        val path1 = javaClass.classLoader?.getResource("samplepdf1.4.pdf")?.path
         val file1 = RandomAccessFile(path1, "r")
         val streamObj = Stream(KarryPDFContext(), file1, 42603)
         val stream = streamObj.decodeEncodedStream()
-        val path2 = javaClass.classLoader.getResource("samplepdf1.4expectedtext.txt").path
+        val path2 = javaClass.classLoader?.getResource("samplepdf1.4expectedtext.txt")?.path
         val file2 = File(path2)
         val expected = file2.readText()
         assertThat(String(stream), `is`(expected))

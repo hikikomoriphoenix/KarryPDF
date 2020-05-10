@@ -115,14 +115,14 @@ internal class TTFParser(val data: ByteArray) {
                 val widths = getCharacterWidths(glyphWidths, ttfCMap as TTFCMap)
                 logd("${widths.size()} widths obtained")
                 return widths
-            } else {
+            } /*else {
                 val glyphWidths = getGlyphBoundingBoxWidths()
                 if (glyphWidths.count() > 0) {
                     val widths = getCharacterWidths(glyphWidths, ttfCMap as TTFCMap)
                     logd("${widths.size()} widths obtained")
                     return widths
                 }
-            }
+            }*/
         } else {
             logd("Can not obtain valid TTF cmap")
         }

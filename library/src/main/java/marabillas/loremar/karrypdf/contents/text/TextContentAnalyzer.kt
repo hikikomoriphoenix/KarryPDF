@@ -164,7 +164,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         var width = 0f
         string.value.forEach { c ->
             val w = widths[c.toInt()] ?: widths[-1]
-            w?.let { width += ((w / 1000) * fs * scaleX) }
+            w?.let { width += ((w / 1000f) * fs * scaleX) }
         }
         return width
     }
@@ -235,6 +235,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         fonts.forEach {
             val font = it.value
             val spaceWidth = font.widths[32] ?: font.widths[105]
+            //val spaceWidth = font.widths.extractMinWidthIntoSpaceWidth()
             if (spaceWidth is Float) {
                 existingSpaceWidths[it.key] = spaceWidth
             }
@@ -518,10 +519,12 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         val font = fonts[textElement.fontResource]
         if (font != null) {
             // Get width of space or 'i'
-            val spaceWidth = ((font.widths[32] ?: font.widths[105] ?: return true) / 1000) * fSize * textObj.scaleX
+            //val spaceWidth = ((font.widths[32] ?: font.widths[105] ?: return true) / 1000) * fSize * textObj.scaleX
+            val spaceWidth = ((font.widths.extractMinWidthIntoSpaceWidth()
+                ?: return true) / 1000f) * fSize * textObj.scaleX
 
             val lastCharPosition = xPosPrev + currLine.last().width
-            return xPos - lastCharPosition >= spaceWidth
+            return (xPos - lastCharPosition) >= (spaceWidth / 2)
         } else {
             return true
         }
@@ -849,5 +852,16 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
             // Ignore table, since a blank line may mean an empty cell.
             i++
         }
+    }
+
+    private fun SparseArrayCompat<Float>.extractMinWidthIntoSpaceWidth(): Float? {
+        return if (size() > 0) {
+            var min = Float.MAX_VALUE
+            for (i in 0 until size()) {
+                if (valueAt(i) < min && valueAt(i) != 0f) min = valueAt(i)
+            }
+            if (min == Float.MAX_VALUE) null else min
+        } else
+            null
     }
 }

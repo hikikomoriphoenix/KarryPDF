@@ -241,8 +241,17 @@ internal class Font(private val dictionary: Dictionary, private val referenceRes
                 widths.put(firstChar + i, (ws[i] as Numeric).value.toFloat())
             }
         } else {
+            var encodedWidths: SparseArrayCompat<Float>? = null
+            if (ws is PDFArray) {
+                encodedWidths = SparseArrayCompat()
+                ws.forEachIndexed { i, w ->
+                    if (w is Numeric) {
+                        encodedWidths.put(firstChar + i, w.value.toFloat())
+                    }
+                }
+            }
             if (fontDescriptor is Dictionary) {
-                getWidthsFromFontProgram(fontDescriptor, subtype)
+                getWidthsFromFontProgram(fontDescriptor, subtype, encodedWidths)
             }
         }
     }
@@ -306,7 +315,8 @@ internal class Font(private val dictionary: Dictionary, private val referenceRes
 
     private fun getWidthsFromFontProgram(
         fontDescriptor: Dictionary,
-        fontType: Name
+        fontType: Name,
+        encodedWidths: SparseArrayCompat<Float>? = null
     ) {
         fontFile1 = fontDescriptor["FontFile"] as Reference?
         fontFile2 = fontDescriptor["FontFile2"] as Reference?
@@ -320,7 +330,7 @@ internal class Font(private val dictionary: Dictionary, private val referenceRes
                 getWidthsFromFontFile1()
             }
             fontFile2IsEmbedded(fontType) -> {
-                getWidthsFromFontFile2()
+                getWidthsFromFontFile2(encodedWidths)
             }
         }
     }
@@ -378,13 +388,15 @@ internal class Font(private val dictionary: Dictionary, private val referenceRes
         }
     }
 
-    private fun getWidthsFromFontFile2() {
+    private fun getWidthsFromFontFile2(encodedWidths: SparseArrayCompat<Float>? = null) {
         try {
             fontFile2?.let {
                 val fontProgram = referenceResolver.resolveReferenceToStream(it)
                 val data = fontProgram?.decodeEncodedStream()
                 if (data is ByteArray) {
                     widths = TTFParser(data).getCharacterWidths()
+                    if (widths.isEmpty)
+                        encodedWidths?.encodedWidthsToWidths()
                 }
             }
         } catch (e: InvalidStreamException) {
@@ -393,6 +405,24 @@ internal class Font(private val dictionary: Dictionary, private val referenceRes
         } catch (e: Exception) {
             loge("Exception on getting widths from FontFile2", e)
         }
+    }
+
+    private fun SparseArrayCompat<Float>.encodedWidthsToWidths() {
+        var totalWidths = 0f
+        for (i in 0 until size()) {
+            val charCode = keyAt(i)
+            val width = valueAt(i)
+            cmap?.apply {
+                charCodeToUnicode(charCode)?.let {
+                    widths.put(it, width)
+                }
+            } ?: {
+                widths.put(charCode, width)
+            }()
+            totalWidths += width
+        }
+        if (size() > 0)
+            widths.put(-1, totalWidths / size())
     }
 
 

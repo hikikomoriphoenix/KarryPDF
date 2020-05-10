@@ -84,7 +84,8 @@ Title: Project Management
 Author/Publisher: Adrienne Watt
 File: Project-Management.pdf
 Issues:
-- Lacking character spacing in almost every page
+- Few character spacing issues
+- Few missing characters
 
 Title: Seeing Theory
 Author/Publisher: Devlin Guo, Kunin Xiang

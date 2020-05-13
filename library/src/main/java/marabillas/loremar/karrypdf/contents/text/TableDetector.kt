@@ -46,15 +46,15 @@ internal class TableDetector(
             // Check if the first TextObject of the current line is to the right of any divider of the previous line. Look
             // for the rightmost divider that is at the left of the TextObject. Initialize belowColumn based on the
             // number of columns to the left of the divider.
-            if (prevLineWideSpaces.count() > 0 && textObj.td[1] != textObjects[i - 1].td[1]) {
+            if (prevLineWideSpaces.count() > 0 && textObj.getY() != textObjects[i - 1].getY()) {
                 for (k in prevLineWideSpaces.lastIndex downTo 0) {
                     val aboveSpace = prevLineWideSpaces[k]
-                    if (aboveSpace.isDivider && textObj.td[0] > aboveSpace.left) {
+                    if (aboveSpace.isDivider && textObj.getX() > aboveSpace.left) {
                         val aboveTextObj = textObjects[aboveSpace.leftTextObj]
 
                         // Get the distance between the left of the divider and the TextObject. Check if the divider
                         // extends below.
-                        val diff = textObj.td[0] - aboveSpace.left
+                        val diff = textObj.getX() - aboveSpace.left
                         val spaceWidth = getSpaceWidthOfFirstElement(textObj)
                         if (spaceWidth != Float.MAX_VALUE && diff > (spaceWidth * 3f)) {
                             // Set the next column number of the current line to reflect the number of columns to skip
@@ -70,7 +70,7 @@ internal class TableDetector(
                             val currWideSpace =
                                 WideSpace(
                                     left = aboveSpace.left,
-                                    right = textObj.td[0],
+                                    right = textObj.getX(),
                                     rightTextObj = i,
                                     isDivider = true
                                 )
@@ -89,9 +89,9 @@ internal class TableDetector(
 
             // Check if another text object exists following the current text object on the same line. Otherwise, the
             // current TextObject is the last TextObject of the current line.
-            if (i + 1 < textObjects.count() && textObj.td[1] == textObjects[i + 1].td[1]) {
+            if (i + 1 < textObjects.count() && textObj.getY() == textObjects[i + 1].getY()) {
                 val rbArr = getLocationAndSpaceWidthOfRightBoundary(textObj)
-                val diff = textObjects[i + 1].td[0] - rbArr[0]
+                val diff = textObjects[i + 1].getX() - rbArr[0]
 
                 // Check if the distance between the two TextObjects is wider than 3 space characters. If it is, assume
                 // a widespace between them, and proceed to detecting for divider. Else continue iterating through
@@ -101,7 +101,7 @@ internal class TableDetector(
                     val currWideSpace =
                         WideSpace(
                             left = rbArr[0],
-                            right = textObjects[i + 1].td[0],
+                            right = textObjects[i + 1].getX(),
                             leftTextObj = i,
                             rightTextObj = i + 1
                         )
@@ -158,7 +158,7 @@ internal class TableDetector(
                                 while (r < textObjects.count()) {
                                     if (textObjects[r].column == -1)
                                         break
-                                    if (textObjects[r].td[1] != textObjects[r - 1].td[1])
+                                    if (textObjects[r].getY() != textObjects[r - 1].getY())
                                         break
                                     else
                                         textObjects[r].column += inc
@@ -208,7 +208,7 @@ internal class TableDetector(
                     while (j < textObjects.count()) {
                         if (
                             textObjects[j].column >= 0 ||
-                            textObjects[j].td[1] != textObjects[j - 1].td[1]
+                            textObjects[j].getY() != textObjects[j - 1].getY()
                         ) break
 
                         textObjects[j].column = aboveColumn
@@ -234,7 +234,7 @@ internal class TableDetector(
         while (i >= 0) {
             if (
                 textObjects[i].column >= 0 ||
-                textObjects[i].td[1] != textObjects[i + 1].td[1]
+                textObjects[i].getY() != textObjects[i + 1].getY()
             ) break
 
             textObjects[i].column = column
@@ -259,13 +259,13 @@ internal class TableDetector(
     }
 
     private fun getLocationAndSpaceWidthOfRightBoundary(textObj: TextObject): FloatArray {
-        var rightmost = textObj.first().td[0]
+        var rightmost = textObj.first().tx
         var spaceWidth = Float.MAX_VALUE
-        var currX = textObj.first().td[0]
+        var currX = textObj.first().tx
         textObj.forEachIndexed { i, e ->
             if (e != textObj.first())
-                currX += e.td[0]
-            if (i + 1 == textObj.count() || textObj.elementAt(i + 1).td[1] != 0f) {
+                currX += e.tx
+            if (i + 1 == textObj.count() || textObj.elementAt(i + 1).ty != 0f) {
                 val elemWdth = e.width
                 if (elemWdth == 0f) {
                     spaceWidth = Float.MAX_VALUE
@@ -311,7 +311,7 @@ internal class TableDetector(
     private fun isTextObjectMultiLinear(textObj: TextObject): Boolean {
         textObj.forEach { textElement ->
             if (textElement != textObj.first()) {
-                if (textElement.td[1] != 0f)
+                if (textElement.ty != 0f)
                     return true
             }
         }
@@ -321,7 +321,7 @@ internal class TableDetector(
     private fun findRowStart(current: Int): Int {
         var i = current
         while (i >= 0) {
-            if (i - 1 < 0 || textObjects[i].td[1] != textObjects[i - 1].td[1])
+            if (i - 1 < 0 || textObjects[i].getY() != textObjects[i - 1].getY())
                 return i
             i--
         }
@@ -331,7 +331,7 @@ internal class TableDetector(
     private fun findRowEnd(current: Int): Int {
         var i = current
         while (i < textObjects.count()) {
-            if (i + 1 > textObjects.lastIndex || textObjects[i].td[1] != textObjects[i + 1].td[1])
+            if (i + 1 > textObjects.lastIndex || textObjects[i].getY() != textObjects[i + 1].getY())
                 return i
             i++
         }

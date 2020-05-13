@@ -68,3 +68,17 @@ internal fun Int.length(): Int {
         else -> log10(abs(toDouble())).toInt() + 1
     }
 }
+
+internal fun multiplyTransformMatrices(m1: FloatArray, m2: FloatArray): FloatArray {
+    if (m1.count() != 6 || m2.count() != 6)
+        throw IllegalArgumentException("Each matrix must have a size of 6")
+
+    val a = m1[0] * m2[0] + m1[1] * m2[2]
+    val b = m1[0] * m2[1] + m1[1] * m2[3]
+    val c = m1[2] * m2[0] + m1[3] * m2[2]
+    val d = m1[2] * m2[1] + m1[3] * m2[3]
+    val e = m1[4] * m2[0] + m1[5] * m2[2] + m2[4]
+    val f = m1[4] * m2[1] + m1[5] * m2[3] + m2[5]
+
+    return floatArrayOf(a, b, c, d, e, f)
+}

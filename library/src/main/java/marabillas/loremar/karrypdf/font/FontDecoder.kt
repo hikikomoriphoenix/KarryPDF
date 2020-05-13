@@ -1,7 +1,6 @@
 package marabillas.loremar.karrypdf.font
 
 import marabillas.loremar.karrypdf.contents.PageObject
-import marabillas.loremar.karrypdf.contents.text.TextElement
 import marabillas.loremar.karrypdf.contents.text.TextObject
 import marabillas.loremar.karrypdf.document.KarryPDFContext
 import marabillas.loremar.karrypdf.objects.*
@@ -26,8 +25,9 @@ internal class FontDecoder(
                     var newTj: PDFObject? = null
                     when (e.tj) {
                         is PDFArray -> {
+                            val tj = e.tj as PDFArray
                             mainSB.clear().append('[')
-                            e.tj.forEach { p ->
+                            tj.forEach { p ->
                                 if (p is PDFString) {
                                     if (cmap != null) {
                                         mainSB.append(
@@ -47,23 +47,14 @@ internal class FontDecoder(
                         }
                         is PDFString -> {
                             if (cmap != null) {
-                                newTj = cmap.decodeString(e.tj.original).toPDFString()
+                                val tj = e.tj as PDFString
+                                newTj = cmap.decodeString(tj.original).toPDFString()
                             } else {
                                 newTj = e.tj
                             }
                         }
                     }
-
-                    val updated =
-                        TextElement(
-                            td = e.td.copyOf(),
-                            tj = newTj ?: e.tj,
-                            tf = e.tf,
-                            ts = e.ts,
-                            rgb = e.rgb
-                        )
-
-                    textObject.update(updated, i)
+                    e.tj = newTj ?: e.tj
                 }
             }
     }

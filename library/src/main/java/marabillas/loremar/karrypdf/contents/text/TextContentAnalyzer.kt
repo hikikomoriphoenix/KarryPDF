@@ -8,7 +8,7 @@ import marabillas.loremar.karrypdf.objects.Numeric
 import marabillas.loremar.karrypdf.objects.PDFArray
 import marabillas.loremar.karrypdf.objects.PDFString
 import marabillas.loremar.karrypdf.objects.toPDFString
-import marabillas.loremar.karrypdf.utils.exts.toDouble
+import kotlin.math.abs
 
 internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableListOf()) {
     internal val contentGroups = ArrayList<ContentGroup>()
@@ -130,25 +130,21 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
 
                 val widths = fonts[textElem.fontResource]?.widths
 
-                sb.clear()
-                sb.append(textElem.tf, textElem.tf.indexOf(' ') + 1, textElem.tf.length)
-                val fs = sb.toDouble().toFloat()
-
                 if (tj is PDFArray) {
                     tj.forEach {
                         if (it is PDFString) {
                             if (widths != null) {
-                                textElem.width += computeStringWidth(it, widths, fs, textObj.scaleX)
+                                textElem.width += computeStringWidth(it, widths, textElem.scaleX)
                             }
                         } else if (it is Numeric) {
                             val num = -(it.value.toFloat())
-                            val offset = (num / 1000) * fs * textObj.scaleX
+                            val offset = (num / 1000) * textElem.scaleX
                             textElem.width += offset
                         }
                     }
                 } else if (tj is PDFString) {
                     if (widths != null) {
-                        textElem.width += computeStringWidth(tj, widths, fs, textObj.scaleX)
+                        textElem.width += computeStringWidth(tj, widths, textElem.scaleX)
                     }
                 }
             }
@@ -158,13 +154,12 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
     private fun computeStringWidth(
         string: PDFString,
         widths: SparseArrayCompat<Float>,
-        fs: Float,
         scaleX: Float
     ): Float {
         var width = 0f
         string.value.forEach { c ->
             val w = widths[c.toInt()] ?: widths[-1]
-            w?.let { width += ((w / 1000f) * fs * scaleX) }
+            w?.let { width += ((w / 1000f) * scaleX) }
         }
         return width
     }
@@ -251,8 +246,9 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                 val spaceWidth = spaceWidths[textElement.fontResource] ?: 0f
 
                 if (textElement.tj is PDFArray) {
+                    val tj = textElement.tj as PDFArray
                     sb.clear().append('(')
-                    (textElement.tj).forEach {
+                    tj.forEach {
                         if (it is PDFString)
                             sb.append(it.value) // If string, append
                         else if (it is Numeric) {
@@ -262,16 +258,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                         }
                     }
                     sb.append(')')
-                    val transformed =
-                        TextElement(
-                            td = textElement.td,
-                            tf = textElement.tf,
-                            ts = textElement.ts,
-                            tj = sb.toString().toPDFString(),
-                            rgb = textElement.rgb
-                        )
-                    transformed.width = textElement.width
-                    textObj.update(transformed, index)
+                    textElement.tj = sb.toString().toPDFString()
                 }
             }
         }
@@ -294,7 +281,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                 textObj.column >= 0 -> {
                     when {
                         // If first cell of table or if not in the same row, then add new row
-                        table.size() == 0 || textObj.td[1] != (prevTextObj as TextObject).td[1] -> {
+                        table.size() == 0 || textObj.getY() != (prevTextObj as TextObject).getY() -> {
                             // Add new table if first cell of table
                             if (table.size() == 0) {
                                 contentGroups.add(table)
@@ -333,22 +320,20 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                             cell.add(currTextGroup)
                             row.add(cell)
 
+                            var prevY = textObj.getY()
                             textObj.forEach {
-                                var dty = -it.td[1]
-                                if (textObj.first() == it) dty = 0f
-                                sortGroup(it, dty, textObj)
+                                val dty = prevY - it.ty
+                                sortGroup(it, dty)
+                                prevY = it.ty
                             }
                         }
                         // If in the same column of previous TextObject
                         textObj.column == prevTextObj.column -> {
+                            var prevY = textObj.getY()
                             textObj.forEach {
-                                var dty = -it.td[1]
-
-                                // This makes sure it is appended on the same line.
-                                if (textObj.first() == it)
-                                    dty = 0f
-
-                                sortGroup(it, dty, textObj)
+                                val dty = prevY - it.ty
+                                sortGroup(it, dty)
+                                prevY = it.ty
                             }
                         }
                         else -> {
@@ -380,10 +365,11 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                                 Table.Cell()
                             cell.add(currTextGroup)
                             table[table.size() - 1].add(cell)
+                            var prevY = textObj.getY()
                             textObj.forEach {
-                                var dty = -it.td[1]
-                                if (textObj.first() == it) dty = 0f
-                                sortGroup(it, dty, textObj)
+                                val dty = prevY - it.ty
+                                sortGroup(it, dty)
+                                prevY = it.ty
                             }
                         }
                     }
@@ -394,59 +380,36 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                     currTextGroup =
                         TextGroup()
                     contentGroups.add(currTextGroup)
+
+                    var prevX = textObj.getX()
+                    var prevY = textObj.getY()
                     textObj.forEach {
-                        var dty = -it.td[1]
-                        var xPos = textObj.td[0]
-                        var xPosPrev = textObj.td[0]
-
-                        if (textObj.first() == it) dty = 0f
-                        else {
-                            xPosPrev = xPos
-                            xPos += (it.td[0] * textObj.scaleX)
-                        }
-
-                        sortGroup(it, dty, textObj, xPos, xPosPrev)
+                        val dty = prevY - it.ty
+                        sortGroup(it, dty, it.tx, prevX)
+                        prevX = it.tx
+                        prevY = it.ty
                     }
                 }
                 else -> {
-                    var xPos = textObj.td[0]
-                    var xPosPrev = prevTextObj?.td?.get(0) ?: xPos
+                    var prevX = prevTextObj?.last()?.tx ?: textObj.getX()
+                    var prevY = prevTextObj?.last()?.ty ?: textObj.getY()
                     textObj.forEach {
-                        var dty = -it.td[1]
-                        if (textObj.first() == it) {
-                            dty = if (prevTextObj == null)
-                                0f
-                            else {
-                                var yOfLast = prevTextObj.td[1]
-                                prevTextObj.forEach { e ->
-                                    if (prevTextObj.first() != e)
-                                        yOfLast += e.td[1]
-                                }
-                                yOfLast - it.td[1]
-                            }
-                            prevTextObj?.forEach { prevTextObjElem ->
-                                if (prevTextObj.first() != prevTextObjElem) {
-                                    xPosPrev += (prevTextObjElem.td[0] * prevTextObj.scaleX)
-                                }
-                            }
-                        } else {
-                            xPosPrev = xPos
-                            xPos += (it.td[0] * textObj.scaleX)
-                        }
-
-                        sortGroup(it, dty, textObj, xPos, xPosPrev)
+                        val dty = prevY - it.ty
+                        sortGroup(it, dty, it.tx, prevX)
+                        prevX = it.tx
+                        prevY = it.ty
                     }
                 }
             }
         }
     }
 
-    private fun sameLine(dty: Float): Boolean {
-        return dty == 0f
+    private fun sameLine(dty: Float, textHeight: Float): Boolean {
+        return abs(dty) < textHeight
     }
 
-    private fun near(dty: Float, fSize: Float): Boolean {
-        return dty < fSize * 2
+    private fun near(dty: Float, textHeight: Float): Boolean {
+        return abs(dty) < textHeight * 2
     }
 
     private fun newLine(textElement: TextElement, xPos: Float) {
@@ -471,39 +434,27 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
     private fun sortGroup(
         textElement: TextElement,
         dty: Float,
-        textObj: TextObject,
         xPos: Float = 0f,
         xPosPrev: Float = 0f
     ) {
-        sb.clear().append(textElement.tf, textElement.tf.indexOf(' ') + 1, textElement.tf.length)
-        val fSize = sb.toDouble().toFloat()
+        val tj = textElement.tj as PDFString
 
         when {
             currTextGroup.size() == 0 -> newLine(textElement, xPos)
-            sameLine(dty) -> {
+            sameLine(dty, textElement.scaleY) -> {
                 if (
                     (currLine.last().tj as PDFString).value.last() != ' ' // If last TextElement does not end with space
                     && (textElement.tj as PDFString).value.first() != ' ' // If new TextElement does not start with space
-                    && areSpaceSeparated(textElement, xPos, xPosPrev, textObj, fSize)
+                    && areSpaceSeparated(textElement, xPos, xPosPrev)
                 ) {
                     // Put space between last TextElement and new TextElement
-                    sb.clear().append(' ').append(textElement.tj.value)
+                    sb.clear().append(' ').append(tj.value)
                     sb.insert(0, '(').append(')')
-                    val te =
-                        TextElement(
-                            tf = textElement.tf,
-                            td = textElement.td.copyOf(),
-                            tj = sb.toPDFString(),
-                            ts = textElement.ts,
-                            rgb = textElement.rgb
-                        )
-                    te.width = textElement.width
-                    currLine.add(te)
-                } else {
-                    currLine.add(textElement)
+                    textElement.tj = sb.toPDFString()
                 }
+                currLine.add(textElement)
             }
-            near(dty, fSize * textObj.scaleY) -> newLine(textElement, xPos)
+            near(dty, textElement.scaleY) -> newLine(textElement, xPos)
             else -> newTextGroup(textElement, xPos)
         }
     }
@@ -511,16 +462,14 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
     private fun areSpaceSeparated(
         textElement: TextElement,
         xPos: Float,
-        xPosPrev: Float,
-        textObj: TextObject,
-        fSize: Float
+        xPosPrev: Float
     ): Boolean {
         val font = fonts[textElement.fontResource]
         if (font != null) {
             // Get width of space or 'i'
             //val spaceWidth = ((font.widths[32] ?: font.widths[105] ?: return true) / 1000) * fSize * textObj.scaleX
             val spaceWidth = ((font.widths.extractMinWidthIntoSpaceWidth()
-                ?: return true) / 1000f) * fSize * textObj.scaleX
+                ?: return true) / 1000f) * textElement.scaleX
 
             val lastCharPosition = xPosPrev + currLine.last().width
             return (xPos - lastCharPosition) >= (spaceWidth / 2)
@@ -650,31 +599,11 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                             sb.clear().append(lastElementStr, 0, lastElementStr.lastIndex)
                             sb.insert(0, '(')
                             sb.append(')')
-                            val e =
-                                TextElement(
-                                    tf = line.last().tf,
-                                    tj = sb.toPDFString(),
-                                    td = line.last().td.copyOf(),
-                                    ts = line.last().ts,
-                                    rgb = line.last().rgb
-                                )
-                            e.width = line.last().width
-                            line.remove(line.last())
-                            line.add(e)
+                            line.last().tj = sb.toPDFString()
                         } else {
                             // Add space in between when appending.
                             sb.clear().append('(').append(' ').append((next.first().tj as PDFString).value).append(')')
-                            val e =
-                                TextElement(
-                                    tf = next.first().tf,
-                                    tj = sb.toPDFString(),
-                                    td = next.first().td.copyOf(),
-                                    ts = next.first().ts,
-                                    rgb = next.first().rgb
-                                )
-                            e.width = next.first().width
-                            next.remove(next.first())
-                            next.add(0, e)
+                            next.first().tj = sb.toPDFString()
                         }
 
                         // Append next line to current line. The appended line will be removed from the TextGroup's list.
@@ -731,15 +660,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
 
                         val line = textGroup[j]
                         val newTj = sb.append((line.first().tj as PDFString).value).append(')').toPDFString()
-                        line[0] =
-                            TextElement(
-                                tf = line.first().tf,
-                                td = line.first().td.copyOf(),
-                                tj = newTj,
-                                ts = line.first().ts,
-                                rgb = line.first().rgb
-                            )
-                        line[0].width = line.first().width
+                        line.first().tj = newTj
                     }
                 }
             }
@@ -809,17 +730,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         }
         sb.insert(0, '(')
         sb.append(')')
-        val newTextElement =
-            TextElement(
-                tf = line[start].tf,
-                td = line[start].td.copyOf(),
-                ts = line[start].ts,
-                tj = sb.toPDFString(),
-                rgb = line[start].rgb
-            )
-        newTextElement.width = line[start].width
-        line.removeAt(start)
-        line.add(start, newTextElement)
+        line[start].tj = sb.toPDFString()
     }
 
     private fun deleteBlankLines() {

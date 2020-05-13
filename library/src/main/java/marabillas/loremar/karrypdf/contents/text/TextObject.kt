@@ -1,12 +1,14 @@
 package marabillas.loremar.karrypdf.contents.text
 
 import marabillas.loremar.karrypdf.contents.PageObject
+import marabillas.loremar.karrypdf.utils.multiplyTransformMatrices
 
 internal class TextObject : PageObject {
-    val td = FloatArray(2)
-    var scaleX = 1f
-    var scaleY = 1f
     var column = -1
+    var transformMatrix = floatArrayOf(1f, 0f, 0f, 1f, 0f, 0f)
+
+    val scaleX; get() = transformMatrix[0]
+    val scaleY; get() = transformMatrix[3]
 
     private val elements = ArrayList<TextElement>()
 
@@ -48,10 +50,25 @@ internal class TextObject : PageObject {
     }
 
     override fun getY(): Float {
-        return td[1]
+        return first().ty
     }
 
     override fun getX(): Float {
-        return td[0]
+        return first().tx
+    }
+
+    fun computeAllElementsTransformation() {
+        elements.forEach {
+            val elementMatrix = it.computeElementTransformMatrix()
+            it.tx = elementMatrix[4]
+            it.ty = elementMatrix[5]
+            it.scaleX = elementMatrix[0]
+            it.scaleY = elementMatrix[3]
+        }
+    }
+
+    private fun TextElement.computeElementTransformMatrix(): FloatArray {
+        val textSpaceMatrix = multiplyTransformMatrices(textParamsMatrix, textMatrix)
+        return multiplyTransformMatrices(textSpaceMatrix, transformMatrix)
     }
 }

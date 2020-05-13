@@ -5,6 +5,7 @@ import marabillas.loremar.karrypdf.document.KarryPDFContext
 import marabillas.loremar.karrypdf.objects.PDFObject
 import marabillas.loremar.karrypdf.objects.toPDFObject
 import marabillas.loremar.karrypdf.utils.exts.*
+import marabillas.loremar.karrypdf.utils.multiplyTransformMatrices
 
 internal class TextObjectParser(
     private val context: KarryPDFContext,
@@ -14,27 +15,33 @@ internal class TextObjectParser(
     private val operandsIndices = IntArray(6)
     private val operand = StringBuilder()
     private var pos = 0
-    private var td = FloatArray(2)
+    private var currentTextMatrix = floatArrayOf(1f, 0f, 0f, 1f, 0f, 0f)
     private var tf = StringBuilder()
     private var tfDef = StringBuilder()
     private var ts = 0f
     private var tl = 0f
     private var rgb = floatArrayOf(-1f, -1f, -1f)
     private var cmyk = floatArrayOf(-1f, -1f, -1f, -1f)
+    var fontSizeOverride: Float? = null
+    private var horizontalScaling = 1f
+    private var textRise = 0f
 
     fun parse(
         s: StringBuilder,
         textObj: TextObject,
         tfDefault: StringBuilder = tfDef,
         startIndex: Int,
-        ctm: FloatArray,
         rgb: FloatArray
     ): Int {
         if (tfDefault.isNotBlank()) {
             tf.clear().append(tfDefault)
         }
-
         this.rgb = rgb
+
+        // Text matrix should not persist from one text object to another. Other states can persist.
+        currentTextMatrix.apply {
+            set(0, 1f); set(1, 0f); set(2, 0f); set(3, 1f); set(4, 0f); set(5, 0f)
+        }
 
         pos = startIndex
         var operandsCount = 0
@@ -54,57 +61,35 @@ internal class TextObjectParser(
                 } else if (s[pos] == 'T') {
                     pos++
                     if (s[pos] == 'j' || s[pos] == 'J') {
-                        showText(pos, s, textObj, ctm)
+                        showText(pos, s, textObj)
                     } else if (s[pos] == 'd') {
                         positionText(s)
                     } else if (s[pos] == 'm') {
-                        td[0] = operand
-                            .clear()
-                            .append(s, operandsIndices[4], operandsIndices[5] - 1)
-                            .toDouble()
-                            .toFloat()
-                        td[1] = operand
-                            .clear()
-                            .append(s, operandsIndices[5], pos - 2)
-                            .toDouble()
-                            .toFloat()
-                        val sx = operand
-                            .clear()
-                            .append(s, operandsIndices[0], operandsIndices[1] - 1)
-                            .toDouble()
-                            .toFloat()
-                        if (sx < 0) {
-                            td[0] = td[0] * (-1)
-                        }
-                        val sy = operand
-                            .clear()
-                            .append(s, operandsIndices[3], operandsIndices[4] - 1)
-                            .toDouble()
-                            .toFloat()
-                        if (sy < 0) {
-                            td[1] = td[1] * (-1)
-                        }
+                        currentTextMatrix[0] =
+                            getNumericOperand(s, operandsIndices[0], operandsIndices[1] - 1)
+                        currentTextMatrix[1] =
+                            getNumericOperand(s, operandsIndices[1], operandsIndices[2] - 1)
+                        currentTextMatrix[2] =
+                            getNumericOperand(s, operandsIndices[2], operandsIndices[3] - 1)
+                        currentTextMatrix[3] =
+                            getNumericOperand(s, operandsIndices[3], operandsIndices[4] - 1)
+                        currentTextMatrix[4] =
+                            getNumericOperand(s, operandsIndices[4], operandsIndices[5] - 1)
+                        currentTextMatrix[5] = getNumericOperand(s, operandsIndices[5], pos - 2)
                     } else if (s[pos] == 'f') {
                         tf.clear().append(s, operandsIndices[0] + 1/* Exclude (/) delimiter */, pos - 2)
                         tf.cleanTF()
+                        fontSizeOverride = null
                     } else if (s[pos] == 'D') {
                         positionText(s)
-                        tl = -td[1]
+                        tl = -currentTextMatrix[5]
                     } else if (s[pos] == 'L') {
-                        tl = operand
-                            .clear()
-                            .append(s, operandsIndices[0], pos - 2)
-                            .toDouble()
-                            .toFloat()
+                        tl = getNumericOperand(s, operandsIndices[0], pos - 2)
                     } else if (s[pos] == '*') {
-                        td[0] = 0f
-                        td[1] = -tl
+                        val tdMatrix = floatArrayOf(1f, 0f, 0f, 1f, 0f, -tl)
+                        currentTextMatrix = multiplyTransformMatrices(tdMatrix, currentTextMatrix)
                     } else if (s[pos] == 's') {
-                        ts = operand
-                            .clear()
-                            .append(s, operandsIndices[0], pos - 2)
-                            .toDouble()
-                            .toFloat()
+                        ts = getNumericOperand(s, operandsIndices[0], pos - 2)
                     }
                     operandsCount = 0
                 } else if (s[pos] == 'E' && s[pos + 1] == 'T') {
@@ -118,15 +103,15 @@ internal class TextObjectParser(
                     // TODO Support Tw(Word Spacing) and Tc(Character Spacing)
                     val tjObject = operand.toPDFObject(context, obj, gen)
                     if (tjObject != null) {
-                        addTextElement(textObj, tjObject, ctm)
+                        addTextElement(textObj, tjObject)
                     }
                     operandsCount = 0
                 } else if (s[pos] == '\'') {
                     // Perform T*
-                    td[0] = 0f
-                    td[1] = -tl
+                    val tdMatrix = floatArrayOf(1f, 0f, 0f, 1f, 0f, -tl)
+                    currentTextMatrix = multiplyTransformMatrices(tdMatrix, currentTextMatrix)
 
-                    showText(pos, s, textObj, ctm)
+                    showText(pos, s, textObj)
                     operandsCount = 0
                 } else if ((s[pos] == 'R' && s[pos + 1] == 'G') || (s[pos] == 'r' && s[pos + 1] == 'g')) {
                     operandsIndices[operandsCount] = pos
@@ -160,7 +145,7 @@ internal class TextObjectParser(
         return pos
     }
 
-    private fun showText(pos: Int, s: StringBuilder, textObj: TextObject, ctm: FloatArray) {
+    private fun showText(pos: Int, s: StringBuilder, textObj: TextObject) {
         var tjEnd = pos
         while (tjEnd > operandsIndices[0]) {
             if (s.isUnEnclosingAt(tjEnd - 1))
@@ -170,42 +155,32 @@ internal class TextObjectParser(
         operand.clear().append(s, operandsIndices[0], tjEnd)
         val tjObject = operand.toPDFObject(context, obj, gen)
         if (tjObject != null) {
-            addTextElement(textObj, tjObject, ctm)
+            addTextElement(textObj, tjObject)
         }
     }
 
-    private fun addTextElement(textObj: TextObject, tj: PDFObject, ctm: FloatArray) {
+    private fun addTextElement(textObj: TextObject, tj: PDFObject) {
         if (tf.isEmpty()) return
 
-        // If first element, apply CTM and initialize TextObject's x and y
-        if (textObj.count() == 0) {
-            td[0] = td[0] * ctm[0] + ctm[4]
-            td[1] = td[1] * ctm[3] + ctm[5]
-            textObj.td[0] = td[0]
-            textObj.td[1] = td[1]
-        }
-
-        val content = TextElement(
+        val textElement = TextElement(
             tf = tf.toString(),
-            td = td.copyOf(),
             tj = tj,
             ts = ts,
             rgb = rgb
-        )
-        textObj.add(content)
+        ).apply {
+            textMatrix = currentTextMatrix.copyOf()
+            fontSizeOverride?.let { fontSize = it }
+            setTextParamsMatrix(fontSize, horizontalScaling, textRise)
+        }
+
+        textObj.add(textElement)
     }
 
     private fun positionText(s: StringBuilder) {
-        td[0] = operand
-            .clear()
-            .append(s, operandsIndices[0], operandsIndices[1] - 1)
-            .toDouble()
-            .toFloat()
-        td[1] = operand
-            .clear()
-            .append(s, operandsIndices[1], pos - 2)
-            .toDouble()
-            .toFloat()
+        val tx = getNumericOperand(s, operandsIndices[0], operandsIndices[1] - 1)
+        val ty = getNumericOperand(s, operandsIndices[1], pos - 2)
+        val tdMatrix = floatArrayOf(1f, 0f, 0f, 1f, tx, ty)
+        currentTextMatrix = multiplyTransformMatrices(tdMatrix, currentTextMatrix)
     }
 
     private fun getRGB(s: StringBuilder) {
@@ -245,5 +220,16 @@ internal class TextObjectParser(
             }
             i++
         }
+    }
+
+    private fun getNumericOperand(
+        textObjectContent: StringBuilder,
+        startIndex: Int,
+        endIndex: Int
+    ): Float {
+        return operand.clear()
+            .append(textObjectContent, startIndex, endIndex)
+            .toDouble()
+            .toFloat()
     }
 }

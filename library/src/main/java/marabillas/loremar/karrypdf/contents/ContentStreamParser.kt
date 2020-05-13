@@ -83,6 +83,7 @@ internal class ContentStreamParser(private val context: KarryPDFContext) {
                         }
                         gsStack.lastElement().tf = token.toString()
                         tf.clear().append(token)
+                        textObjectParser.fontSizeOverride = null
                         i += 2
                     }
                     // BT
@@ -91,11 +92,11 @@ internal class ContentStreamParser(private val context: KarryPDFContext) {
                             TextObject()
                         val cm = gsStack.lastElement().cm
                         val rgb = gsStack.lastElement().rgb
-                        i = textObjectParser.parse(sb, textObj, tf, i + 2, cm, rgb)
+                        i = textObjectParser.parse(sb, textObj, tf, i + 2, rgb)
 
                         if (textObj.count() > 0) {
-                            textObj.scaleX = Math.abs(cm[0])
-                            textObj.scaleY = Math.abs(cm[3])
+                            textObj.transformMatrix = cm
+                            textObj.computeAllElementsTransformation()
                             pageObjects.add(textObj)
                         }
                         //logd("textObj -> ${textObj.getX()}, ${textObj.getY()}")

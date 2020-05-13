@@ -98,7 +98,6 @@ Author/Publisher: Koji Tamura
 File: The_Origin_And_Evolution_of_the_Genetic_Code.pdf
 Issues:
 - Innacurate positioning of texts
-- Lacking character spacing beginning in page 12
 
 Title: ToUnicode Mapping File Tutorial
 Author/Publisher: Adobe Systems Incorporated

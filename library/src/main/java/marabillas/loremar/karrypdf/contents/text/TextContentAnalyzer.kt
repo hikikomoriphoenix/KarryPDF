@@ -234,8 +234,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
         val existingSpaceWidths = HashMap<String, Float>()
         fonts.forEach {
             val font = it.value
-            val spaceWidth = font.widths[32] ?: font.widths[105]
-            //val spaceWidth = font.widths.extractMinWidthIntoSpaceWidth()
+            val spaceWidth = font.widths.extractMinWidthIntoSpaceWidth()
             if (spaceWidth is Float) {
                 existingSpaceWidths[it.key] = spaceWidth
             }
@@ -258,7 +257,7 @@ internal class TextContentAnalyzer(textObjs: MutableList<TextObject> = mutableLi
                             sb.append(it.value) // If string, append
                         else if (it is Numeric) {
                             val num = -it.value.toFloat()
-                            if (num >= spaceWidth)
+                            if (num >= 0.6 * spaceWidth)
                                 sb.append(' ')
                         }
                     }

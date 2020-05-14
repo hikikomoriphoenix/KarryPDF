@@ -97,7 +97,7 @@ Title: The Origin and Evolution of the Genetic Code: 100th Anniversary Year of t
 Author/Publisher: Koji Tamura
 File: The_Origin_And_Evolution_of_the_Genetic_Code.pdf
 Issues:
-- Innacurate positioning of texts
+- Sometimes, text from the same line gets separated from the line into another paragraph. Caused by Tm or Td drastically changing Tx when not supposed to
 
 Title: ToUnicode Mapping File Tutorial
 Author/Publisher: Adobe Systems Incorporated
@@ -109,7 +109,6 @@ Title: Cognitive Science of Religion and Belief Systems
 Author/Publisher: David Cycleback
 File: cognitive-science-of-religion-and-belief-systems.pdf
 Issues:
-- Texts that belong in the same line are not aligned together, starting from page 3
 - some few missing characters in page 16, 18, 21, and probably more
 - missing images
 
@@ -117,7 +116,6 @@ Title: Dealing With Difficult People
 Author/Publisher: Ken Pierce
 File: dealing-with-difficult-people.pdf
 Issues:
-- Texts that belong in the same line are not aligned together, starting from page 3
 - missing images
 
 Title: Elementary Linear Algebra
@@ -126,7 +124,6 @@ File: elementary-linear-algebra.pdf
 Issues:
 - missing images
 - missing characters from page 4 to 8
-- lack of character spacing beginning from page 9
 
 Title: Entity Framework Notes for Professionals
 Author/Publisher: GoalKicker.com

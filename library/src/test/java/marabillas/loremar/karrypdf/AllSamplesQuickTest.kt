@@ -123,8 +123,8 @@ class AllSamplesQuickTest {
     fun testOnePage() {
         forceHideLogs = false
 
-        val pdfFilename = "The_Origin_and_Evolution_of_the_Genetic_Code.pdf"
-        val pageNum = 2
+        val pdfFilename = "PDF32000_2008.pdf"
+        val pageNum = 0
         print("Testing library on $pdfFilename at page $pageNum")
         val path = javaClass.classLoader?.getResource("$samplesDir$pdfFilename")?.path
         val file = RandomAccessFile(path, "r")

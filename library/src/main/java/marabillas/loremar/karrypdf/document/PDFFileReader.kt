@@ -2,6 +2,7 @@ package marabillas.loremar.karrypdf.document
 
 import marabillas.loremar.karrypdf.exceptions.InvalidDocumentException
 import marabillas.loremar.karrypdf.objects.*
+import marabillas.loremar.karrypdf.utils.exts.appendBytes
 import marabillas.loremar.karrypdf.utils.logd
 import java.io.RandomAccessFile
 
@@ -14,11 +15,14 @@ internal class PDFFileReader(val file: RandomAccessFile) {
     private var isLinearized: Boolean? = null
 
     companion object {
+        const val READ_BUFFER_SIZE = 1024
         private val STRING_BUILDERS: MutableMap<KarryPDFContext.Session, StringBuilder> =
             mutableMapOf()
+        private val READ_BUFFERS: MutableMap<KarryPDFContext.Session, ByteArray> = mutableMapOf()
 
         fun notifyNewSession(session: KarryPDFContext.Session) {
             STRING_BUILDERS[session] = StringBuilder()
+            READ_BUFFERS[session] = ByteArray(READ_BUFFER_SIZE)
         }
     }
 
@@ -26,11 +30,11 @@ internal class PDFFileReader(val file: RandomAccessFile) {
         synchronized(file) {
             return if (isLinearized == null) {
                 file.seek(0)
-                var s = file.readLine()
+                var s = readFileLine(context)
                 var beginning = file.filePointer
                 while (s.startsWith('%')) {
                     beginning = file.filePointer
-                    s = file.readLine()
+                    s = readFileLine(context)
                 }
                 val indObj = getIndirectObject(context, beginning)
                 val firstObj =
@@ -54,14 +58,14 @@ internal class PDFFileReader(val file: RandomAccessFile) {
         synchronized(file) {
             return if (isLinearized(context)) {
                 file.seek(0)
-                var s = file.readLine()
+                var s = readFileLine(context)
                 while (!s.contains("endobj"))
-                    s = file.readLine()
+                    s = readFileLine(context)
                 var beginning = file.filePointer
-                s = file.readLine()
+                s = readFileLine(context)
                 while (s.isBlank() || s.startsWith('%')) {
                     beginning = file.filePointer
-                    s = file.readLine()
+                    s = readFileLine(context)
                 }
                 beginning
             } else {
@@ -82,7 +86,7 @@ internal class PDFFileReader(val file: RandomAccessFile) {
      *
      * @throws IllegalArgumentException If position is not within beginning and end of file.
      */
-    private fun readContainingLine(position: Long): String {
+    private fun readContainingLine(context: KarryPDFContext, position: Long): StringBuilder {
         if (position < 0 || position > file.length() - 1) throw IllegalArgumentException()
 
         var nonLineBreakFound = false
@@ -92,7 +96,7 @@ internal class PDFFileReader(val file: RandomAccessFile) {
             val c = file.readByte().toChar()
             if (c == '\n' || c == '\r') {
                 if (nonLineBreakFound) {
-                    val s = file.readLine()
+                    val s = readFileLine(context)
                     file.seek(p)
                     return s
                 }
@@ -103,7 +107,7 @@ internal class PDFFileReader(val file: RandomAccessFile) {
             p--
             if (p <= 0) {
                 file.seek(0)
-                return file.readLine()
+                return readFileLine(context)
             }
         }
     }
@@ -116,14 +120,14 @@ internal class PDFFileReader(val file: RandomAccessFile) {
             if (startXRefPos == null) {
                 var p = file.length() - 1
                 while (true) {
-                    var s = readContainingLine(p)
+                    var s = readContainingLine(context, p)
                     if (s.startsWith("startxref")) {
                         file.seek(file.filePointer + 1)
-                        file.readLine()
+                        readFileLine(context)
                         while (true) {
-                            s = file.readLine()
+                            s = readFileLine(context)
                             if (!s.startsWith("%")) {
-                                startXRefPos = s.toLong()
+                                startXRefPos = s.toNumeric().value.toLong()
                                 return getValidXRefPos(startXRefPos as Long)
                             }
                         }
@@ -234,9 +238,9 @@ internal class PDFFileReader(val file: RandomAccessFile) {
     fun getXRefData(context: KarryPDFContext, pos: Long): HashMap<String, XRefEntry> {
         synchronized(file) {
             file.seek(pos)
-            val s = file.readLine()
+            val s = readFileLine(context)
             return if (s.contains("xref")) {
-                var data = parseXRefSection()
+                var data = parseXRefSection(context)
                 data = parseOtherXRefInTrailer(context, file.filePointer, data)
                 data
             } else {
@@ -253,7 +257,7 @@ internal class PDFFileReader(val file: RandomAccessFile) {
      * Parse through each line of the cross reference section to get all of its entries. The offset position must
      * currently be in the beginning of the first subsection.
      */
-    private fun parseXRefSection(): HashMap<String, XRefEntry> {
+    private fun parseXRefSection(context: KarryPDFContext): HashMap<String, XRefEntry> {
         val entries = HashMap<String, XRefEntry>()
 
         logd("Parsing XRef section start")
@@ -261,8 +265,8 @@ internal class PDFFileReader(val file: RandomAccessFile) {
         while (true) {
             val p = file.filePointer
             // Find next subsection
-            val s = file.readLine()
-            if (s == "") continue
+            val s = readFileLine(context)
+            if (s.isBlank() && !s.endOfLine()) continue
             if (!s.matches(subSectionRegex)) {
                 // File pointer should be reset to right after the last entry
                 file.seek(p)
@@ -275,7 +279,7 @@ internal class PDFFileReader(val file: RandomAccessFile) {
             // Iterate through every entry and add to entries
             for (i in obj..(obj + count - 1)) {
                 //logd("Parsing XRef entry for obj $i ")
-                val e = file.readLine()
+                val e = readFileLine(context)
                 val eFields = e.split(" ")
                 val pos = eFields.component1().toLong()
                 val gen = eFields.component2().toInt()
@@ -311,11 +315,11 @@ internal class PDFFileReader(val file: RandomAccessFile) {
     ): HashMap<String, XRefEntry> {
         var entries = xRefEntries
         var p: Long
-        var s: String
+        var s: StringBuilder
         file.seek(endXRefPos)
         do {
             p = file.filePointer
-            s = file.readLine()
+            s = readFileLine(context)
         } while (!s.startsWith("trailer"))
 
         val trailer = getDictionary(context, p, -1, 0, false)
@@ -351,13 +355,13 @@ internal class PDFFileReader(val file: RandomAccessFile) {
             return if (trailerPos == null) {
                 val startXRef = getStartXRefPosition(context)
                 file.seek(startXRef)
-                var s = file.readLine()
+                var s = readFileLine(context)
                 if (s.contains("xref")) {
-                    parseXRefSection()
+                    parseXRefSection(context)
                     var p: Long
                     do {
                         p = file.filePointer
-                        s = file.readLine()
+                        s = readFileLine(context)
                     } while (!s.startsWith("trailer"))
                     p
                 } else {
@@ -489,5 +493,52 @@ internal class PDFFileReader(val file: RandomAccessFile) {
         synchronized(file) {
             return Stream(context, file, pos, reference)
         }
+    }
+
+    private fun readFileLine(context: KarryPDFContext): StringBuilder {
+        val sb = STRING_BUILDERS[context.session] ?: StringBuilder().apply {
+            STRING_BUILDERS[context.session] = this
+        }
+        val buffer = READ_BUFFERS[context.session] ?: ByteArray(READ_BUFFER_SIZE)
+        sb.clear()
+        while (true) {
+            val read = file.read(buffer, 0, READ_BUFFER_SIZE)
+            if (read <= 0)
+                break
+            var end = 0
+            for (i in 0 until read) {
+                end = i + 1
+                val c = buffer[i].toChar()
+                if (c == '\n' || c == '\r') {
+                    end = i
+                    break
+                }
+            }
+            sb.appendBytes(buffer, 0, end)
+            if (buffer[end].toChar() == '\n') {
+                val numNotAppended = read - end
+                file.seek(file.filePointer - numNotAppended + 1)
+                break
+            } else if (buffer[end].toChar() == '\r' && end + 1 < read && buffer[end].toChar() == '\n') {
+                val numNotAppended = read - end
+                file.seek(file.filePointer - numNotAppended + 2)
+                break
+            } else if (buffer[end].toChar() == '\r') {
+                val numNotAppended = read - end
+                file.seek(file.filePointer - numNotAppended + 1)
+                val curr = file.filePointer
+                if (file.read().toChar() != '\n')
+                    file.seek(curr)
+                break
+            }
+        }
+        return sb
+    }
+
+    private fun StringBuilder.endOfLine(): Boolean {
+        val curr = file.filePointer
+        val read = file.read()
+        file.seek(curr)
+        return read == -1
     }
 }

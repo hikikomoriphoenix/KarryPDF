@@ -21,10 +21,12 @@ class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         val file = RandomAccessFile(
-            "${filesDir.path}/The_Origin_and_Evolution_of_the_Genetic_Code.pdf",
+            "${filesDir.path}/PDF32000_2008.pdf",
             "r"
         )
+        TimeCounter.reset()
         val parser = KarryPDF(file)
+        println("KARRPDF => ${TimeCounter.getTimeElapsed()}")
 
         // Get views
         val pageView = findViewById<LinearLayout>(R.id.pageview)

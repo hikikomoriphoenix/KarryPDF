@@ -32,10 +32,11 @@ internal fun StringBuilder.containedEqualsWith(vararg chars: Char): Boolean {
     return true
 }
 
-internal fun StringBuilder.toInt(): Int {
+internal fun StringBuilder.toInt(startIndex: Int = 0, endIndex: Int = -1): Int {
+    val end = if (endIndex == -1) length else endIndex
     var factor = 1
     var int = 0
-    for (i in (this.length - 1) downTo 0) {
+    for (i in (end - 1) downTo startIndex) {
         val num = Character.getNumericValue(this[i])
 
         if ((num == -2 || num == -1) && (this[i] != '-')) throw NumberFormatException()
@@ -53,6 +54,30 @@ internal fun StringBuilder.toInt(): Int {
         factor *= 10
     }
     return int
+}
+
+internal fun StringBuilder.toLong(startIndex: Int = 0, endIndex: Int = -1): Long {
+    val end = if (endIndex == -1) length else endIndex
+    var factor = 1
+    var long = 0L
+    for (i in (end - 1) downTo startIndex) {
+        val num = Character.getNumericValue(this[i])
+
+        if ((num == -2 || num == -1) && (this[i] != '-')) throw NumberFormatException()
+
+        if (this[i] == '-') {
+            if (i == 0) {
+                long *= (-1)
+            } else {
+                throw  NumberFormatException()
+            }
+            break
+        }
+
+        long += (num * factor)
+        factor *= 10
+    }
+    return long
 }
 
 internal fun StringBuilder.toDouble(): Double {

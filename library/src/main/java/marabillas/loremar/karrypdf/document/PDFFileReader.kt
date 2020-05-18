@@ -3,6 +3,9 @@ package marabillas.loremar.karrypdf.document
 import marabillas.loremar.karrypdf.exceptions.InvalidDocumentException
 import marabillas.loremar.karrypdf.objects.*
 import marabillas.loremar.karrypdf.utils.exts.appendBytes
+import marabillas.loremar.karrypdf.utils.exts.toInt
+import marabillas.loremar.karrypdf.utils.exts.toLong
+import marabillas.loremar.karrypdf.utils.exts.trimContainedChars
 import marabillas.loremar.karrypdf.utils.logd
 import java.io.RandomAccessFile
 
@@ -128,37 +131,31 @@ internal class PDFFileReader(val file: RandomAccessFile) {
                             s = readFileLine(context)
                             if (!s.startsWith("%")) {
                                 startXRefPos = s.toNumeric().value.toLong()
-                                return getValidXRefPos(startXRefPos as Long)
+                                return getValidXRefPos(context, startXRefPos as Long)
                             }
                         }
                     }
                     p = file.filePointer
                 }
-            } else return getValidXRefPos(startXRefPos as Long)
+            } else return getValidXRefPos(context, startXRefPos as Long)
         } else {
-            return getValidXRefPos(getStartXRefPositionLinearized(context))
+            return getValidXRefPos(context, getStartXRefPositionLinearized(context))
         }
     }
 
-    private fun getValidXRefPos(pos: Long): Long {
+    private fun getValidXRefPos(context: KarryPDFContext, pos: Long): Long {
         file.seek(pos)
         var isXrefStream = false
         var foundXref = false
-        while (file.filePointer + 3 < file.length()) {
-            var c = file.readByte().toChar()
-            if (c == 'X' || c == 'x') {
-                isXrefStream = c == 'X'
-                c = file.readByte().toChar()
-                if (c == 'R' || c == 'r') {
-                    c = file.readByte().toChar()
-                    if (c == 'e') {
-                        c = file.readByte().toChar()
-                        if (c == 'f') {
-                            foundXref = true
-                            break
-                        }
-                    }
-                }
+        var s: StringBuilder? = null
+        var xi: Int = -1
+        while (!isEndOfLine()) {
+            s = readFileLine(context)
+            xi = s.indexOf("xref", 0, true)
+            if (xi != -1) {
+                isXrefStream = s[xi] == 'X'
+                foundXref = true
+                break
             }
         }
 
@@ -167,6 +164,15 @@ internal class PDFFileReader(val file: RandomAccessFile) {
                 "Can not find valid cross reference table"
             )
         else {
+            file.seek(file.filePointer - 2)
+            if (file.readByte().toChar() == '\r' && s != null) {
+                val shift = s.length - (xi + 4) + 1
+                file.seek(file.filePointer - shift)
+            } else if (s != null) {
+                val shift = s.length - (xi + 4)
+                file.seek(file.filePointer - shift)
+            }
+
             if (isXrefStream) {
                 findStartOfXRefStream(file.filePointer)
             } else {
@@ -262,30 +268,32 @@ internal class PDFFileReader(val file: RandomAccessFile) {
 
         logd("Parsing XRef section start")
         val subSectionRegex = Regex("^\\s*(\\d+) (\\d+)\\s*$")
-        while (true) {
+        while (!isEndOfLine()) {
             val p = file.filePointer
             // Find next subsection
             val s = readFileLine(context)
-            if (s.isBlank() && !s.endOfLine()) continue
+            if (s.isBlank() && !isEndOfLine()) continue
             if (!s.matches(subSectionRegex)) {
                 // File pointer should be reset to right after the last entry
                 file.seek(p)
                 break
             }
-            val subs = s.split(" ")
-            val obj = subs.component1().toInt()
-            val count = subs.component2().toInt()
+
+            s.trimContainedChars()
+            val spi = s.indexOf(' ')
+            val obj = s.toInt(0, spi)
+            val count = s.toInt(spi + 1)
 
             // Iterate through every entry and add to entries
-            for (i in obj..(obj + count - 1)) {
+            for (i in obj until obj + count) {
                 //logd("Parsing XRef entry for obj $i ")
-                val e = readFileLine(context)
-                val eFields = e.split(" ")
-                val pos = eFields.component1().toLong()
-                val gen = eFields.component2().toInt()
-                val n = eFields.component3()
+                val entry = readFileLine(context)
+                val sp1 = entry.indexOf(' ')
+                val sp2 = entry.indexOf(' ', spi + 1)
+                val pos = entry.toLong(0, sp1)
+                val gen = entry.toInt(sp1 + 1, sp2)
 
-                if (n == "f") {
+                if (entry[sp2 + 1] == 'f') {
                     entries["$i $gen"] =
                         XRefEntry(
                             i,
@@ -535,7 +543,7 @@ internal class PDFFileReader(val file: RandomAccessFile) {
         return sb
     }
 
-    private fun StringBuilder.endOfLine(): Boolean {
+    private fun isEndOfLine(): Boolean {
         val curr = file.filePointer
         val read = file.read()
         file.seek(curr)

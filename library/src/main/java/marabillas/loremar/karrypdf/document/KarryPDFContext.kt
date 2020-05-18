@@ -102,19 +102,23 @@ internal open class KarryPDFContext :
                 objEntry = topDownReferences?.get("${objEntry.obj} ${objEntry.gen}") ?: return null
             }
 
+            stringBuilder.clear()
             val content = try {
-                fileReader.getIndirectObject(this, objEntry.pos, reference).extractContent()
+                fileReader.getIndirectObject(this, objEntry.pos, reference)
+                    .extractContent(stringBuilder)
+                stringBuilder
             } catch (e: IndirectObjectMismatchException) {
                 if (checkTopDownReferences) {
-
                     val pos = topDownReferences?.get("${objEntry.obj} ${objEntry.gen}")?.pos
                     if (pos != null) {
-                        fileReader.getIndirectObject(this, pos, reference).extractContent()
+                        fileReader.getIndirectObject(this, pos, reference)
+                            .extractContent(stringBuilder)
+                        stringBuilder
                     } else {
-                        StringBuilder()
+                        stringBuilder
                     }
                 } else {
-                    StringBuilder()
+                    stringBuilder
                 }
             }
             if (content.isEmpty() || content.containedEqualsWith('n', 'u', 'l', 'l')) return null

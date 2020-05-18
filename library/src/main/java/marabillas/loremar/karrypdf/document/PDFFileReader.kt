@@ -40,8 +40,9 @@ internal class PDFFileReader(val file: RandomAccessFile) {
                     s = readFileLine(context)
                 }
                 val indObj = getIndirectObject(context, beginning)
-                val firstObj =
-                    indObj.extractContent().toPDFObject(context, indObj.obj ?: -1, indObj.gen)
+                val destSb = STRING_BUILDERS[context.session] ?: StringBuilder()
+                indObj.extractContent(destSb)
+                val firstObj = destSb.toPDFObject(context, indObj.obj ?: -1, indObj.gen)
                 if (firstObj is Dictionary) {
                     val linearized = firstObj["Linearized"]
                     if (linearized != null) {

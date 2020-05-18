@@ -1,6 +1,7 @@
 package marabillas.loremar.karrypdf.objects
 
 import marabillas.loremar.karrypdf.exceptions.IndirectObjectMismatchException
+import marabillas.loremar.karrypdf.utils.exts.appendBytes
 import marabillas.loremar.karrypdf.utils.exts.toInt
 import marabillas.loremar.karrypdf.utils.length
 import java.io.RandomAccessFile
@@ -22,17 +23,15 @@ internal open class Indirect(
         private set
 
     init {
-        synchronized(file) {
-            file.seek(start)
-            obj = extractNextNumber()
-            start = file.filePointer - 1 - (obj as Int).length()
-            gen = extractNextNumber()
+        file.seek(start)
+        obj = extractNextNumber()
+        start = file.filePointer - 1 - (obj as Int).length()
+        gen = extractNextNumber()
 
-            validateObj()
+        validateObj()
 
-            if (reference != null) {
-                if (reference.obj != obj) throw IndirectObjectMismatchException()
-            }
+        if (reference != null) {
+            if (reference.obj != obj) throw IndirectObjectMismatchException()
         }
     }
 
@@ -74,26 +73,64 @@ internal open class Indirect(
         }
     }
 
-    fun extractContent(): StringBuilder {
-        synchronized(file) {
-            file.seek(start)
-            val sb = StringBuilder()
-            while (true) {
-                val s = " ${file.readLine()}"
-                if (s.endsWith("stream", true)) return sb.clear()
-                    .append("pdf_stream_content")
-                sb.append(s)
-                if (s.contains("endobj", true)) break
+    fun extractContent(destStringBuilder: StringBuilder) {
+        file.seek(start)
+        destStringBuilder.clear()
+        while (true) {
+            val s = readFileLine()
+            s.insert(0, ' ')
+            if (s.endsWith("stream", true)) {
+                destStringBuilder.clear().append("pdf_stream_content")
+                return
             }
-            val objIndex = sb.indexOf("obj")
-            val endobjIndex = sb.lastIndexOf("endobj")
-            sb.delete(endobjIndex, sb.length)
-            sb.delete(0, objIndex + 3)
-            return sb
+            destStringBuilder.append(s)
+            if (s.contains("endobj", true)) break
         }
+        val objIndex = destStringBuilder.indexOf("obj")
+        val endObjIndex = destStringBuilder.lastIndexOf("endobj")
+        destStringBuilder.delete(endObjIndex, destStringBuilder.length)
+        destStringBuilder.delete(0, objIndex + 3)
+    }
+
+    private fun readFileLine(): StringBuilder {
+        stringBuilder.clear()
+        while (true) {
+            val read = file.read(readBuffer, 0, READ_BUFFER_SIZE)
+            if (read <= 0)
+                break
+            var end = 0
+            for (i in 0 until read) {
+                end = i + 1
+                val c = readBuffer[i].toChar()
+                if (c == '\n' || c == '\r') {
+                    end = i
+                    break
+                }
+            }
+            stringBuilder.appendBytes(readBuffer, 0, end)
+            if (readBuffer[end].toChar() == '\n') {
+                val numNotAppended = read - end
+                file.seek(file.filePointer - numNotAppended + 1)
+                break
+            } else if (readBuffer[end].toChar() == '\r' && end + 1 < read && readBuffer[end].toChar() == '\n') {
+                val numNotAppended = read - end
+                file.seek(file.filePointer - numNotAppended + 2)
+                break
+            } else if (readBuffer[end].toChar() == '\r') {
+                val numNotAppended = read - end
+                file.seek(file.filePointer - numNotAppended + 1)
+                val curr = file.filePointer
+                if (file.read().toChar() != '\n')
+                    file.seek(curr)
+                break
+            }
+        }
+        return stringBuilder
     }
 
     companion object {
-        val stringBuilder = StringBuilder()
+        private val stringBuilder = StringBuilder()
+        private const val READ_BUFFER_SIZE = 1024
+        private val readBuffer = ByteArray(READ_BUFFER_SIZE)
     }
 }

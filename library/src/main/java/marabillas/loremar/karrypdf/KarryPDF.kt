@@ -29,7 +29,7 @@ class KarryPDF(file: RandomAccessFile, password: String = "") {
     internal var info: Dictionary? = null
 
     init {
-        TimeCounter.reset()
+        //TimeCounter.reset()
 
         if (BuildConfig.DEBUG && !forceHideLogs) {
             showKarryPDFLogs = true
@@ -38,13 +38,19 @@ class KarryPDF(file: RandomAccessFile, password: String = "") {
         val fileReader = PDFFileReader(file)
         context.fileReader = fileReader
 
+        TimeCounter.reset()
         parseCrossReferences(fileReader)
+        println("PARSEXREF => ${TimeCounter.getTimeElapsed()}")
 
+        TimeCounter.reset()
         parseTrailer(fileReader, password)
+        println("PARSETRAILER => ${TimeCounter.getTimeElapsed()}")
 
+        TimeCounter.reset()
         setupPagesList()
+        println("SETUPPAGELIST => ${TimeCounter.getTimeElapsed()}")
 
-        logd("KarryPDF.loadDocument() -> ${TimeCounter.getTimeElapsed()} ms")
+        //logd("KarryPDF.loadDocument() -> ${TimeCounter.getTimeElapsed()} ms")
     }
 
     private fun parseCrossReferences(fileReader: PDFFileReader) {

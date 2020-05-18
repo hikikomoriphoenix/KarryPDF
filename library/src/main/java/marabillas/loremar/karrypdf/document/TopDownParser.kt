@@ -11,6 +11,8 @@ internal class TopDownParser(
     private val file: RandomAccessFile
 ) {
     private var lastAdded: XRefEntry? = null
+    private val stringBuilder = StringBuilder()
+
     fun parseObjects(): HashMap<String, XRefEntry> {
         logd("TopDownParser.parseObjects start")
         val objects = HashMap<String, XRefEntry>()
@@ -142,9 +144,11 @@ internal class TopDownParser(
                 if (length == null) {
                     val lengthPos = objects["$lengthObj $lengthGen"]?.pos
                     if (lengthPos != null) {
-                        length = context.fileReader?.getIndirectObject(context, lengthPos)
-                            ?.extractContent()
-                            ?.toPDFObject(context, lengthObj, lengthGen)
+                        stringBuilder.clear()
+                        context.fileReader
+                            ?.getIndirectObject(context, lengthPos)
+                            ?.extractContent(stringBuilder)
+                        length = stringBuilder.toPDFObject(context, lengthObj, lengthGen)
                     }
                 }
             }

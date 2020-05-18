@@ -18,20 +18,25 @@ internal class PDFFileReader(val file: RandomAccessFile) {
     private var isLinearized: Boolean? = null
 
     companion object {
-        private const val READ_BUFFER_SIZE_KB = 1024
+        private const val READ_BUFFER_SIZE_DEFAULT = 32000
         private const val READ_BUFFER_SIZE_64 = 64
         private val STRING_BUILDERS: MutableMap<KarryPDFContext.Session, StringBuilder> =
             mutableMapOf()
         private val READ_BUFFERS: MutableMap<Int, MutableMap<KarryPDFContext.Session, ByteArray>> =
             mutableMapOf(
-                READ_BUFFER_SIZE_KB to mutableMapOf(),
+                READ_BUFFER_SIZE_DEFAULT to mutableMapOf(),
                 READ_BUFFER_SIZE_64 to mutableMapOf()
             )
+        private val BUFFER_POSITIONS: MutableMap<KarryPDFContext.Session, Long> = mutableMapOf()
 
         fun notifyNewSession(session: KarryPDFContext.Session) {
             STRING_BUILDERS[session] = StringBuilder()
-            READ_BUFFERS[READ_BUFFER_SIZE_KB]?.set(session, ByteArray(READ_BUFFER_SIZE_KB))
+            READ_BUFFERS[READ_BUFFER_SIZE_DEFAULT]?.set(
+                session,
+                ByteArray(READ_BUFFER_SIZE_DEFAULT)
+            )
             READ_BUFFERS[READ_BUFFER_SIZE_64]?.set(session, ByteArray(READ_BUFFER_SIZE_64))
+            BUFFER_POSITIONS[session] = -1L
         }
     }
 
@@ -294,7 +299,7 @@ internal class PDFFileReader(val file: RandomAccessFile) {
             // Iterate through every entry and add to entries
             for (i in obj until obj + count) {
                 //logd("Parsing XRef entry for obj $i ")
-                val entry = readFileLine(context, READ_BUFFER_SIZE_64)
+                val entry = readFileLine(context)
                 val sp1 = entry.indexOf(' ')
                 val sp2 = entry.indexOf(' ', spi + 1)
                 val pos = entry.toLong(0, sp1)
@@ -511,7 +516,7 @@ internal class PDFFileReader(val file: RandomAccessFile) {
 
     private fun readFileLine(
         context: KarryPDFContext,
-        readBufferSize: Int = READ_BUFFER_SIZE_KB
+        readBufferSize: Int = READ_BUFFER_SIZE_DEFAULT
     ): StringBuilder {
         val sb = STRING_BUILDERS[context.session] ?: StringBuilder().apply {
             STRING_BUILDERS[context.session] = this
@@ -520,13 +525,32 @@ internal class PDFFileReader(val file: RandomAccessFile) {
             .apply {
                 READ_BUFFERS[readBufferSize]?.set(context.session, this)
             }
+        var bufferPos = BUFFER_POSITIONS[context.session] ?: (-1L).also {
+            BUFFER_POSITIONS[context.session] = it
+        }
+
         sb.clear()
         while (true) {
-            val read = file.read(buffer, 0, readBufferSize)
+            val start = if (bufferPos == -1L
+                || file.filePointer < bufferPos
+                || file.filePointer >= bufferPos + readBufferSize
+            ) {
+
+                BUFFER_POSITIONS[context.session] = file.filePointer
+                bufferPos = file.filePointer
+                file.read(buffer, 0, readBufferSize)
+                0
+            } else
+                (file.filePointer - bufferPos).toInt()
+
+            val read = if (file.length() - bufferPos >= readBufferSize.toLong())
+                readBufferSize else (file.length() - bufferPos).toInt()
+
             if (read <= 0)
                 break
-            var end = 0
-            for (i in 0 until read) {
+
+            var end = -1
+            for (i in start until read) {
                 end = i + 1
                 val c = buffer[i].toChar()
                 if (c == '\n' || c == '\r') {
@@ -534,18 +558,19 @@ internal class PDFFileReader(val file: RandomAccessFile) {
                     break
                 }
             }
-            sb.appendBytes(buffer, 0, end)
-            if (buffer[end].toChar() == '\n') {
-                val numNotAppended = read - end
-                file.seek(file.filePointer - numNotAppended + 1)
+
+            sb.appendBytes(buffer, start, end)
+
+            if (end >= read) {
+                file.seek(bufferPos + end)
+            } else if (buffer[end].toChar() == '\n') {
+                file.seek(bufferPos + end + 1)
                 break
             } else if (buffer[end].toChar() == '\r' && end + 1 < read && buffer[end].toChar() == '\n') {
-                val numNotAppended = read - end
-                file.seek(file.filePointer - numNotAppended + 2)
+                file.seek(bufferPos + end + 2)
                 break
             } else if (buffer[end].toChar() == '\r') {
-                val numNotAppended = read - end
-                file.seek(file.filePointer - numNotAppended + 1)
+                file.seek(bufferPos + end + 1)
                 val curr = file.filePointer
                 if (file.read().toChar() != '\n')
                     file.seek(curr)

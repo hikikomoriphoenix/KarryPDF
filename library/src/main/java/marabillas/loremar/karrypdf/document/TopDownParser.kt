@@ -146,7 +146,7 @@ internal class TopDownParser(
                     if (lengthPos != null) {
                         stringBuilder.clear()
                         context.fileReader
-                            ?.getIndirectObject(context, lengthPos)
+                            ?.getIndirectObject(lengthPos)
                             ?.extractContent(stringBuilder)
                         length = stringBuilder.toPDFObject(context, lengthObj, lengthGen)
                     }

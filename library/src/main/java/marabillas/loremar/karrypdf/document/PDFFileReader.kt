@@ -45,7 +45,7 @@ internal class PDFFileReader(val file: RandomAccessFile) {
                     beginning = file.filePointer
                     s = readFileLine(context)
                 }
-                val indObj = getIndirectObject(context, beginning)
+                val indObj = getIndirectObject(beginning)
                 val destSb = STRING_BUILDERS[context.session] ?: StringBuilder()
                 indObj.extractContent(destSb)
                 val firstObj = destSb.toPDFObject(context, indObj.obj ?: -1, indObj.gen)
@@ -425,7 +425,6 @@ internal class PDFFileReader(val file: RandomAccessFile) {
     }
 
     fun getIndirectObject(
-        context: KarryPDFContext,
         pos: Long,
         reference: Reference? = null
     ): Indirect {

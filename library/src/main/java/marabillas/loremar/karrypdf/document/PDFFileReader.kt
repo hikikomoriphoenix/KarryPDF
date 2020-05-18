@@ -18,14 +18,20 @@ internal class PDFFileReader(val file: RandomAccessFile) {
     private var isLinearized: Boolean? = null
 
     companion object {
-        const val READ_BUFFER_SIZE = 1024
+        private const val READ_BUFFER_SIZE_KB = 1024
+        private const val READ_BUFFER_SIZE_64 = 64
         private val STRING_BUILDERS: MutableMap<KarryPDFContext.Session, StringBuilder> =
             mutableMapOf()
-        private val READ_BUFFERS: MutableMap<KarryPDFContext.Session, ByteArray> = mutableMapOf()
+        private val READ_BUFFERS: MutableMap<Int, MutableMap<KarryPDFContext.Session, ByteArray>> =
+            mutableMapOf(
+                READ_BUFFER_SIZE_KB to mutableMapOf(),
+                READ_BUFFER_SIZE_64 to mutableMapOf()
+            )
 
         fun notifyNewSession(session: KarryPDFContext.Session) {
             STRING_BUILDERS[session] = StringBuilder()
-            READ_BUFFERS[session] = ByteArray(READ_BUFFER_SIZE)
+            READ_BUFFERS[READ_BUFFER_SIZE_KB]?.set(session, ByteArray(READ_BUFFER_SIZE_KB))
+            READ_BUFFERS[READ_BUFFER_SIZE_64]?.set(session, ByteArray(READ_BUFFER_SIZE_64))
         }
     }
 
@@ -288,7 +294,7 @@ internal class PDFFileReader(val file: RandomAccessFile) {
             // Iterate through every entry and add to entries
             for (i in obj until obj + count) {
                 //logd("Parsing XRef entry for obj $i ")
-                val entry = readFileLine(context)
+                val entry = readFileLine(context, READ_BUFFER_SIZE_64)
                 val sp1 = entry.indexOf(' ')
                 val sp2 = entry.indexOf(' ', spi + 1)
                 val pos = entry.toLong(0, sp1)
@@ -504,14 +510,20 @@ internal class PDFFileReader(val file: RandomAccessFile) {
         }
     }
 
-    private fun readFileLine(context: KarryPDFContext): StringBuilder {
+    private fun readFileLine(
+        context: KarryPDFContext,
+        readBufferSize: Int = READ_BUFFER_SIZE_KB
+    ): StringBuilder {
         val sb = STRING_BUILDERS[context.session] ?: StringBuilder().apply {
             STRING_BUILDERS[context.session] = this
         }
-        val buffer = READ_BUFFERS[context.session] ?: ByteArray(READ_BUFFER_SIZE)
+        val buffer = READ_BUFFERS[readBufferSize]?.get(context.session) ?: ByteArray(readBufferSize)
+            .apply {
+                READ_BUFFERS[readBufferSize]?.set(context.session, this)
+            }
         sb.clear()
         while (true) {
-            val read = file.read(buffer, 0, READ_BUFFER_SIZE)
+            val read = file.read(buffer, 0, readBufferSize)
             if (read <= 0)
                 break
             var end = 0

@@ -2,10 +2,7 @@ package marabillas.loremar.karrypdf.document
 
 import marabillas.loremar.karrypdf.exceptions.InvalidDocumentException
 import marabillas.loremar.karrypdf.objects.*
-import marabillas.loremar.karrypdf.utils.exts.appendBytes
-import marabillas.loremar.karrypdf.utils.exts.toInt
-import marabillas.loremar.karrypdf.utils.exts.toLong
-import marabillas.loremar.karrypdf.utils.exts.trimContainedChars
+import marabillas.loremar.karrypdf.utils.exts.*
 import marabillas.loremar.karrypdf.utils.logd
 import java.io.RandomAccessFile
 
@@ -278,6 +275,8 @@ internal class PDFFileReader(val file: RandomAccessFile) {
     private fun parseXRefSection(context: KarryPDFContext): HashMap<String, XRefEntry> {
         val entries = HashMap<String, XRefEntry>()
 
+        val nextLineData = NextLineData(byteArrayOf(), 0, 0)
+
         logd("Parsing XRef section start")
         val subSectionRegex = Regex("^\\s*(\\d+) (\\d+)\\s*$")
         while (!isEndOfLine()) {
@@ -299,29 +298,31 @@ internal class PDFFileReader(val file: RandomAccessFile) {
             // Iterate through every entry and add to entries
             for (i in obj until obj + count) {
                 //logd("Parsing XRef entry for obj $i ")
-                val entry = readFileLine(context)
-                val sp1 = entry.indexOf(' ')
-                val sp2 = entry.indexOf(' ', spi + 1)
-                val pos = entry.toLong(0, sp1)
-                val gen = entry.toInt(sp1 + 1, sp2)
+                getNextLine(context, nextLineData)
 
-                if (entry[sp2 + 1] == 'f') {
-                    entries["$i $gen"] =
-                        XRefEntry(
-                            i,
-                            pos,
-                            gen,
-                            false
-                        )
-                } else {
-                    entries["$i $gen"] =
-                        XRefEntry(
-                            i,
-                            pos,
-                            gen
-                        )
+                nextLineData.apply {
+                    val sp1 = buffer.indexOfChar(' ', start, end)
+                    val sp2 = buffer.indexOfChar(' ', sp1 + 1, end)
+                    val pos = buffer.toLong(start, sp1)
+                    val gen = buffer.toInt(sp1 + 1, sp2)
+
+                    if (buffer[sp2 + 1].toChar() == 'f') {
+                        entries["$i $gen"] =
+                            XRefEntry(
+                                i,
+                                pos,
+                                gen,
+                                false
+                            )
+                    } else {
+                        entries["$i $gen"] =
+                            XRefEntry(
+                                i,
+                                pos,
+                                gen
+                            )
+                    }
                 }
-                //logd("${entries["$i $gen"]}")
             }
         }
         logd("Parsing XRef section end")
@@ -580,10 +581,107 @@ internal class PDFFileReader(val file: RandomAccessFile) {
         return sb
     }
 
+    private fun getNextLine(
+        context: KarryPDFContext,
+        nextLineData: NextLineData,
+        readBufferSize: Int = READ_BUFFER_SIZE_DEFAULT
+    ) {
+
+        val buffer = READ_BUFFERS[readBufferSize]?.get(context.session) ?: ByteArray(readBufferSize)
+            .apply {
+                READ_BUFFERS[readBufferSize]?.set(context.session, this)
+            }
+        var bufferPos = BUFFER_POSITIONS[context.session] ?: (-1L).also {
+            BUFFER_POSITIONS[context.session] = it
+        }
+
+        var start = if (bufferPos == -1L
+            || file.filePointer < bufferPos
+            || file.filePointer >= bufferPos + readBufferSize
+        ) {
+
+            BUFFER_POSITIONS[context.session] = file.filePointer
+            bufferPos = file.filePointer
+            file.read(buffer, 0, readBufferSize)
+            0
+        } else
+            (file.filePointer - bufferPos).toInt()
+
+        var end = -1
+
+        while (true) {
+            val read = if (file.length() - bufferPos >= readBufferSize.toLong())
+                readBufferSize else (file.length() - bufferPos).toInt()
+
+            if (read <= 0)
+                break
+
+            for (i in start until read) {
+                end = i + 1
+                val c = buffer[i].toChar()
+                if (c == '\n' || c == '\r') {
+                    end = i
+                    break
+                }
+            }
+
+            if (end >= read) {
+                file.seek(bufferPos + end)
+            } else if (buffer[end].toChar() == '\n') {
+                file.seek(bufferPos + end + 1)
+                break
+            } else if (buffer[end].toChar() == '\r' && end + 1 < read && buffer[end].toChar() == '\n') {
+                file.seek(bufferPos + end + 2)
+                break
+            } else if (buffer[end].toChar() == '\r') {
+                file.seek(bufferPos + end + 1)
+                val curr = file.filePointer
+                if (file.read().toChar() != '\n')
+                    file.seek(curr)
+                break
+            }
+
+            if (!isEndOfLine()) {
+                file.seek(bufferPos + start)
+                start = 0
+                end = 0
+                bufferPos = file.filePointer
+                BUFFER_POSITIONS[context.session] = file.filePointer
+                file.read(buffer, 0, readBufferSize)
+            }
+        }
+
+        nextLineData.buffer = buffer
+        nextLineData.start = start
+        nextLineData.end = end
+    }
+
     private fun isEndOfLine(): Boolean {
         val curr = file.filePointer
         val read = file.read()
         file.seek(curr)
         return read == -1
+    }
+
+    data class NextLineData(var buffer: ByteArray, var start: Int, var end: Int) {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as NextLineData
+
+            if (!buffer.contentEquals(other.buffer)) return false
+            if (start != other.start) return false
+            if (end != other.end) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            var result = buffer.contentHashCode()
+            result = 31 * result + start
+            result = 31 * result + end
+            return result
+        }
     }
 }

@@ -97,11 +97,24 @@ internal open class Indirect(
     private fun readFileLine(): StringBuilder {
         stringBuilder.clear()
         while (true) {
-            val read = file.read(readBuffer, 0, READ_BUFFER_SIZE)
+            val start = if (bufferPos == -1L
+                || file.filePointer < bufferPos
+                || file.filePointer >= bufferPos + READ_BUFFER_SIZE
+            ) {
+                bufferPos = file.filePointer
+                file.read(readBuffer, 0, READ_BUFFER_SIZE)
+                0
+            } else
+                (file.filePointer - bufferPos).toInt()
+
+            val read = if (file.length() - bufferPos >= READ_BUFFER_SIZE.toLong())
+                READ_BUFFER_SIZE else (file.length() - bufferPos).toInt()
+
             if (read <= 0)
                 break
-            var end = 0
-            for (i in 0 until read) {
+
+            var end = -1
+            for (i in start until read) {
                 end = i + 1
                 val c = readBuffer[i].toChar()
                 if (c == '\n' || c == '\r') {
@@ -109,18 +122,19 @@ internal open class Indirect(
                     break
                 }
             }
-            stringBuilder.appendBytes(readBuffer, 0, end)
-            if (readBuffer[end].toChar() == '\n') {
-                val numNotAppended = read - end
-                file.seek(file.filePointer - numNotAppended + 1)
+
+            stringBuilder.appendBytes(readBuffer, start, end)
+
+            if (end >= read) {
+                file.seek(bufferPos + end)
+            } else if (readBuffer[end].toChar() == '\n') {
+                file.seek(bufferPos + end + 1)
                 break
             } else if (readBuffer[end].toChar() == '\r' && end + 1 < read && readBuffer[end].toChar() == '\n') {
-                val numNotAppended = read - end
-                file.seek(file.filePointer - numNotAppended + 2)
+                file.seek(bufferPos + end + 2)
                 break
             } else if (readBuffer[end].toChar() == '\r') {
-                val numNotAppended = read - end
-                file.seek(file.filePointer - numNotAppended + 1)
+                file.seek(bufferPos + end + 1)
                 val curr = file.filePointer
                 if (file.read().toChar() != '\n')
                     file.seek(curr)
@@ -132,7 +146,8 @@ internal open class Indirect(
 
     companion object {
         private val stringBuilder = StringBuilder()
-        private const val READ_BUFFER_SIZE = 1024
+        private const val READ_BUFFER_SIZE = 32000
         private val readBuffer = ByteArray(READ_BUFFER_SIZE)
+        private var bufferPos = -1L
     }
 }

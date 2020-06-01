@@ -74,22 +74,24 @@ internal open class Indirect(
     }
 
     fun extractContent(destStringBuilder: StringBuilder) {
-        file.seek(start)
-        destStringBuilder.clear()
-        while (true) {
-            val s = readFileLine()
-            s.insert(0, ' ')
-            if (s.endsWith("stream", true)) {
-                destStringBuilder.clear().append("pdf_stream_content")
-                return
+        synchronized(file) {
+            file.seek(start)
+            destStringBuilder.clear()
+            while (true) {
+                val s = readFileLine()
+                s.insert(0, ' ')
+                if (s.endsWith("stream", true)) {
+                    destStringBuilder.clear().append("pdf_stream_content")
+                    return
+                }
+                destStringBuilder.append(s)
+                if (s.contains("endobj", true)) break
             }
-            destStringBuilder.append(s)
-            if (s.contains("endobj", true)) break
+            val objIndex = destStringBuilder.indexOf("obj")
+            val endObjIndex = destStringBuilder.lastIndexOf("endobj")
+            destStringBuilder.delete(endObjIndex, destStringBuilder.length)
+            destStringBuilder.delete(0, objIndex + 3)
         }
-        val objIndex = destStringBuilder.indexOf("obj")
-        val endObjIndex = destStringBuilder.lastIndexOf("endobj")
-        destStringBuilder.delete(endObjIndex, destStringBuilder.length)
-        destStringBuilder.delete(0, objIndex + 3)
     }
 
     private fun readFileLine(): StringBuilder {

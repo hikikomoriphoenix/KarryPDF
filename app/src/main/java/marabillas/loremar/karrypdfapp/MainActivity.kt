@@ -21,7 +21,7 @@ class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         val file = RandomAccessFile(
-            "${filesDir.path}/PDF32000_2008.pdf",
+            "${filesDir.path}/Mark L. Murphy - The Busy Coder's Guide to Android Development 8.3 - 2017.pdf",
             "r"
         )
         TimeCounter.reset()

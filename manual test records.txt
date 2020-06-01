@@ -139,3 +139,11 @@ Issues:
 - missing images
 - Bold texts are placed in its own line instead of placed inline within a paragraph
 - missing characters, page 20 and others
+
+Title: The Busy Coder's Guide to Android Development Version 8.3
+Author/Publisher: Mark L. Murphy
+File: Mark L. Murphy - The Busy Coder's Guide to Android Development 8.3 - 2017.pdf
+Issues:
+- Text is color blue in Table of Contents from page 4 until 44. Occurs in other pages as well.
+- Some missing characters
+- Some innacurate character spacing.

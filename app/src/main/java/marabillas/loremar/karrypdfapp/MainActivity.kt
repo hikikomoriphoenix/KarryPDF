@@ -1,6 +1,7 @@
 package marabillas.loremar.karrypdfapp
 
 import android.os.Bundle
+import android.os.Environment
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -21,7 +22,7 @@ class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         val file = RandomAccessFile(
-            "${filesDir.path}/Mark L. Murphy - The Busy Coder's Guide to Android Development 8.3 - 2017.pdf",
+            "${Environment.getExternalStorageDirectory().absolutePath}/PDF32000_2008.pdf",
             "r"
         )
         TimeCounter.reset()

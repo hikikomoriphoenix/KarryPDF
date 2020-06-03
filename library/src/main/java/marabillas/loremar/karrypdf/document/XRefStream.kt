@@ -89,8 +89,7 @@ internal class XRefStream(
         val prev = dictionary["Prev"] as Numeric?
         if (prev != null) {
             logd("Prev = ${prev.value.toLong()}")
-            val data = PDFFileReader(file)
-                .getXRefData(context, prev.value.toLong())
+            val data = context.fileReader!!.getXRefData(context, prev.value.toLong())
             data.putAll(entries)
             entries = data
         }

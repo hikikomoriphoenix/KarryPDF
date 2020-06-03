@@ -1,10 +1,10 @@
 package marabillas.loremar.karrypdf.objects
 
 import marabillas.loremar.karrypdf.exceptions.IndirectObjectMismatchException
-import marabillas.loremar.karrypdf.utils.exts.appendBytes
 import marabillas.loremar.karrypdf.utils.exts.toInt
 import marabillas.loremar.karrypdf.utils.length
 import java.io.RandomAccessFile
+import java.nio.ByteBuffer
 
 /**
  * An indirect object in a PDF file.
@@ -21,6 +21,8 @@ internal open class Indirect(
         private set
     var gen: Int = 0
         private set
+
+    private val fileChannel = file.channel
 
     init {
         file.seek(start)
@@ -97,47 +99,48 @@ internal open class Indirect(
     private fun readFileLine(): StringBuilder {
         stringBuilder.clear()
         while (true) {
-            val start = if (bufferPos == -1L
+            if (bufferPos == -1L
                 || file.filePointer < bufferPos
                 || file.filePointer >= bufferPos + READ_BUFFER_SIZE
             ) {
                 bufferPos = file.filePointer
-                file.read(readBuffer, 0, READ_BUFFER_SIZE)
-                0
+                readBuffer.rewind()
+                fileChannel.position(file.filePointer)
+                fileChannel.read(readBuffer)
+                readBuffer.rewind()
+                file.seek(fileChannel.position())
             } else
-                (file.filePointer - bufferPos).toInt()
+                readBuffer.position((file.filePointer - bufferPos).toInt())
 
-            val read = if (file.length() - bufferPos >= READ_BUFFER_SIZE.toLong())
-                READ_BUFFER_SIZE else (file.length() - bufferPos).toInt()
+            val read = readBuffer.remaining()
 
             if (read <= 0)
                 break
 
-            var end = -1
-            for (i in start until read) {
-                end = i + 1
-                val c = readBuffer[i].toChar()
+            var lastChar: Char? = null
+            while (readBuffer.hasRemaining()) {
+                val c = readBuffer.get().toChar()
+                stringBuilder.append(c)
                 if (c == '\n' || c == '\r') {
-                    end = i
+                    stringBuilder.deleteCharAt(stringBuilder.lastIndex)
+                    lastChar = c
                     break
                 }
             }
 
-            stringBuilder.appendBytes(readBuffer, start, end)
-
-            if (end >= read) {
-                file.seek(bufferPos + end)
-            } else if (readBuffer[end].toChar() == '\n') {
-                file.seek(bufferPos + end + 1)
+            if (!readBuffer.hasRemaining()) {
+                file.seek(bufferPos + read)
+                if (lastChar == '\r') {
+                    val curr = file.filePointer
+                    if (file.read().toChar() != '\n')
+                        file.seek(curr)
+                    break
+                }
+            } else if (lastChar == '\n') {
+                file.seek(bufferPos + readBuffer.position())
                 break
-            } else if (readBuffer[end].toChar() == '\r' && end + 1 < read && readBuffer[end].toChar() == '\n') {
-                file.seek(bufferPos + end + 2)
-                break
-            } else if (readBuffer[end].toChar() == '\r') {
-                file.seek(bufferPos + end + 1)
-                val curr = file.filePointer
-                if (file.read().toChar() != '\n')
-                    file.seek(curr)
+            } else if (lastChar == '\r' && readBuffer.get().toChar() == '\n') {
+                file.seek(bufferPos + readBuffer.position())
                 break
             }
         }
@@ -147,7 +150,7 @@ internal open class Indirect(
     companion object {
         private val stringBuilder = StringBuilder()
         private const val READ_BUFFER_SIZE = 32000
-        private val readBuffer = ByteArray(READ_BUFFER_SIZE)
+        private val readBuffer = ByteBuffer.allocateDirect(READ_BUFFER_SIZE)
         private var bufferPos = -1L
     }
 }

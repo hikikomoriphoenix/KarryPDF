@@ -336,10 +336,40 @@ internal fun StringBuilder.hexToBytes(): ByteArray {
     return bytes.toByteArray()
 }
 
-internal fun StringBuilder.appendBytes(bytes: ByteArray, start: Int = 0, end: Int = bytes.size): StringBuilder {
+internal fun StringBuilder.appendBytes(
+    bytes: ByteArray,
+    start: Int = 0,
+    end: Int = bytes.size
+): StringBuilder {
     for (i in start until end) {
         val c = bytes[i].toChar()
         this.append(c)
     }
     return this
+}
+
+internal fun StringBuilder.isNumeric(): Boolean {
+    var hasDecimalPoint = false
+    var i = 0
+    while (i < length) {
+        if (this[i] == '-') {
+            if (i != 0) return false
+            else {
+                i++
+                continue
+            }
+        }
+        if (this[i] == '.') {
+            if (hasDecimalPoint) return false
+            else {
+                hasDecimalPoint = true
+                i++
+                continue
+            }
+        }
+        if (!Character.isDigit(this[i]))
+            return false
+        i++
+    }
+    return true
 }

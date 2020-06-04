@@ -3,11 +3,11 @@ package marabillas.loremar.karrypdf.objects
 import marabillas.loremar.karrypdf.document.KarryPDFContext
 import marabillas.loremar.karrypdf.utils.exts.containedEqualsWith
 import marabillas.loremar.karrypdf.utils.exts.isEnclosedWith
+import marabillas.loremar.karrypdf.utils.exts.isNumeric
 import marabillas.loremar.karrypdf.utils.exts.trimContainedChars
 
 internal class PDFObjectAdapter {
     companion object {
-        private val NUMERIC_PATTERN = "-?\\d*.?\\d+".toRegex()
         private val AUXILIARY_STRING_BUILDERS: MutableMap<KarryPDFContext.Session, StringBuilder> =
             mutableMapOf()
 
@@ -31,7 +31,7 @@ internal class PDFObjectAdapter {
             return when {
                 sb.containedEqualsWith('t', 'r', 'u', 'e') -> PDFBoolean(true)
                 sb.containedEqualsWith('f', 'a', 'l', 's', 'e') -> PDFBoolean(false)
-                NUMERIC_PATTERN.matches(sb) -> sb.toNumeric()
+                sb.isNumeric() -> sb.toNumeric()
                 sb.isEnclosedWith('(', ')') -> sb.toPDFString()
                 sb.isEnclosedWith(arrayOf('<', '<'), arrayOf('>', '>')) ->
                     AUXILIARY_STRING_BUILDERS[context.session]?.let {
@@ -51,7 +51,7 @@ internal class PDFObjectAdapter {
                         resolveReferences
                     )
                 }
-                Reference.REGEX.matches(sb) -> {
+                Reference.isReference(sb) -> {
                     if (resolveReferences) {
                         AUXILIARY_STRING_BUILDERS[context.session]?.let {
                             sb.toReference(

@@ -6,10 +6,6 @@ import marabillas.loremar.karrypdf.utils.exts.toInt
 
 
 internal class Reference(var context: KarryPDFContext, val obj: Int, val gen: Int) : PDFObject {
-    companion object {
-        val REGEX = "^\\d+ \\d+ R\$".toRegex()
-    }
-
     fun resolve(referenceResolver: ReferenceResolver? = context): PDFObject? {
         return referenceResolver?.resolveReference(this)
     }
@@ -21,10 +17,43 @@ internal class Reference(var context: KarryPDFContext, val obj: Int, val gen: In
     override fun toString(): String {
         return "$obj $gen R"
     }
+
+    companion object {
+        fun isReference(sb: StringBuilder): Boolean {
+            var i = 0
+            // Check first number
+            var hasFirstNumber = false
+            while (true) {
+                if (i >= sb.length) return false
+                if (sb[i] == ' ') {
+                    if (hasFirstNumber) break else return false
+                }
+                if (!Character.isDigit(sb[i])) return false else hasFirstNumber = true
+                i++
+            }
+            i++
+            // Check second number
+            var hasSecondNumber = false
+            while (true) {
+                if (i >= sb.length) return false
+                if (sb[i] == ' ') {
+                    if (hasSecondNumber) break else return false
+                }
+                if (!Character.isDigit(sb[i])) return false else hasSecondNumber = true
+                i++
+            }
+            // Check for R
+            if (sb[++i] != 'R') return false
+            if (i != sb.lastIndex) return false
+
+            return true
+        }
+    }
 }
 
+@Deprecated("Use StringBuilder.toReference instead")
 internal fun String.toReference(context: KarryPDFContext): Reference {
-    if (!(Reference.REGEX.matches(this))) throw IllegalArgumentException(
+    if (!Reference.isReference(StringBuilder())) throw IllegalArgumentException(
         "Given string does not match format for an indirect object reference"
     )
 
@@ -37,7 +66,7 @@ internal fun StringBuilder.toReference(
     context: KarryPDFContext,
     secondary: StringBuilder
 ): Reference {
-    if (!(Reference.REGEX.matches(this))) throw IllegalArgumentException(
+    if (!Reference.isReference(this)) throw IllegalArgumentException(
         "Given string does not match format for an indirect object reference"
     )
 

@@ -33,7 +33,7 @@ internal class PDFObjectAdapter {
                 sb.containedEqualsWith('f', 'a', 'l', 's', 'e') -> PDFBoolean(false)
                 sb.isNumeric() -> sb.toNumeric()
                 sb.isEnclosedWith('(', ')') -> sb.toPDFString()
-                sb.isEnclosedWith(arrayOf('<', '<'), arrayOf('>', '>')) ->
+                sb.isEnclosedWith("<<", ">>") ->
                     AUXILIARY_STRING_BUILDERS[context.session]?.let {
                         sb.toDictionary(
                             context,

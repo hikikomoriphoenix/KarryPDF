@@ -1,6 +1,7 @@
 package marabillas.loremar.karrypdf.objects
 
 import marabillas.loremar.karrypdf.exceptions.IndirectObjectMismatchException
+import marabillas.loremar.karrypdf.utils.exts.contains
 import marabillas.loremar.karrypdf.utils.exts.toInt
 import marabillas.loremar.karrypdf.utils.length
 import java.io.RandomAccessFile

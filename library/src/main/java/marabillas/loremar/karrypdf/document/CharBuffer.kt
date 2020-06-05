@@ -121,9 +121,11 @@ class CharBuffer(private val size: Int) {
     }
 
     fun isBlank(): Boolean {
-        for (i in 0 until limit) {
+        var i = 0
+        while (i < limit) {
             if (array[i] != ' ' || array[i] != '\n' || array[i] != '\r')
                 return false
+            i++
         }
         return true
     }
@@ -132,7 +134,8 @@ class CharBuffer(private val size: Int) {
         val end = if (endIndex == -1) limit else endIndex
         var factor = 1
         var int = 0
-        for (i in (end - 1) downTo startIndex) {
+        var i = end - 1
+        while (i >= startIndex) {
             val num = Character.getNumericValue(array[i])
 
             if ((num == -2 || num == -1) && (array[i] != '-')) throw NumberFormatException()
@@ -148,6 +151,7 @@ class CharBuffer(private val size: Int) {
 
             int += (num * factor)
             factor *= 10
+            i--
         }
         return int
     }
@@ -156,7 +160,8 @@ class CharBuffer(private val size: Int) {
         val end = if (endIndex == -1) limit else endIndex
         var factor = 1
         var long = 0L
-        for (i in (end - 1) downTo startIndex) {
+        var i = end - 1
+        while (i >= startIndex) {
             val num = Character.getNumericValue(array[i])
 
             if ((num == -2 || num == -1) && (array[i] != '-')) throw NumberFormatException()
@@ -172,6 +177,7 @@ class CharBuffer(private val size: Int) {
 
             long += (num * factor)
             factor *= 10
+            i--
         }
         return long
     }
@@ -186,9 +192,11 @@ class CharBuffer(private val size: Int) {
             throw IndexOutOfBoundsException()
         if (endIndex <= startIndex)
             throw IllegalArgumentException()
-        for (i in endIndex until limit) {
+        var i = endIndex
+        while (i < limit) {
             val j = i - endIndex
             array[startIndex + j] = array[i]
+            i++
         }
         limit = startIndex + limit - endIndex
     }

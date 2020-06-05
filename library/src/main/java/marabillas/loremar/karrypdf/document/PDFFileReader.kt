@@ -306,7 +306,8 @@ internal class PDFFileReader(val file: RandomAccessFile) {
             val count = charBuffer.toInt(spi + 1)
 
             // Iterate through every entry and add to entries
-            for (i in obj until obj + count) {
+            var i = obj
+            while (i < obj + count) {
                 //logd("Parsing XRef entry for obj $i ")
                 getNextLine(context, nextLineData)
 
@@ -340,6 +341,7 @@ internal class PDFFileReader(val file: RandomAccessFile) {
                         }
                     }
                 }
+                i++
             }
         }
         logd("Parsing XRef section end")

@@ -32,6 +32,32 @@ internal fun StringBuilder.containedEqualsWith(vararg chars: Char): Boolean {
     return true
 }
 
+internal fun StringBuilder.contains(s: String, ignoreCase: Boolean = true): Boolean {
+    var i = 0
+    while (i < length) {
+        var c1 = if (ignoreCase) this[i].toLowerCase() else this[i]
+        var c2 = if (ignoreCase) s[0].toLowerCase() else s[0]
+        if (c1 == c2) {
+            var found = true
+            for (j in s.indices) {
+                if (i + j >= length) {
+                    found = false
+                    break
+                }
+                c1 = if (ignoreCase) this[i + j].toLowerCase() else this[i + j]
+                c2 = if (ignoreCase) s[j].toLowerCase() else s[j]
+                if (c1 != c2) {
+                    found = false
+                    break
+                }
+            }
+            if (found) return true
+        }
+        i++
+    }
+    return false
+}
+
 internal fun StringBuilder.toInt(startIndex: Int = 0, endIndex: Int = -1): Int {
     val end = if (endIndex == -1) length else endIndex
     var factor = 1
@@ -112,8 +138,20 @@ internal fun StringBuilder.isEnclosedWith(open: Char, close: Char): Boolean {
     return this.startsWith(open) && this.endsWith(close)
 }
 
+internal fun StringBuilder.isEnclosedWith(open: String, close: String): Boolean {
+    for (i in open.indices) {
+        if (this[i] != open[i])
+            return false
+    }
+    for (i in (close.length - 1) downTo 0) {
+        if (this[this.length - (close.length - i)] != close[i])
+            return false
+    }
+    return true
+}
+
 internal fun StringBuilder.isEnclosedWith(open: Array<Char>, close: Array<Char>): Boolean {
-    for (i in 0 until open.size) {
+    for (i in open.indices) {
         if (this[i] != open[i])
             return false
     }

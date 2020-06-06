@@ -7,43 +7,29 @@ import marabillas.loremar.karrypdf.utils.exts.toInt
 import marabillas.loremar.karrypdf.utils.exts.toLong
 import marabillas.loremar.karrypdf.utils.logd
 import java.io.RandomAccessFile
-import java.nio.ByteBuffer
 import kotlin.collections.set
 
 /**
  * This class facilitates reading in a pdf file.
  */
 internal class PDFFileReader(val file: RandomAccessFile) {
-    private val fileChannel = file.channel
-    private val charBuffer = CharBuffer(32000)
+    private val fileLineReader = FileLineReader(file).apply { newSessionListeners.add(this) }
     private var startXRefPos: Long? = null
     private var trailerPos: Long? = null
     private var isLinearized: Boolean? = null
 
     companion object {
-        private const val READ_BUFFER_SIZE_DEFAULT = 32000
-        private const val READ_BUFFER_SIZE_64 = 64
         private val STRING_BUILDERS: MutableMap<KarryPDFContext.Session, StringBuilder> =
             mutableMapOf()
-        private val READ_BUFFERS: MutableMap<Int, MutableMap<KarryPDFContext.Session, ByteBuffer>> =
-            mutableMapOf(
-                READ_BUFFER_SIZE_DEFAULT to mutableMapOf(),
-                READ_BUFFER_SIZE_64 to mutableMapOf()
-            )
-        private val BUFFER_POSITIONS: MutableMap<KarryPDFContext.Session, Long> = mutableMapOf()
+        private val newSessionListeners: MutableList<NewSessionListener> = mutableListOf()
 
         fun notifyNewSession(session: KarryPDFContext.Session) {
             STRING_BUILDERS[session] = StringBuilder()
-            READ_BUFFERS[READ_BUFFER_SIZE_DEFAULT]?.set(
-                session,
-                ByteBuffer.allocateDirect(READ_BUFFER_SIZE_DEFAULT)
-            )
-            READ_BUFFERS[READ_BUFFER_SIZE_64]?.set(
-                session, ByteBuffer.allocateDirect(
-                    READ_BUFFER_SIZE_64
-                )
-            )
-            BUFFER_POSITIONS[session] = -1L
+            newSessionListeners.forEach { it.onNewSession(session) }
+        }
+
+        interface NewSessionListener {
+            fun onNewSession(session: KarryPDFContext.Session)
         }
     }
 
@@ -53,7 +39,7 @@ internal class PDFFileReader(val file: RandomAccessFile) {
                 file.seek(0)
                 readFileLine(context)
                 var beginning = file.filePointer
-                while (charBuffer.startsWith('%')) {
+                while (getCharBuffer(context).startsWith('%')) {
                     beginning = file.filePointer
                     readFileLine(context)
                 }
@@ -81,11 +67,11 @@ internal class PDFFileReader(val file: RandomAccessFile) {
             return if (isLinearized(context)) {
                 file.seek(0)
                 readFileLine(context)
-                while (!charBuffer.contains("endobj"))
+                while (!getCharBuffer(context).contains("endobj"))
                     readFileLine(context)
                 var beginning = file.filePointer
                 readFileLine(context)
-                while (charBuffer.isBlank() || charBuffer.startsWith('%')) {
+                while (getCharBuffer(context).isBlank() || getCharBuffer(context).startsWith('%')) {
                     beginning = file.filePointer
                     readFileLine(context)
                 }
@@ -142,13 +128,13 @@ internal class PDFFileReader(val file: RandomAccessFile) {
                 var p = file.length() - 1
                 while (true) {
                     readContainingLine(context, p)
-                    if (charBuffer.startsWith("startxref")) {
+                    if (getCharBuffer(context).startsWith("startxref")) {
                         file.seek(file.filePointer + 1)
                         readFileLine(context)
                         while (true) {
                             readFileLine(context)
-                            if (!charBuffer.startsWith("%")) {
-                                startXRefPos = charBuffer.toLong()
+                            if (!getCharBuffer(context).startsWith("%")) {
+                                startXRefPos = getCharBuffer(context).toLong()
                                 return getValidXRefPos(context, startXRefPos as Long)
                             }
                         }
@@ -163,15 +149,15 @@ internal class PDFFileReader(val file: RandomAccessFile) {
 
     private fun getValidXRefPos(context: KarryPDFContext, pos: Long): Long {
         file.seek(pos)
-        charBuffer.rewind()
+        getCharBuffer(context).rewind()
         var isXrefStream = false
         var foundXref = false
         var xi: Int = -1
         while (!isEndOfLine()) {
             readFileLine(context)
-            xi = charBuffer.indexOf("xref", 0, true)
+            xi = getCharBuffer(context).indexOf("xref", 0, true)
             if (xi != -1) {
-                isXrefStream = charBuffer[xi] == 'X'
+                isXrefStream = getCharBuffer(context)[xi] == 'X'
                 foundXref = true
                 break
             }
@@ -183,11 +169,11 @@ internal class PDFFileReader(val file: RandomAccessFile) {
             )
         else {
             file.seek(file.filePointer - 2)
-            if (file.readByte().toChar() == '\r' && charBuffer.length != 0) {
-                val shift = charBuffer.length - (xi + 4) + 1
+            if (file.readByte().toChar() == '\r' && getCharBuffer(context).length != 0) {
+                val shift = getCharBuffer(context).length - (xi + 4) + 1
                 file.seek(file.filePointer - shift)
-            } else if (charBuffer.length != 0) {
-                val shift = charBuffer.length - (xi + 4)
+            } else if (getCharBuffer(context).length != 0) {
+                val shift = getCharBuffer(context).length - (xi + 4)
                 file.seek(file.filePointer - shift)
             }
 
@@ -263,7 +249,7 @@ internal class PDFFileReader(val file: RandomAccessFile) {
         synchronized(file) {
             file.seek(pos)
             readFileLine(context)
-            return if (charBuffer.contains("xref")) {
+            return if (getCharBuffer(context).contains("xref")) {
                 var data = parseXRefSection(context)
                 data = parseOtherXRefInTrailer(context, file.filePointer, data)
                 data
@@ -293,17 +279,17 @@ internal class PDFFileReader(val file: RandomAccessFile) {
             val p = file.filePointer
             // Find next subsection
             readFileLine(context)
-            if (charBuffer.isBlank() && !isEndOfLine()) continue
-            if (!charBuffer.matches(subSectionRegex)) {
+            if (getCharBuffer(context).isBlank() && !isEndOfLine()) continue
+            if (!getCharBuffer(context).matches(subSectionRegex)) {
                 // File pointer should be reset to right after the last entry
                 file.seek(p)
                 break
             }
 
-            charBuffer.trimContainedChars()
-            val spi = charBuffer.indexOf(' ')
-            val obj = charBuffer.toInt(0, spi)
-            val count = charBuffer.toInt(spi + 1)
+            getCharBuffer(context).trimContainedChars()
+            val spi = getCharBuffer(context).indexOf(' ')
+            val obj = getCharBuffer(context).toInt(0, spi)
+            val count = getCharBuffer(context).toInt(spi + 1)
 
             // Iterate through every entry and add to entries
             var i = obj
@@ -355,12 +341,12 @@ internal class PDFFileReader(val file: RandomAccessFile) {
     ): HashMap<String, XRefEntry> {
         var entries = xRefEntries
         var p: Long
-        charBuffer.rewind()
+        getCharBuffer(context).rewind()
         file.seek(endXRefPos)
         do {
             p = file.filePointer
             readFileLine(context)
-        } while (!charBuffer.startsWith("trailer"))
+        } while (!getCharBuffer(context).startsWith("trailer"))
 
         val trailer = getDictionary(context, p, -1, 0, false)
 
@@ -396,13 +382,13 @@ internal class PDFFileReader(val file: RandomAccessFile) {
                 val startXRef = getStartXRefPosition(context)
                 file.seek(startXRef)
                 readFileLine(context)
-                if (charBuffer.contains("xref")) {
+                if (getCharBuffer(context).contains("xref")) {
                     parseXRefSection(context)
                     var p: Long
                     do {
                         p = file.filePointer
                         readFileLine(context)
-                    } while (!charBuffer.startsWith("trailer"))
+                    } while (!getCharBuffer(context).startsWith("trailer"))
                     p
                 } else {
                     null
@@ -536,154 +522,17 @@ internal class PDFFileReader(val file: RandomAccessFile) {
 
     private fun readFileLine(
         context: KarryPDFContext,
-        readBufferSize: Int = READ_BUFFER_SIZE_DEFAULT
+        readBufferSize: Int = FileLineReader.READ_BUFFER_SIZE_DEFAULT
     ) {
-        val buffer =
-            READ_BUFFERS[readBufferSize]?.get(context.session) ?: ByteBuffer.allocateDirect(
-                readBufferSize
-            )
-                .apply {
-                    READ_BUFFERS[readBufferSize]?.set(context.session, this)
-                }
-        var bufferPos = BUFFER_POSITIONS[context.session] ?: (-1L).also {
-            BUFFER_POSITIONS[context.session] = it
-        }
-
-        charBuffer.rewind()
-        while (true) {
-            if (bufferPos == -1L
-                || file.filePointer < bufferPos
-                || file.filePointer >= bufferPos + readBufferSize
-            ) {
-
-                BUFFER_POSITIONS[context.session] = file.filePointer
-                bufferPos = file.filePointer
-                buffer.rewind()
-                fileChannel.position(file.filePointer)
-                fileChannel.read(buffer)
-                buffer.rewind()
-                file.seek(fileChannel.position())
-            } else {
-                buffer.position((file.filePointer - bufferPos).toInt())
-            }
-            val read = buffer.remaining()
-
-            if (read <= 0)
-                break
-
-            var lastChar: Char? = null
-            while (buffer.hasRemaining()) {
-                val c = buffer.get().toChar()
-                charBuffer.put(c)
-                if (c == '\n' || c == '\r') {
-                    charBuffer.trimLast()
-                    lastChar = c
-                    break
-                }
-            }
-
-            if (!buffer.hasRemaining()) {
-                file.seek(bufferPos + read)
-                if (lastChar == '\r') {
-                    val curr = file.filePointer
-                    if (file.read().toChar() != '\n')
-                        file.seek(curr)
-                    break
-                }
-            } else if (lastChar == '\n') {
-                file.seek(bufferPos + buffer.position())
-                break
-            } else if (lastChar == '\r' && buffer.get().toChar() == '\n') {
-                file.seek(bufferPos + buffer.position())
-                break
-            }
-        }
+        fileLineReader.read(context, readBufferSize)
     }
 
     private fun getNextLine(
         context: KarryPDFContext,
         nextLineData: NextLineData,
-        readBufferSize: Int = READ_BUFFER_SIZE_DEFAULT
+        readBufferSize: Int = FileLineReader.READ_BUFFER_SIZE_DEFAULT
     ) {
-
-        val buffer =
-            READ_BUFFERS[readBufferSize]?.get(context.session) ?: ByteBuffer.allocateDirect(
-                readBufferSize
-            )
-                .apply {
-                    READ_BUFFERS[readBufferSize]?.set(context.session, this)
-                }
-        var bufferPos = BUFFER_POSITIONS[context.session] ?: (-1L).also {
-            BUFFER_POSITIONS[context.session] = it
-        }
-
-        var start = if (bufferPos == -1L
-            || file.filePointer < bufferPos
-            || file.filePointer >= bufferPos + readBufferSize
-        ) {
-
-            BUFFER_POSITIONS[context.session] = file.filePointer
-            bufferPos = file.filePointer
-            buffer.rewind()
-            fileChannel.position(file.filePointer)
-            fileChannel.read(buffer)
-            file.seek(fileChannel.position())
-            0
-        } else
-            (file.filePointer - bufferPos).toInt()
-
-        var end = -1
-
-        while (true) {
-            buffer.position(start)
-            val read = buffer.remaining()
-
-            if (read <= 0)
-                break
-
-            var lastChar: Char? = null
-            while (buffer.hasRemaining()) {
-                val c = buffer.get().toChar()
-                end = buffer.position()
-                if (c == '\n' || c == '\r') {
-                    lastChar = c
-                    end = buffer.position() - 1
-                    break
-                }
-            }
-
-            if (!buffer.hasRemaining()) {
-                file.seek(bufferPos + read)
-                if (lastChar == '\r') {
-                    val curr = file.filePointer
-                    if (file.read().toChar() != '\n')
-                        file.seek(curr)
-                    break
-                }
-            } else if (lastChar == '\n') {
-                file.seek(bufferPos + buffer.position())
-                break
-            } else if (lastChar == '\r' && buffer.get().toChar() == '\n') {
-                file.seek(bufferPos + buffer.position())
-                break
-            }
-
-            if (!isEndOfLine()) {
-                file.seek(bufferPos + start)
-                start = 0
-                end = 0
-                bufferPos = file.filePointer
-                BUFFER_POSITIONS[context.session] = file.filePointer
-                buffer.rewind()
-                fileChannel.position(file.filePointer)
-                fileChannel.read(buffer)
-                file.seek(fileChannel.position())
-            }
-        }
-
-        nextLineData.buffer = buffer
-        nextLineData.start = start
-        nextLineData.end = end
+        fileLineReader.getNextLine(context, nextLineData, readBufferSize)
     }
 
     private fun isEndOfLine(): Boolean {
@@ -693,5 +542,7 @@ internal class PDFFileReader(val file: RandomAccessFile) {
         return read == -1
     }
 
-    data class NextLineData(var buffer: ByteBuffer?, var start: Int, var end: Int)
+    private fun getCharBuffer(context: KarryPDFContext): CharBuffer {
+        return fileLineReader.getCharBuffer(context.session)
+    }
 }

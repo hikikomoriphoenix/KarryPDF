@@ -267,14 +267,16 @@ internal class PDFFileReader(val file: RandomAccessFile) {
      * Parse through each line of the cross reference section to get all of its entries. The offset position must
      * currently be in the beginning of the first subsection.
      */
-    private fun parseXRefSection(context: KarryPDFContext): HashMap<String, XRefEntry> {
+    private fun parseXRefSection(
+        context: KarryPDFContext,
+        parseEntries: Boolean = true
+    ): HashMap<String, XRefEntry> {
         val entries = HashMap<String, XRefEntry>()
 
         val nextLineData = NextLineData(null, 0, 0)
         val nextLineBuffer = ByteArray(64)
 
-        logd("Parsing XRef section start")
-        val subSectionRegex = Regex("^\\s*(\\d+) (\\d+)\\s*$")
+        logd("Parsing XRef section start${if (!parseEntries) ". Skip parsing entries" else ""}")
         while (!isEndOfLine()) {
             val p = file.filePointer
             // Find next subsection
@@ -296,6 +298,10 @@ internal class PDFFileReader(val file: RandomAccessFile) {
             while (i < obj + count) {
                 //logd("Parsing XRef entry for obj $i ")
                 getNextLine(context, nextLineData)
+
+                if (!parseEntries) {
+                    i++; continue
+                }
 
                 nextLineData.apply {
                     buffer?.let { buffer ->
@@ -423,7 +429,7 @@ internal class PDFFileReader(val file: RandomAccessFile) {
                 file.seek(startXRef)
                 readFileLine(context)
                 if (getCharBuffer(context).contains("xref")) {
-                    parseXRefSection(context)
+                    parseXRefSection(context, false)
                     var p: Long
                     do {
                         p = file.filePointer

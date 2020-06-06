@@ -280,7 +280,7 @@ internal class PDFFileReader(val file: RandomAccessFile) {
             // Find next subsection
             readFileLine(context)
             if (getCharBuffer(context).isBlank() && !isEndOfLine()) continue
-            if (!getCharBuffer(context).matches(subSectionRegex)) {
+            if (!isCurrentLineSubsection(getCharBuffer(context))) {
                 // File pointer should be reset to right after the last entry
                 file.seek(p)
                 break
@@ -332,6 +332,46 @@ internal class PDFFileReader(val file: RandomAccessFile) {
         }
         logd("Parsing XRef section end")
         return entries
+    }
+
+    private fun isCurrentLineSubsection(charBuffer: CharBuffer): Boolean {
+        var i = 0
+        var phrase =
+            0 // 0=first spaces, 1=first number, 2=middle space, 3=second number, 4= last spaces
+        while (i < charBuffer.length) {
+            when (phrase) {
+                0 -> {
+                    if (Character.isDigit(charBuffer[i]))
+                        phrase = 1
+                    else if (charBuffer[i] != ' ')
+                        return false
+                }
+                1 -> {
+                    if (charBuffer[i] == ' ')
+                        phrase = 2
+                    else if (!Character.isDigit(charBuffer[i]))
+                        return false
+                }
+                2 -> {
+                    if (!Character.isDigit(charBuffer[i]))
+                        return false
+                    else
+                        phrase = 3
+                }
+                3 -> {
+                    if (charBuffer[i] == ' ')
+                        phrase = 4
+                    else if (!Character.isDigit(charBuffer[i]))
+                        return false
+                }
+                4 -> {
+                    if (charBuffer[i] != ' ')
+                        return false
+                }
+            }
+            i++
+        }
+        return true
     }
 
     private fun parseOtherXRefInTrailer(

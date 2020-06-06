@@ -5,9 +5,11 @@ package marabillas.loremar.karrypdf.utils.exts
  * until endIndex(EXCLUSIVE). Returns -1 if no such occurrence.
  */
 fun ByteArray.indexOfChar(c: Char, startIndex: Int, endIndex: Int): Int {
-    for (i in startIndex until endIndex) {
+    var i = startIndex
+    while (i < endIndex) {
         if (get(i).toChar() == c)
             return i
+        i++
     }
     return -1
 }
@@ -15,7 +17,8 @@ fun ByteArray.indexOfChar(c: Char, startIndex: Int, endIndex: Int): Int {
 fun ByteArray.toInt(startIndex: Int, endIndex: Int): Int {
     var factor = 1
     var int = 0
-    for (i in (endIndex - 1) downTo startIndex) {
+    var i = endIndex - 1
+    while (i >= startIndex) {
         val num = Character.getNumericValue(this[i].toChar())
 
         if ((num == -2 || num == -1) && (this[i].toChar() != '-')) throw NumberFormatException()
@@ -31,6 +34,7 @@ fun ByteArray.toInt(startIndex: Int, endIndex: Int): Int {
 
         int += (num * factor)
         factor *= 10
+        i--
     }
     return int
 }
@@ -38,7 +42,8 @@ fun ByteArray.toInt(startIndex: Int, endIndex: Int): Int {
 internal fun ByteArray.toLong(startIndex: Int, endIndex: Int): Long {
     var factor = 1
     var long = 0L
-    for (i in (endIndex - 1) downTo startIndex) {
+    var i = endIndex - 1
+    while (i >= startIndex) {
         val num = Character.getNumericValue(this[i].toChar())
 
         if ((num == -2 || num == -1) && (this[i].toChar() != '-')) throw NumberFormatException()
@@ -54,6 +59,7 @@ internal fun ByteArray.toLong(startIndex: Int, endIndex: Int): Long {
 
         long += (num * factor)
         factor *= 10
+        i--
     }
     return long
 }

@@ -2,9 +2,6 @@ package marabillas.loremar.karrypdf.document
 
 import marabillas.loremar.karrypdf.exceptions.InvalidDocumentException
 import marabillas.loremar.karrypdf.objects.*
-import marabillas.loremar.karrypdf.utils.exts.indexOfChar
-import marabillas.loremar.karrypdf.utils.exts.toInt
-import marabillas.loremar.karrypdf.utils.exts.toLong
 import marabillas.loremar.karrypdf.utils.logd
 import java.io.RandomAccessFile
 import kotlin.collections.set
@@ -14,6 +11,7 @@ import kotlin.collections.set
  */
 internal class PDFFileReader(val file: RandomAccessFile) {
     private val fileLineReader = FileLineReader(file).apply { newSessionListeners.add(this) }
+    private val xrefParser = XrefParser(file)
     private var startXRefPos: Long? = null
     private var trailerPos: Long? = null
     private var isLinearized: Boolean? = null
@@ -273,9 +271,6 @@ internal class PDFFileReader(val file: RandomAccessFile) {
     ): HashMap<String, XRefEntry> {
         val entries = HashMap<String, XRefEntry>()
 
-        val nextLineData = NextLineData(null, 0, 0)
-        val nextLineBuffer = ByteArray(64)
-
         logd("Parsing XRef section start${if (!parseEntries) ". Skip parsing entries" else ""}")
         while (!isEndOfLine()) {
             val p = file.filePointer
@@ -293,48 +288,7 @@ internal class PDFFileReader(val file: RandomAccessFile) {
             val obj = getCharBuffer(context).toInt(0, spi)
             val count = getCharBuffer(context).toInt(spi + 1)
 
-            // Iterate through every entry and add to entries
-            var i = obj
-            while (i < obj + count) {
-                //logd("Parsing XRef entry for obj $i ")
-                getNextLine(context, nextLineData)
-
-                if (!parseEntries) {
-                    i++; continue
-                }
-
-                nextLineData.apply {
-                    buffer?.let { buffer ->
-                        buffer.limit(end)
-                        buffer.position(start)
-                        buffer.get(nextLineBuffer, 0, end - start)
-                        buffer.limit(buffer.capacity())
-
-                        val sp1 = nextLineBuffer.indexOfChar(' ', 0, end - start)
-                        val sp2 = nextLineBuffer.indexOfChar(' ', sp1 + 1, end - start)
-                        val pos = nextLineBuffer.toLong(0, sp1)
-                        val gen = nextLineBuffer.toInt(sp1 + 1, sp2)
-
-                        if (nextLineBuffer[sp2 + 1].toChar() == 'f') {
-                            entries["$i $gen"] =
-                                XRefEntry(
-                                    i,
-                                    pos,
-                                    gen,
-                                    false
-                                )
-                        } else {
-                            entries["$i $gen"] =
-                                XRefEntry(
-                                    i,
-                                    pos,
-                                    gen
-                                )
-                        }
-                    }
-                }
-                i++
-            }
+            xrefParser.parseEntries(obj, count, entries)
         }
         logd("Parsing XRef section end")
         return entries

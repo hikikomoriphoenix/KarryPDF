@@ -6,12 +6,8 @@ import marabillas.loremar.karrypdf.utils.exts.toInt
 
 
 internal class Reference(var context: KarryPDFContext, val obj: Int, val gen: Int) : PDFObject {
-    var value: PDFObject? = null
-
     fun resolve(referenceResolver: ReferenceResolver? = context): PDFObject? {
-        if (value == null)
-            value = referenceResolver?.resolveReference(this)
-        return value
+        return referenceResolver?.resolveReference(this)
     }
 
     fun resolveToStream(referenceResolver: ReferenceResolver? = context): Stream? {

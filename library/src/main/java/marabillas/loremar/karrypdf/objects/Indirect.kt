@@ -26,15 +26,17 @@ internal open class Indirect(
     private val fileChannel = file.channel
 
     init {
-        file.seek(start)
-        obj = extractNextNumber()
-        start = file.filePointer - 1 - (obj as Int).length()
-        gen = extractNextNumber()
+        synchronized(file) {
+            file.seek(start)
+            obj = extractNextNumber()
+            start = file.filePointer - 1 - (obj as Int).length()
+            gen = extractNextNumber()
 
-        validateObj()
+            validateObj()
 
-        if (reference != null) {
-            if (reference.obj != obj) throw IndirectObjectMismatchException()
+            if (reference != null) {
+                if (reference.obj != obj) throw IndirectObjectMismatchException()
+            }
         }
     }
 

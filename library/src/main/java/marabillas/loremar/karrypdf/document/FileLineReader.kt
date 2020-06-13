@@ -77,7 +77,7 @@ internal class FileLineReader(private val file: RandomAccessFile) :
             }
 
             if (!currentReadBuffer.hasRemaining()) {
-                file.seek(currentBufferPosition + read)
+                file.seek(currentBufferPosition + currentReadBuffer.position())
                 if (lastChar == '\r') {
                     val curr = file.filePointer
                     if (file.read().toChar() != '\n')
@@ -87,8 +87,12 @@ internal class FileLineReader(private val file: RandomAccessFile) :
             } else if (lastChar == '\n') {
                 file.seek(currentBufferPosition + currentReadBuffer.position())
                 break
-            } else if (lastChar == '\r' && currentReadBuffer.get().toChar() == '\n') {
-                file.seek(currentBufferPosition + currentReadBuffer.position())
+            } else if (lastChar == '\r') {
+                val prevPosition = currentReadBuffer.position()
+                if (currentReadBuffer.get().toChar() == '\n')
+                    file.seek(currentBufferPosition + currentReadBuffer.position())
+                else
+                    file.seek(currentBufferPosition + prevPosition)
                 break
             }
         }

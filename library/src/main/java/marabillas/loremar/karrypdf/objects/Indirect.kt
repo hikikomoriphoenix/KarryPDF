@@ -132,7 +132,7 @@ internal open class Indirect(
             }
 
             if (!readBuffer.hasRemaining()) {
-                file.seek(bufferPos + read)
+                file.seek(bufferPos + readBuffer.position())
                 if (lastChar == '\r') {
                     val curr = file.filePointer
                     if (file.read().toChar() != '\n')
@@ -142,8 +142,12 @@ internal open class Indirect(
             } else if (lastChar == '\n') {
                 file.seek(bufferPos + readBuffer.position())
                 break
-            } else if (lastChar == '\r' && readBuffer.get().toChar() == '\n') {
-                file.seek(bufferPos + readBuffer.position())
+            } else if (lastChar == '\r') {
+                val prevPosition = readBuffer.position()
+                if (readBuffer.get().toChar() == '\n')
+                    file.seek(bufferPos + readBuffer.position())
+                else
+                    file.seek(bufferPos + prevPosition)
                 break
             }
         }

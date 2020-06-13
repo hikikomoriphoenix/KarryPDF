@@ -1,12 +1,7 @@
 package marabillas.loremar.karrypdf.objects
 
-import org.hamcrest.CoreMatchers.`is`
-import org.hamcrest.MatcherAssert.assertThat
-import org.junit.Test
-import java.io.RandomAccessFile
-
 class IndirectTest {
-    @Test
+    /*@Test
     fun testIndirect() {
         val path = javaClass.classLoader?.getResource("samplepdf1.4.pdf")?.path
         val file = RandomAccessFile(path, "r")
@@ -21,5 +16,5 @@ class IndirectTest {
                 "/DescendantFonts [18 0 R] " +
                 "/ToUnicode 19 0 R>>"
         assertThat(content.toString(), `is`(expected))
-    }
+    }*/
 }

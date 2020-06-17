@@ -348,7 +348,7 @@ internal class PDFFileReader(val file: RandomAccessFile) {
             readFileLine(context)
         } while (!getCharBuffer(context).startsWith("trailer"))
 
-        trailerPos = p
+        if (trailerPos == null) trailerPos = p
         val trailer = getDictionary(context, p, -1, 0, false)
 
         // Parse any existing cross reference stream

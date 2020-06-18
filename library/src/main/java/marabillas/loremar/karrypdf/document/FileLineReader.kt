@@ -67,7 +67,7 @@ internal class FileLineReader(private val file: RandomAccessFile) :
                 break
 
             while (currentReadBuffer.hasRemaining()) {
-                val c = currentReadBuffer.get().toChar()
+                val c = (currentReadBuffer.get().toInt() and 0xff).toChar()
                 currentCharBuffer.put(c)
                 if (c == '\n' || c == '\r') {
                     currentCharBuffer.trimLast()

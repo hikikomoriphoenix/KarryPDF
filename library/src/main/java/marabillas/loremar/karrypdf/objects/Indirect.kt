@@ -122,7 +122,7 @@ internal open class Indirect(
 
             var lastChar: Char? = null
             while (readBuffer.hasRemaining()) {
-                val c = readBuffer.get().toChar()
+                val c = (readBuffer.get().toInt() and 0xff).toChar()
                 stringBuilder.append(c)
                 if (c == '\n' || c == '\r') {
                     stringBuilder.deleteCharAt(stringBuilder.lastIndex)

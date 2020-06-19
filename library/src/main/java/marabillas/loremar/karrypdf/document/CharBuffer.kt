@@ -123,7 +123,7 @@ class CharBuffer(private val size: Int) {
     fun isBlank(): Boolean {
         var i = 0
         while (i < limit) {
-            if (array[i] != ' ' || array[i] != '\n' || array[i] != '\r')
+            if (array[i] != ' ' && array[i] != '\n' && array[i] != '\r')
                 return false
             i++
         }
@@ -199,5 +199,13 @@ class CharBuffer(private val size: Int) {
             i++
         }
         limit = startIndex + limit - endIndex
+    }
+
+    override fun toString(): String {
+        val sb = StringBuilder()
+        for (i in 0 until limit) {
+            sb.append(array[i])
+        }
+        return sb.toString()
     }
 }

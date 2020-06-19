@@ -10,7 +10,10 @@ import kotlin.collections.set
  * This class facilitates reading in a pdf file.
  */
 internal class PDFFileReader(val file: RandomAccessFile) {
-    private val fileLineReader = FileLineReader(file).apply { newSessionListeners.add(this) }
+    private val fileLineReader = FileLineReader(file).apply {
+        newSessionListeners.add(this)
+        endSessionListeners.add(this)
+    }
     private val xrefParser = XrefParser(file)
     private var startXRefPos: Long? = null
     private var trailerPos: Long? = null
@@ -20,14 +23,24 @@ internal class PDFFileReader(val file: RandomAccessFile) {
         private val STRING_BUILDERS: MutableMap<KarryPDFContext.Session, StringBuilder> =
             mutableMapOf()
         private val newSessionListeners: MutableList<NewSessionListener> = mutableListOf()
+        private val endSessionListeners: MutableList<EndSessionListener> = mutableListOf()
 
         fun notifyNewSession(session: KarryPDFContext.Session) {
             STRING_BUILDERS[session] = StringBuilder()
             newSessionListeners.forEach { it.onNewSession(session) }
         }
 
+        fun endSession(session: KarryPDFContext.Session) {
+            STRING_BUILDERS.remove(session)
+            endSessionListeners.forEach { it.onEndSession(session) }
+        }
+
         interface NewSessionListener {
             fun onNewSession(session: KarryPDFContext.Session)
+        }
+
+        interface EndSessionListener {
+            fun onEndSession(session: KarryPDFContext.Session)
         }
     }
 

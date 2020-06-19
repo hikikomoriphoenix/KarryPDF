@@ -39,4 +39,9 @@ internal class GetPageContentsContext(private val context: KarryPDFContext) : Ka
             session
         )
     }
+
+    fun release() {
+        PDFObjectAdapter.endSession(session)
+        PDFFileReader.endSession(session)
+    }
 }

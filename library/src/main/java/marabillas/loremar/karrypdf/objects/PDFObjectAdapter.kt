@@ -15,6 +15,10 @@ internal class PDFObjectAdapter {
             AUXILIARY_STRING_BUILDERS[session] = StringBuilder()
         }
 
+        fun endSession(session: KarryPDFContext.Session) {
+            AUXILIARY_STRING_BUILDERS.remove(session)
+        }
+
         fun getPDFObject(
             context: KarryPDFContext,
             sb: StringBuilder,

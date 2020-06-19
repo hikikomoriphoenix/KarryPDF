@@ -154,7 +154,7 @@ class KarryPDF(file: RandomAccessFile, password: String = "") {
             "Missing Contents entry in Page object."
         )
         logd("Preparations -> ${TimeCounter.getTimeElapsed()} ms")
-        return if (contents is PDFArray) {
+        val pageContents = if (contents is PDFArray) {
             contents.asSequence()
                 .filterNotNull()
                 .forEach { content ->
@@ -166,7 +166,8 @@ class KarryPDF(file: RandomAccessFile, password: String = "") {
             TimeCounter.reset()
             return parseContent(getPageContentsContext, contents, fonts, xObjs)
         }
-
+        getPageContentsContext.release()
+        return pageContents
     }
 
     private fun parseContent(

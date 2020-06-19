@@ -4,7 +4,7 @@ import java.io.RandomAccessFile
 import java.nio.ByteBuffer
 
 internal class FileLineReader(private val file: RandomAccessFile) :
-    PDFFileReader.Companion.NewSessionListener {
+    PDFFileReader.Companion.NewSessionListener, PDFFileReader.Companion.EndSessionListener {
     private val fileChannel = file.channel
     private val readBuffers: MutableMap<Int, MutableMap<KarryPDFContext.Session, ByteBuffer>> =
         mutableMapOf(
@@ -195,6 +195,13 @@ internal class FileLineReader(private val file: RandomAccessFile) :
         bufferPositions[session] = -1L
 
         charBuffers[session] = CharBuffer(32000)
+    }
+
+    override fun onEndSession(session: KarryPDFContext.Session) {
+        readBuffers[READ_BUFFER_SIZE_DEFAULT]?.remove(session)
+        readBuffers[READ_BUFFER_SIZE_64]?.remove(session)
+        bufferPositions.remove(session)
+        charBuffers.remove(session)
     }
 
     fun getCharBuffer(session: KarryPDFContext.Session): CharBuffer {

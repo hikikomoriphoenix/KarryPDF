@@ -5,10 +5,7 @@ import marabillas.loremar.karrypdf.contents.ContentStreamParser
 import marabillas.loremar.karrypdf.contents.PageContent
 import marabillas.loremar.karrypdf.contents.PageContentAdapter
 import marabillas.loremar.karrypdf.contents.XObjectsResolver
-import marabillas.loremar.karrypdf.document.GetPageContentsContext
-import marabillas.loremar.karrypdf.document.KarryPDFContext
-import marabillas.loremar.karrypdf.document.OutlineItem
-import marabillas.loremar.karrypdf.document.PDFFileReader
+import marabillas.loremar.karrypdf.document.*
 import marabillas.loremar.karrypdf.encryption.Decryptor
 import marabillas.loremar.karrypdf.exceptions.InvalidDocumentException
 import marabillas.loremar.karrypdf.exceptions.InvalidStreamException
@@ -35,8 +32,8 @@ class KarryPDF(file: RandomAccessFile, password: String = "") {
             showKarryPDFLogs = true
         }
 
-        val fileReader = PDFFileReader(file)
-        context.fileReader = fileReader
+        context.fileReader = PDFFileReader(file)
+        context.fileLineReader = FileLineReader(file)
 
         TimeCounter.reset()
         parseCrossReferences(fileReader)
@@ -109,8 +106,9 @@ class KarryPDF(file: RandomAccessFile, password: String = "") {
     fun getPageContents(pageNum: Int): List<PageContent> {
         TimeCounter.reset()
 
-        val getPageContentsContext =
-            GetPageContentsContext(context)
+        val getPageContentsContext = GetPageContentsContext(context).apply {
+            fileLineReader = FileLineReader(fileReader.file)
+        }
         pages.forEach { it.context = getPageContentsContext }
 
         val contentsList = ArrayList<PageContent>()
@@ -154,7 +152,7 @@ class KarryPDF(file: RandomAccessFile, password: String = "") {
             "Missing Contents entry in Page object."
         )
         logd("Preparations -> ${TimeCounter.getTimeElapsed()} ms")
-        val pageContents = if (contents is PDFArray) {
+        return if (contents is PDFArray) {
             contents.asSequence()
                 .filterNotNull()
                 .forEach { content ->
@@ -164,10 +162,8 @@ class KarryPDF(file: RandomAccessFile, password: String = "") {
             contentsList
         } else {
             TimeCounter.reset()
-            return parseContent(getPageContentsContext, contents, fonts, xObjs)
+            parseContent(getPageContentsContext, contents, fonts, xObjs)
         }
-        getPageContentsContext.release()
-        return pageContents
     }
 
     private fun parseContent(

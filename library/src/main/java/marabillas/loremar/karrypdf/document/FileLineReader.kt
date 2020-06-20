@@ -3,21 +3,14 @@ package marabillas.loremar.karrypdf.document
 import java.io.RandomAccessFile
 import java.nio.ByteBuffer
 
-internal class FileLineReader(private val file: RandomAccessFile) :
-    PDFFileReader.Companion.NewSessionListener, PDFFileReader.Companion.EndSessionListener {
-    private val fileChannel = file.channel
-    private val readBuffers: MutableMap<Int, MutableMap<KarryPDFContext.Session, ByteBuffer>> =
-        mutableMapOf(
-            READ_BUFFER_SIZE_DEFAULT to mutableMapOf(),
-            READ_BUFFER_SIZE_64 to mutableMapOf()
-        )
-    private val bufferPositions: MutableMap<KarryPDFContext.Session, Long> = mutableMapOf()
+internal class FileLineReader(private val file: RandomAccessFile) {
+    val charBuffer = CharBuffer(32000)
 
-    private val charBuffers: MutableMap<KarryPDFContext.Session, CharBuffer> = mutableMapOf()
+    private val fileChannel = file.channel
+    private val readBuffers: MutableMap<Int, ByteBuffer> = mutableMapOf()
+    private var bufferPosition: Long = -1L
 
     private lateinit var currentReadBuffer: ByteBuffer
-    private var currentBufferPosition: Long = 0L
-    private lateinit var currentCharBuffer: CharBuffer
 
     private var read = 0
     private var lastChar: Char? = null
@@ -25,41 +18,30 @@ internal class FileLineReader(private val file: RandomAccessFile) :
     private var lineStart = 0
     private var lineEnd = -1
 
-    fun read(context: KarryPDFContext, readBufferSize: Int = READ_BUFFER_SIZE_DEFAULT) {
-        currentReadBuffer =
-            readBuffers[readBufferSize]?.get(context.session) ?: ByteBuffer.allocateDirect(
-                readBufferSize
-            )
-                .apply {
-                    readBuffers[readBufferSize]?.set(context.session, this)
-                }
-        currentBufferPosition = bufferPositions[context.session] ?: (-1L).also {
-            bufferPositions[context.session] = it
-        }
-        currentCharBuffer = charBuffers[context.session] ?: CharBuffer(32000).also {
-            charBuffers[context.session] = it
-        }
-
-
-        currentCharBuffer.rewind()
-
+    fun read(readBufferSize: Int = READ_BUFFER_SIZE_DEFAULT) {
+        currentReadBuffer = readBuffers[readBufferSize] ?: ByteBuffer
+            .allocateDirect(readBufferSize)
+            .apply {
+                readBuffers[readBufferSize] = this
+            }
+        charBuffer.rewind()
         read = 0
         lastChar = null
         while (true) {
-            if (currentBufferPosition == -1L
-                || file.filePointer < currentBufferPosition
-                || file.filePointer >= currentBufferPosition + readBufferSize
+            if (bufferPosition == -1L
+                || file.filePointer < bufferPosition
+                || file.filePointer >= bufferPosition + readBufferSize
             ) {
 
-                bufferPositions[context.session] = file.filePointer
-                currentBufferPosition = file.filePointer
+                bufferPosition = file.filePointer
+                bufferPosition = file.filePointer
                 currentReadBuffer.rewind()
                 fileChannel.position(file.filePointer)
                 fileChannel.read(currentReadBuffer)
                 currentReadBuffer.rewind()
                 file.seek(fileChannel.position())
             } else {
-                currentReadBuffer.position((file.filePointer - currentBufferPosition).toInt())
+                currentReadBuffer.position((file.filePointer - bufferPosition).toInt())
             }
             read = currentReadBuffer.remaining()
 
@@ -68,16 +50,16 @@ internal class FileLineReader(private val file: RandomAccessFile) :
 
             while (currentReadBuffer.hasRemaining()) {
                 val c = (currentReadBuffer.get().toInt() and 0xff).toChar()
-                currentCharBuffer.put(c)
+                charBuffer.put(c)
                 if (c == '\n' || c == '\r') {
-                    currentCharBuffer.trimLast()
+                    charBuffer.trimLast()
                     lastChar = c
                     break
                 }
             }
 
             if (!currentReadBuffer.hasRemaining()) {
-                file.seek(currentBufferPosition + currentReadBuffer.position())
+                file.seek(bufferPosition + currentReadBuffer.position())
                 if (lastChar == '\r') {
                     val curr = file.filePointer
                     if (file.read().toChar() != '\n')
@@ -85,49 +67,43 @@ internal class FileLineReader(private val file: RandomAccessFile) :
                     break
                 }
             } else if (lastChar == '\n') {
-                file.seek(currentBufferPosition + currentReadBuffer.position())
+                file.seek(bufferPosition + currentReadBuffer.position())
                 break
             } else if (lastChar == '\r') {
                 val prevPosition = currentReadBuffer.position()
                 if (currentReadBuffer.get().toChar() == '\n')
-                    file.seek(currentBufferPosition + currentReadBuffer.position())
+                    file.seek(bufferPosition + currentReadBuffer.position())
                 else
-                    file.seek(currentBufferPosition + prevPosition)
+                    file.seek(bufferPosition + prevPosition)
                 break
             }
         }
     }
 
     fun getNextLine(
-        context: KarryPDFContext,
         nextLineData: NextLineData,
         readBufferSize: Int = READ_BUFFER_SIZE_DEFAULT
     ) {
-        currentReadBuffer =
-            readBuffers[readBufferSize]?.get(context.session) ?: ByteBuffer.allocateDirect(
-                readBufferSize
-            )
-                .apply {
-                    readBuffers[readBufferSize]?.set(context.session, this)
-                }
-        currentBufferPosition = bufferPositions[context.session] ?: (-1L).also {
-            bufferPositions[context.session] = it
-        }
+        currentReadBuffer = readBuffers[readBufferSize] ?: ByteBuffer
+            .allocateDirect(readBufferSize)
+            .apply {
+                readBuffers[readBufferSize] = this
+            }
 
-        lineStart = if (currentBufferPosition == -1L
-            || file.filePointer < currentBufferPosition
-            || file.filePointer >= currentBufferPosition + readBufferSize
+        lineStart = if (bufferPosition == -1L
+            || file.filePointer < bufferPosition
+            || file.filePointer >= bufferPosition + readBufferSize
         ) {
 
-            bufferPositions[context.session] = file.filePointer
-            currentBufferPosition = file.filePointer
+            bufferPosition = file.filePointer
+            bufferPosition = file.filePointer
             currentReadBuffer.rewind()
             fileChannel.position(file.filePointer)
             fileChannel.read(currentReadBuffer)
             file.seek(fileChannel.position())
             0
         } else
-            (file.filePointer - currentBufferPosition).toInt()
+            (file.filePointer - bufferPosition).toInt()
 
         lineEnd = -1
 
@@ -150,7 +126,7 @@ internal class FileLineReader(private val file: RandomAccessFile) :
             }
 
             if (!currentReadBuffer.hasRemaining()) {
-                file.seek(currentBufferPosition + read)
+                file.seek(bufferPosition + read)
                 if (lastChar == '\r') {
                     val curr = file.filePointer
                     if (file.read().toChar() != '\n')
@@ -158,19 +134,19 @@ internal class FileLineReader(private val file: RandomAccessFile) :
                     break
                 }
             } else if (lastChar == '\n') {
-                file.seek(currentBufferPosition + currentReadBuffer.position())
+                file.seek(bufferPosition + currentReadBuffer.position())
                 break
             } else if (lastChar == '\r' && currentReadBuffer.get().toChar() == '\n') {
-                file.seek(currentBufferPosition + currentReadBuffer.position())
+                file.seek(bufferPosition + currentReadBuffer.position())
                 break
             }
 
             if (!isEndOfLine()) {
-                file.seek(currentBufferPosition + lineStart)
+                file.seek(bufferPosition + lineStart)
                 lineStart = 0
                 lineEnd = 0
-                currentBufferPosition = file.filePointer
-                bufferPositions[context.session] = file.filePointer
+                bufferPosition = file.filePointer
+                bufferPosition = file.filePointer
                 currentReadBuffer.rewind()
                 fileChannel.position(file.filePointer)
                 fileChannel.read(currentReadBuffer)
@@ -182,32 +158,6 @@ internal class FileLineReader(private val file: RandomAccessFile) :
         nextLineData.start = lineStart
         nextLineData.end = lineEnd
 
-    }
-
-    override fun onNewSession(session: KarryPDFContext.Session) {
-        readBuffers[READ_BUFFER_SIZE_DEFAULT]?.set(
-            session,
-            ByteBuffer.allocateDirect(READ_BUFFER_SIZE_DEFAULT)
-        )
-        readBuffers[READ_BUFFER_SIZE_64]?.set(
-            session, ByteBuffer.allocateDirect(READ_BUFFER_SIZE_64)
-        )
-        bufferPositions[session] = -1L
-
-        charBuffers[session] = CharBuffer(32000)
-    }
-
-    override fun onEndSession(session: KarryPDFContext.Session) {
-        readBuffers[READ_BUFFER_SIZE_DEFAULT]?.remove(session)
-        readBuffers[READ_BUFFER_SIZE_64]?.remove(session)
-        bufferPositions.remove(session)
-        charBuffers.remove(session)
-    }
-
-    fun getCharBuffer(session: KarryPDFContext.Session): CharBuffer {
-        return charBuffers[session] ?: CharBuffer(32000).also {
-            charBuffers[session] = it
-        }
     }
 
     private fun isEndOfLine(): Boolean {

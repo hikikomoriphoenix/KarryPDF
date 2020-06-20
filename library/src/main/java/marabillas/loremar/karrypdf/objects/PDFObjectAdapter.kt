@@ -8,16 +8,7 @@ import marabillas.loremar.karrypdf.utils.exts.trimContainedChars
 
 internal class PDFObjectAdapter {
     companion object {
-        private val AUXILIARY_STRING_BUILDERS: MutableMap<KarryPDFContext.Session, StringBuilder> =
-            mutableMapOf()
-
-        fun notifyNewSession(session: KarryPDFContext.Session) {
-            AUXILIARY_STRING_BUILDERS[session] = StringBuilder()
-        }
-
-        fun endSession(session: KarryPDFContext.Session) {
-            AUXILIARY_STRING_BUILDERS.remove(session)
-        }
+        private const val PDF_OBJECT_SECONDARY_STRING_BUILDER = "PDFObject Secondary StringBuilder"
 
         fun getPDFObject(
             context: KarryPDFContext,
@@ -28,8 +19,8 @@ internal class PDFObjectAdapter {
         ): PDFObject? {
             sb.trimContainedChars()
 
-            if (sb == AUXILIARY_STRING_BUILDERS[context.session]) {
-                AUXILIARY_STRING_BUILDERS[context.session] = StringBuilder()
+            if (sb == context.getStringBuilder(PDF_OBJECT_SECONDARY_STRING_BUILDER)) {
+                context.setStringBuilder(PDF_OBJECT_SECONDARY_STRING_BUILDER, StringBuilder())
             }
 
             return when {
@@ -38,7 +29,7 @@ internal class PDFObjectAdapter {
                 sb.isNumeric() -> sb.toNumeric()
                 sb.isEnclosedWith('(', ')') -> sb.toPDFString()
                 sb.isEnclosedWith("<<", ">>") ->
-                    AUXILIARY_STRING_BUILDERS[context.session]?.let {
+                    context.getStringBuilder(PDF_OBJECT_SECONDARY_STRING_BUILDER).let {
                         sb.toDictionary(
                             context,
                             it, obj, gen, resolveReferences
@@ -46,25 +37,26 @@ internal class PDFObjectAdapter {
                     }
                 sb.isEnclosedWith('<', '>') -> sb.toPDFString()
                 sb.startsWith("/") -> sb.toName()
-                sb.isEnclosedWith('[', ']') -> AUXILIARY_STRING_BUILDERS[context.session]?.let {
-                    sb.toPDFArray(
-                        context,
-                        it,
-                        obj,
-                        gen,
-                        resolveReferences
-                    )
-                }
+                sb.isEnclosedWith('[', ']') -> context
+                    .getStringBuilder(PDF_OBJECT_SECONDARY_STRING_BUILDER).let {
+                        sb.toPDFArray(
+                            context,
+                            it,
+                            obj,
+                            gen,
+                            resolveReferences
+                        )
+                    }
                 Reference.isReference(sb) -> {
                     if (resolveReferences) {
-                        AUXILIARY_STRING_BUILDERS[context.session]?.let {
+                        context.getStringBuilder(PDF_OBJECT_SECONDARY_STRING_BUILDER).let {
                             sb.toReference(
                                 context,
                                 it
                             ).resolve(context)
                         }
                     } else {
-                        AUXILIARY_STRING_BUILDERS[context.session]?.let {
+                        context.getStringBuilder(PDF_OBJECT_SECONDARY_STRING_BUILDER).let {
                             sb.toReference(
                                 context,
                                 it

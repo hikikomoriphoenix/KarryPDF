@@ -1,7 +1,6 @@
 package marabillas.loremar.karrypdf.objects
 
 import marabillas.loremar.karrypdf.document.KarryPDFContext
-import marabillas.loremar.karrypdf.exceptions.NoDocumentException
 import marabillas.loremar.karrypdf.filters.DecoderFactory
 import java.io.RandomAccessFile
 
@@ -12,8 +11,7 @@ internal open class Stream(
     reference: Reference? = null
 ) :
     Indirect(file, start, reference) {
-    val dictionary = context.fileReader?.getDictionary(context, start, obj ?: -1, 0)
-        ?: throw NoDocumentException()
+    val dictionary = context.fileReader.getDictionary(context, start, obj ?: -1, 0)
     var streamData = byteArrayOf()
         private set
 

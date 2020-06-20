@@ -3,26 +3,21 @@ package marabillas.loremar.karrypdf.document
 import marabillas.loremar.karrypdf.encryption.Decryptor
 import marabillas.loremar.karrypdf.exceptions.IndirectObjectMismatchException
 import marabillas.loremar.karrypdf.exceptions.NoDocumentException
-import marabillas.loremar.karrypdf.objects.*
+import marabillas.loremar.karrypdf.objects.PDFObject
+import marabillas.loremar.karrypdf.objects.Reference
+import marabillas.loremar.karrypdf.objects.Stream
+import marabillas.loremar.karrypdf.objects.toPDFObject
 import marabillas.loremar.karrypdf.utils.exts.appendBytes
 import marabillas.loremar.karrypdf.utils.exts.containedEqualsWith
 
-internal open class KarryPDFContext :
-    ReferenceResolver {
-    var fileReader: PDFFileReader? = null
+internal open class KarryPDFContext : ReferenceResolver {
+    lateinit var fileReader: PDFFileReader
+    lateinit var fileLineReader: FileLineReader
+
     var objects: HashMap<String, XRefEntry>? = null
     var decryptor: Decryptor? = null
-    var session = object : Session() {}
-        protected set
 
-    init {
-        if (javaClass.superclass != KarryPDFContext::class.java) {
-            PDFObjectAdapter.notifyNewSession(session)
-            PDFFileReader.notifyNewSession(
-                session
-            )
-        }
-    }
+    private val stringBuilders: MutableMap<String, StringBuilder> = mutableMapOf()
 
     private val stringBuilder = StringBuilder()
 
@@ -31,7 +26,7 @@ internal open class KarryPDFContext :
             if (topDownReferencesAvailable)
                 return _topDownReferences
 
-            return fileReader?.file?.let {
+            return fileReader.file.let {
                 synchronized(it) {
                     if (_topDownReferences == null) {
                         _topDownReferences =
@@ -58,7 +53,7 @@ internal open class KarryPDFContext :
         reference: Reference,
         checkTopDownReferences: Boolean
     ): PDFObject? {
-        val fileReader = fileReader ?: throw NoDocumentException()
+        val fileReader = fileReader
         val objects = objects ?: throw NoDocumentException()
         var objEntry = objects["${reference.obj} ${reference.gen}"] ?: return null
 
@@ -127,7 +122,7 @@ internal open class KarryPDFContext :
     }
 
     override fun resolveReferenceToStream(reference: Reference): Stream? {
-        val fileReader = fileReader ?: throw NoDocumentException()
+        val fileReader = fileReader
         val objects = objects ?: throw NoDocumentException()
         val obj = objects["${reference.obj} ${reference.gen}"]
         return if (obj != null) {
@@ -151,5 +146,13 @@ internal open class KarryPDFContext :
         }
     }
 
-    abstract inner class Session
+    fun getStringBuilder(key: String): StringBuilder {
+        return stringBuilders[key] ?: StringBuilder().apply {
+            stringBuilders[key] = this
+        }
+    }
+
+    fun setStringBuilder(key: String, value: StringBuilder) {
+        stringBuilders[key] = value
+    }
 }

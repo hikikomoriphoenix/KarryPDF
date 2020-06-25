@@ -574,6 +574,9 @@ internal class Font(private val dictionary: Dictionary, private val referenceRes
             fontFile3 is Stream -> {
                 TODO("Get encoding from FontFile3")
             }
+            else -> {
+                StandardEncoding.putAllTo(encodingArray)
+            }
         }
 
     }

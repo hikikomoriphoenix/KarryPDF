@@ -3,10 +3,8 @@ package marabillas.loremar.karrypdf.encryption
 import marabillas.loremar.karrypdf.exceptions.UnsupportedPDFElementException
 import marabillas.loremar.karrypdf.exceptions.ValidPasswordRequiredException
 import marabillas.loremar.karrypdf.objects.*
-import marabillas.loremar.karrypdf.objects.Dictionary
 import java.io.ByteArrayOutputStream
 import java.security.MessageDigest
-import java.util.*
 import kotlin.math.min
 
 internal class StandardSecurityHandler(encryptionDictionary: Dictionary, idArray: PDFArray?, password: String) :
@@ -82,7 +80,8 @@ internal class StandardSecurityHandler(encryptionDictionary: Dictionary, idArray
         val rc4Key = computeRC4Key(passwordBytes)
 
         if (revision == 2) {
-            TODO("getUserPassword for revision 2 not implemented")
+            rc4.reset(rc4Key)
+            rc4.process(oPassword, result)
         } else {
             val iterationKey = ByteArray(rc4Key.size)
             var otemp = ByteArray(oPassword.size)
@@ -121,22 +120,26 @@ internal class StandardSecurityHandler(encryptionDictionary: Dictionary, idArray
 
     private fun authenticateUserPassword(passwordBytes: ByteArray) {
         if (revision == 2) {
-            TODO("Password authentication for revision 2 is not yet implemented")
+            val computedPassword = computeUserPassword(passwordBytes)
+            if (!uPassword.contentEquals(computedPassword)) {
+                throw ValidPasswordRequiredException()
+            }
         } else {
-            val computedPassword = computeUserPasswordRev3Up(passwordBytes)
-            if (!Arrays.equals(uPassword.copyOf(16), computedPassword.copyOf(16))) {
+            val computedPassword = computeUserPassword(passwordBytes)
+            if (!uPassword.copyOf(16).contentEquals(computedPassword.copyOf(16))) {
                 throw ValidPasswordRequiredException()
             }
         }
     }
 
-    private fun computeUserPasswordRev3Up(passwordBytes: ByteArray): ByteArray {
+    private fun computeUserPassword(passwordBytes: ByteArray): ByteArray {
         val result = ByteArrayOutputStream()
 
         encryptionKey = computeEncryptionKey(passwordBytes)
 
         if (revision == 2) {
-            TODO("Password computation for revision 2 not implemented")
+            rc4.reset(encryptionKey)
+            rc4.process(passwordPadding, result)
         } else {
             val md5 = MessageDigest.getInstance("MD5")
             md5.update(passwordPadding)

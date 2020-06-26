@@ -36,11 +36,11 @@ class KarryPDF(file: RandomAccessFile, password: String = "") {
         context.fileLineReader = FileLineReader(file)
 
         TimeCounter.reset()
-        parseCrossReferences(fileReader)
+        parseCrossReferences(context.fileReader)
         println("PARSEXREF => ${TimeCounter.getTimeElapsed()}")
 
         TimeCounter.reset()
-        parseTrailer(fileReader, password)
+        parseTrailer(context.fileReader, password)
         println("PARSETRAILER => ${TimeCounter.getTimeElapsed()}")
 
         TimeCounter.reset()

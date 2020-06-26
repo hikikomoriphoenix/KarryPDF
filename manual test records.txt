@@ -152,5 +152,4 @@ Title: Adobe Type 1 Font Format
 Author/Publisher: Adobe Systems Incorporated
 File: T1_SPEC.PDF
 Issues:
-- Letter 'p' is decoded as 'θ'
 - Some innacurate character spacing

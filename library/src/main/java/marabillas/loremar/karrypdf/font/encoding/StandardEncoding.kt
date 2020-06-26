@@ -158,7 +158,7 @@ internal class StandardEncoding {
             encoding[171] = "y"
             encoding[245] = "yen"
             encoding[172] = "z"
-            encoding[160] = "zero"
+            encoding[60] = "zero"
 
             encoding.octalToDecimalKeys()
         }

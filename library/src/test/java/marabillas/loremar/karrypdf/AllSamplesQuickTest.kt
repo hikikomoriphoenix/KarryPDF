@@ -93,7 +93,7 @@ class AllSamplesQuickTest {
     @Test
     fun testOneSample() {
         forceHideLogs = true
-        val pdfFilename = "psrefman.pdf"
+        val pdfFilename = "icc32.pdf"
         print("Testing library on $pdfFilename...")
         val path = javaClass.classLoader?.getResource("$samplesDir$pdfFilename")?.path
         val file = RandomAccessFile(path, "r")

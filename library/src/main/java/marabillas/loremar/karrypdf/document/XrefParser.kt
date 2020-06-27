@@ -7,8 +7,16 @@ internal class XrefParser(private val file: RandomAccessFile) {
     private val fileChannel = file.channel
 
     fun parseEntries(startObj: Int, count: Int, entries: HashMap<String, XRefEntry>) {
+        val startPos = file.filePointer
+        file.seek(startPos + 20)
+
+        // Each line is 20 bytes including end of line marker. But if end of line marker consists of
+        // '\r\n' then line is 21 bytes each.
+        val lineLength = if (file.read().toChar() == '\n') 21 else 20
+        file.seek(startPos)
+
         val buffer =
-            ByteBuffer.allocateDirect(count * 20) // Each line is 20 bytes including end of line marker
+            ByteBuffer.allocateDirect(count * lineLength)
         fileChannel.position(file.filePointer)
         fileChannel.read(buffer)
         file.seek(fileChannel.position())
@@ -19,7 +27,7 @@ internal class XrefParser(private val file: RandomAccessFile) {
             // Get object position
             var tens = 1000000000
             var pos = 0L
-            buffer.position(i * 20)
+            buffer.position(i * lineLength)
             while (tens >= 1) {
                 val c = buffer.get().toChar()
                 val d = Character.getNumericValue(c)
@@ -30,7 +38,7 @@ internal class XrefParser(private val file: RandomAccessFile) {
             // Get object generation number
             tens = 10000
             var gen = 0
-            buffer.position(i * 20 + 11)
+            buffer.position(i * lineLength + 11)
             while (tens >= 1) {
                 val c = buffer.get().toChar()
                 val d = Character.getNumericValue(c)
@@ -39,13 +47,13 @@ internal class XrefParser(private val file: RandomAccessFile) {
             }
 
             // Get in-use value
-            buffer.position(i * 20 + 17)
+            buffer.position(i * lineLength + 17)
             val nOrF = buffer.get().toChar()
 
             if (nOrF == 'f') {
-                entries["${startObj + i} $gen"] = XRefEntry(i, pos, gen, false)
+                entries["${startObj + i} $gen"] = XRefEntry(startObj + i, pos, gen, false)
             } else {
-                entries["${startObj + i} $gen"] = XRefEntry(i, pos, gen)
+                entries["${startObj + i} $gen"] = XRefEntry(startObj + i, pos, gen)
             }
 
             i++

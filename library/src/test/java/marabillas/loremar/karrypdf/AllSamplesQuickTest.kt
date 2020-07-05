@@ -1,5 +1,6 @@
 package marabillas.loremar.karrypdf
 
+import android.net.Uri
 import marabillas.loremar.karrypdf.utils.MemoryProfiler
 import marabillas.loremar.karrypdf.utils.forceHideLogs
 import marabillas.loremar.karrypdf.utils.loge
@@ -93,10 +94,12 @@ class AllSamplesQuickTest {
     @Test
     fun testOneSample() {
         forceHideLogs = true
-        val pdfFilename = "icc32.pdf"
+        val pdfFilename =
+            "Android Programming, The Big Nerd Ranch Guide (2nd Edition) - [rida1148].pdf"
         print("Testing library on $pdfFilename...")
         val path = javaClass.classLoader?.getResource("$samplesDir$pdfFilename")?.path
-        val file = RandomAccessFile(path, "r")
+
+        val file = RandomAccessFile(Uri.parse(path).path, "r")
         val pdf = loadDocument(file, pdfFilename)
         if (pdf != null) {
             val numPages = pdf.getTotalPages()
